@@ -1,0 +1,13 @@
+CHIP PC {
+    IN in[16], inc, load, reset;
+    OUT out[16];
+
+    PARTS:
+    ALU(x=saved, y[0]=true, zx=reset, zy=reset, f=inc, out=calculated);
+    Mux16(a=calculated, b=in, sel=load, out=w1);
+
+    Or(a=inc, b=load, out=sel1);
+    Or(a=sel1, b=reset, out=sel2);
+
+    Register(in=w1, load=sel2, out=saved, out=out);
+}
