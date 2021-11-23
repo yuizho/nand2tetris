@@ -32,22 +32,29 @@
     @UNTYPED
     D;JEQ
 (TYPED)
-    // show black to screen
-    @1
-    D=M+1
-    M=D
-    @SCREEN
-    A=D+A
-    M=-1
     // reset screen index if needed
     @0
     D=M
     M=-1
     @RESET_SECREEN_INDEX
     D;JEQ
+    // show black to screen
+    @1
+    D=M+1
+    M=D
+    @SCREEN
+    A=D+A
+    M=-1
+    // jump to main loop
     @LOOP
     0;JMP
 (UNTYPED)
+    // reset sreen index if needed
+    @0
+    D=M
+    M=0
+    @RESET_SECREEN_INDEX
+    D;JNE
     // show black to screen
     @1
     D=M+1
@@ -55,12 +62,7 @@
     @SCREEN
     A=D+A
     M=0
-    // reset sreen index if needed
-    @0
-    D=M
-    M=0
-    @RESET_SECREEN_INDEX
-    D;JNE
+    // jump to main loop
     @LOOP
     0;JMP
 (RESET_SECREEN_INDEX)
