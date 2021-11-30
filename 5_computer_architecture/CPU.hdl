@@ -39,5 +39,41 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // decode
+    // Mux(in=true, sel=instruction[15], a=tmpaload, b=cload);
+
+    // a register
+    Mux16(a=aluresult, b=instruction, sel=instruction[15], out=ainst);
+    Or(a=instruction[15], b=instruction[5], out=aload); // check i and d1 of instruction
+    ARegister(in=ainst, load=aload, out=aregist);
+
+    // A/M
+    // TODO: should check first bit of instruction?
+    Mux16(a=aregist, b=inM, sel=instruction[12], out=am); // check a of instruction
+
+    // D
+    Not(in=instruction[15], out=cload);
+    And(a=cload, b=instruction[4], out=dload); // check i and d2 of instruction
+    DRegister(in=aluresult, load=dload, out=dregist);
+
+    // ALU
+    ALU(x=dregist, y=am, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=aluresult, out=outM, zr=aluzr, ng=alung);
+
+    // check j1 (out < 0)
+    Mux(a=false, b=alung, sel=instruction[2], out=cmp1);
+    // check j2 (out = 0)
+    Mux(a=cmp1, b=aluzr, sel=instruction[1], out=cmp2);
+    // check j3 (out > 0)
+    Not(in=alung, out=notalung);
+    Mux(a=cmp2, b=notalung, sel=instruction[0], out=cmp3);
+    // PC
+    Not(in=cmp3, out=inc);
+    PC(in=aregist, inc=inc, load=cmp3, reset=reset, out[1..15]=pc);
+
+    // writeM
+    Mux(a=false, b=true, sel=instruction[15], out=iscload);
+    And(a=iscload, b=instruction[3], out=writeM);
+
+    // addressM
+    And16(a=true, b=aregist, out[1..15]=addressM);
 }
