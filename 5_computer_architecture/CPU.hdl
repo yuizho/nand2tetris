@@ -43,7 +43,7 @@ CHIP CPU {
     // Mux(in=true, sel=instruction[15], a=tmpaload, b=cload);
 
     // a register
-    Mux16(a=aluresult, b=instruction, sel=instruction[15], out=ainst);
+    Mux16(a=instruction, b=aluresult, sel=instruction[15], out=ainst);
     Or(a=instruction[15], b=instruction[5], out=aload); // check i and d1 of instruction
     ARegister(in=ainst, load=aload, out=aregist);
 
@@ -52,8 +52,7 @@ CHIP CPU {
     Mux16(a=aregist, b=inM, sel=instruction[12], out=am); // check a of instruction
 
     // D
-    Not(in=instruction[15], out=cload);
-    And(a=cload, b=instruction[4], out=dload); // check i and d2 of instruction
+    And(a=instruction[15], b=instruction[4], out=dload); // check i and d2 of instruction
     DRegister(in=aluresult, load=dload, out=dregist);
 
     // ALU
@@ -75,5 +74,5 @@ CHIP CPU {
     And(a=iscload, b=instruction[3], out=writeM);
 
     // addressM
-    And16(a=true, b=aregist, out[1..15]=addressM);
+    And16(a=true, b=aregist, out[0..14]=addressM);
 }
