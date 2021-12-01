@@ -63,11 +63,12 @@ CHIP CPU {
     // check j2 (out = 0)
     Mux(a=cmp1, b=aluzr, sel=instruction[1], out=cmp2);
     // check j3 (out > 0)
-    Not(in=alung, out=notalung);
-    Mux(a=cmp2, b=notalung, sel=instruction[0], out=cmp3);
+    Or(a=alung, b=aluzr, out=zeroorless);
+    Not(in=zeroorless, out=oneormore);
+    Mux(a=cmp2, b=oneormore, sel=instruction[0], out=cmp3);
     // PC
     Not(in=cmp3, out=inc);
-    PC(in=aregist, inc=inc, load=cmp3, reset=reset, out[1..15]=pc);
+    PC(in=aregist, inc=true, load=cmp3, reset=reset, out[0..14]=pc);
 
     // writeM
     Mux(a=false, b=true, sel=instruction[15], out=iscload);
