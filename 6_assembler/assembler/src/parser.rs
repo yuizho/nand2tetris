@@ -1,9 +1,68 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+
+pub struct SymbolTable {
+    symbols: HashMap<String, i32>,
+    memory_index: i32,
+}
+
+impl SymbolTable {
+    pub fn create(contents: &Vec<String>) -> Self {
+        let mut symbols: HashMap<String, i32> = HashMap::new();
+        let mut index = 0;
+        for content in contents.iter() {
+            let trimed = content.trim();
+            if trimed.starts_with("(") {
+                let symbol = trimed.replace("(", "").replace(")", "");
+                println!("symbol is {},  index is {}", symbol, index);
+                symbols.insert(symbol, index);
+            } else if trimed.starts_with("//") || trimed.is_empty() {
+                continue;
+            } else {
+                index += 1;
+            }
+        }
+        // put reserved symbols
+        for i in 0..17 {
+            symbols.insert(format!("R{}", i), i);
+        }
+        symbols.insert("SP".to_string(), 0);
+        symbols.insert("LCL".to_string(), 1);
+        symbols.insert("ARG".to_string(), 2);
+        symbols.insert("THIS".to_string(), 3);
+        symbols.insert("THAT".to_string(), 4);
+        symbols.insert("SCREEN".to_string(), 16384);
+        symbols.insert("KBD".to_string(), 24576);
+
+        SymbolTable {
+            symbols,
+            memory_index: 16,
+        }
+    }
+
+    pub fn put_memory_symbol(&mut self, symbol: String) {
+        println!(
+            "symbol is {},  memory address is {}",
+            symbol, self.memory_index
+        );
+        self.symbols.insert(symbol, self.memory_index);
+        //self.memory_index += 1;
+    }
+
+    pub fn contains(&self, symbol: &String) -> bool {
+        self.symbols.contains_key(symbol)
+    }
+
+    pub fn get_address(&self, symbol: &String) -> Option<i32> {
+        self.symbols.get(symbol).map(|i| i.clone())
+    }
+}
 
 pub struct Parser {
     contents: Vec<String>,
     current_line: usize,
+    symbol_table: SymbolTable,
 }
 
 impl Parser {
@@ -11,8 +70,10 @@ impl Parser {
         let mut contents = String::new();
         let mut f = File::open(filename).expect("file not found");
         f.read_to_string(&mut contents).expect("filed to read file");
+        let contents = contents.split("\n").map(|s| s.to_string()).collect();
         Parser {
-            contents: contents.split("\n").map(|s| s.to_string()).collect(),
+            symbol_table: SymbolTable::create(&contents),
+            contents,
             current_line: 0,
         }
     }
@@ -25,34 +86,37 @@ impl Parser {
         self.current_line += 1
     }
 
-    pub fn command_type(&self) -> CommandType {
-        CommandType::instruction_of(&self.contents[self.current_line])
+    pub fn command_type(&mut self) -> CommandType {
+        CommandType::instruction_of(&self.contents[self.current_line], &mut self.symbol_table)
     }
 }
 
 #[derive(Debug)]
 pub enum CommandType {
-    A(usize),
+    A(i32),
     C(Option<String>, String, Option<String>),
-    L(usize),
     Blank,
 }
 
 impl CommandType {
     // TODO: refactor
-    fn instruction_of(instruction: &String) -> Self {
-        let trimed = instruction.trim();
-        if trimed.is_empty() || trimed.starts_with("//") {
+    fn instruction_of(instruction: &String, symbols: &mut SymbolTable) -> Self {
+        let removed_comments = &instruction[..instruction.find("//").unwrap_or(instruction.len())];
+        let trimed = removed_comments.trim();
+        if trimed.is_empty() || trimed.starts_with("(") {
             CommandType::Blank
         } else if trimed.starts_with("@") {
-            CommandType::A(
-                trimed[1..]
-                    .parse::<usize>()
-                    .expect("symbol doesn't implement yet"),
-            )
-        } else if trimed.starts_with("(") {
-            // TODO
-            CommandType::Blank
+            let symbol = trimed[1..].to_string();
+            if let Ok(address) = symbol.parse::<i32>() {
+                return CommandType::A(address);
+            }
+
+            if !symbols.contains(&symbol) {
+                symbols.put_memory_symbol(symbol.clone())
+            }
+
+            let address = symbols.get_address(&symbol).unwrap();
+            CommandType::A(address)
         } else if trimed.contains("=") {
             let (dest, cmp) = trimed.split_once('=').unwrap();
             CommandType::C(Some(String::from(dest)), String::from(cmp), None)
@@ -67,11 +131,10 @@ impl CommandType {
 
 pub fn convert_code(command_type: CommandType) -> Option<i32> {
     match command_type {
-        CommandType::A(symbol) => Some(symbol as i32),
+        CommandType::A(symbol) => Some(symbol),
         CommandType::C(dest, cmp, jmp) => {
             Some(0b1110000000000000 + convert_comp(cmp) + convert_dest(&dest) + convert_jump(&jmp))
         }
-        // TODO: L
         _ => None,
     }
 }
