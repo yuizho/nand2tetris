@@ -106,19 +106,32 @@ impl Parser {
      */
     pub fn parse(&mut self) -> CommandType {
         // resolve variable symbols and parse
-        CommandType::from_nimonic_code(&self.contents[self.current_line], &mut self.symbol_table)
+        let command_type = CommandType::from_nimonic_code(&self.contents[self.current_line]);
+
+        // resolve variable symbol of A command
+        if let CommandType::UnresolvedA(symbol) = command_type {
+            // get address from symbol table
+            if !self.symbol_table.contains(&symbol) {
+                self.symbol_table.put_variable_symbol(symbol.clone())
+            }
+            let address = self.symbol_table.get_address(&symbol).unwrap();
+            return CommandType::A(address);
+        }
+
+        command_type
     }
 }
 
 #[derive(Debug)]
 pub enum CommandType {
+    UnresolvedA(String),
     A(i32),
     C(Option<String>, String, Option<String>),
     Blank,
 }
 
 impl CommandType {
-    pub fn from_nimonic_code(instruction: &String, symbol_table: &mut SymbolTable) -> Self {
+    pub fn from_nimonic_code(instruction: &String) -> Self {
         let removed_comments = &instruction[..instruction.find("//").unwrap_or(instruction.len())];
         let trimed = removed_comments.trim();
 
@@ -130,12 +143,7 @@ impl CommandType {
                 if let Ok(address) = symbol.parse::<i32>() {
                     return CommandType::A(address);
                 }
-                // get address from symbol table
-                if !symbol_table.contains(&symbol) {
-                    symbol_table.put_variable_symbol(symbol.clone())
-                }
-                let address = symbol_table.get_address(&symbol).unwrap();
-                CommandType::A(address)
+                CommandType::UnresolvedA(symbol)
             }
             trimed if trimed.contains("=") => {
                 let (dest, cmp) = trimed.split_once('=').unwrap();
