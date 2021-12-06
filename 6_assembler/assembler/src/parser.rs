@@ -118,32 +118,34 @@ pub enum CommandType {
 }
 
 impl CommandType {
-    // TODO: refactor
-    fn from_nimonic_code(instruction: &String, symbol_table: &mut SymbolTable) -> Self {
+    pub fn from_nimonic_code(instruction: &String, symbol_table: &mut SymbolTable) -> Self {
         let removed_comments = &instruction[..instruction.find("//").unwrap_or(instruction.len())];
         let trimed = removed_comments.trim();
-        if trimed.is_empty() || trimed.starts_with("(") {
-            CommandType::Blank
-        } else if trimed.starts_with("@") {
-            let symbol = trimed[1..].to_string();
-            if let Ok(address) = symbol.parse::<i32>() {
-                return CommandType::A(address);
-            }
 
-            if !symbol_table.contains(&symbol) {
-                symbol_table.put_variable_symbol(symbol.clone())
+        match trimed {
+            trimed if trimed.is_empty() => CommandType::Blank,
+            trimed if trimed.starts_with("(") => CommandType::Blank,
+            trimed if trimed.starts_with("@") => {
+                let symbol = trimed[1..].to_string();
+                if let Ok(address) = symbol.parse::<i32>() {
+                    return CommandType::A(address);
+                }
+                // get address from symbol table
+                if !symbol_table.contains(&symbol) {
+                    symbol_table.put_variable_symbol(symbol.clone())
+                }
+                let address = symbol_table.get_address(&symbol).unwrap();
+                CommandType::A(address)
             }
-
-            let address = symbol_table.get_address(&symbol).unwrap();
-            CommandType::A(address)
-        } else if trimed.contains("=") {
-            let (dest, cmp) = trimed.split_once('=').unwrap();
-            CommandType::C(Some(String::from(dest)), String::from(cmp), None)
-        } else if trimed.contains(";") {
-            let (cmp, jmp) = trimed.split_once(';').unwrap();
-            CommandType::C(None, String::from(cmp), Some(String::from(jmp)))
-        } else {
-            panic!("unexpected syntax {}", instruction)
+            trimed if trimed.contains("=") => {
+                let (dest, cmp) = trimed.split_once('=').unwrap();
+                CommandType::C(Some(String::from(dest)), String::from(cmp), None)
+            }
+            trimed if trimed.contains(";") => {
+                let (cmp, jmp) = trimed.split_once(';').unwrap();
+                CommandType::C(None, String::from(cmp), Some(String::from(jmp)))
+            }
+            _ => panic!("unexpected syntax {}", instruction),
         }
     }
 
