@@ -9,25 +9,10 @@ pub struct SymbolTable {
 
 impl SymbolTable {
     /**
-     * create symbols hash map which just has label symbols and reserved symbols.
-     * symbols of variables will be put at next phase.
+     * create symbols hash map which just has reserved symbols.
      */
-    pub fn create(contents: &Vec<String>) -> Self {
+    pub fn create() -> Self {
         let mut symbols: HashMap<String, i32> = HashMap::new();
-        let mut index = 0;
-        // put label symbols
-        for content in contents.iter() {
-            let trimed = content.trim();
-            if trimed.starts_with("(") {
-                let symbol = trimed.replace("(", "").replace(")", "");
-                println!("symbol is {},  index is {}", symbol, index);
-                symbols.insert(symbol, index);
-            } else if trimed.starts_with("//") || trimed.is_empty() {
-                continue;
-            } else {
-                index += 1;
-            }
-        }
         // put reserved symbols
         for i in 0..17 {
             symbols.insert(format!("R{}", i), i);
@@ -46,9 +31,25 @@ impl SymbolTable {
         }
     }
 
+    pub fn resolve_label_symbols(&mut self, contents: &Vec<String>) {
+        let mut index = 0;
+        for content in contents.iter() {
+            let trimed = content.trim();
+            if trimed.starts_with("(") {
+                let symbol = trimed.replace("(", "").replace(")", "");
+                println!("label symbol is {},  code index is {}", symbol, index);
+                self.symbols.insert(symbol, index);
+            } else if trimed.starts_with("//") || trimed.is_empty() {
+                continue;
+            } else {
+                index += 1;
+            }
+        }
+    }
+
     pub fn put_memory_symbol(&mut self, symbol: String) {
         println!(
-            "symbol is {},  memory address is {}",
+            "variable symbol is {},  memory address is {}",
             symbol, self.memory_index
         );
         self.symbols.insert(symbol, self.memory_index);
@@ -76,8 +77,13 @@ impl Parser {
         let mut f = File::open(filename).expect("file not found");
         f.read_to_string(&mut contents).expect("filed to read file");
         let contents = contents.split("\n").map(|s| s.to_string()).collect();
+
+        // create symbol table and resolve label symbols
+        let mut symbol_table = SymbolTable::create();
+        symbol_table.resolve_label_symbols(&contents);
+
         Parser {
-            symbol_table: SymbolTable::create(&contents),
+            symbol_table,
             contents,
             current_line: 0,
         }
@@ -94,7 +100,8 @@ impl Parser {
     /**
      * parse nimonic codes to CommandType obj with resolving variable symbols.
      */
-    pub fn command_type(&mut self) -> CommandType {
+    pub fn parse(&mut self) -> CommandType {
+        // resolve variable symbols and parse
         CommandType::instruction_of(&self.contents[self.current_line], &mut self.symbol_table)
     }
 }
@@ -108,7 +115,7 @@ pub enum CommandType {
 
 impl CommandType {
     // TODO: refactor
-    fn instruction_of(instruction: &String, symbols: &mut SymbolTable) -> Self {
+    fn instruction_of(instruction: &String, symbol_table: &mut SymbolTable) -> Self {
         let removed_comments = &instruction[..instruction.find("//").unwrap_or(instruction.len())];
         let trimed = removed_comments.trim();
         if trimed.is_empty() || trimed.starts_with("(") {
@@ -119,11 +126,11 @@ impl CommandType {
                 return CommandType::A(address);
             }
 
-            if !symbols.contains(&symbol) {
-                symbols.put_memory_symbol(symbol.clone())
+            if !symbol_table.contains(&symbol) {
+                symbol_table.put_memory_symbol(symbol.clone())
             }
 
-            let address = symbols.get_address(&symbol).unwrap();
+            let address = symbol_table.get_address(&symbol).unwrap();
             CommandType::A(address)
         } else if trimed.contains("=") {
             let (dest, cmp) = trimed.split_once('=').unwrap();
