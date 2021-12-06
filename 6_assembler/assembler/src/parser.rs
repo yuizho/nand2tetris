@@ -47,7 +47,7 @@ impl SymbolTable {
         }
     }
 
-    pub fn put_memory_symbol(&mut self, symbol: String) {
+    pub fn put_variable_symbol(&mut self, symbol: String) {
         println!(
             "variable symbol is {},  memory address is {}",
             symbol, self.memory_index
@@ -102,7 +102,7 @@ impl Parser {
      */
     pub fn parse(&mut self) -> CommandType {
         // resolve variable symbols and parse
-        CommandType::instruction_of(&self.contents[self.current_line], &mut self.symbol_table)
+        CommandType::from_nimonic_code(&self.contents[self.current_line], &mut self.symbol_table)
     }
 }
 
@@ -115,7 +115,7 @@ pub enum CommandType {
 
 impl CommandType {
     // TODO: refactor
-    fn instruction_of(instruction: &String, symbol_table: &mut SymbolTable) -> Self {
+    fn from_nimonic_code(instruction: &String, symbol_table: &mut SymbolTable) -> Self {
         let removed_comments = &instruction[..instruction.find("//").unwrap_or(instruction.len())];
         let trimed = removed_comments.trim();
         if trimed.is_empty() || trimed.starts_with("(") {
@@ -127,7 +127,7 @@ impl CommandType {
             }
 
             if !symbol_table.contains(&symbol) {
-                symbol_table.put_memory_symbol(symbol.clone())
+                symbol_table.put_variable_symbol(symbol.clone())
             }
 
             let address = symbol_table.get_address(&symbol).unwrap();
