@@ -15,8 +15,7 @@ fn main() {
         // parse nimonic to commant_type obj
         let command_type = parser.parse();
         // convert command_type obj to binary
-        let code = parser::convert_code(command_type);
-        if let Some(code) = code {
+        if let Some(code) = command_type.to_binary_code() {
             let binary_instruction = format!("{:016b}", code) + "\n";
             f.write(binary_instruction.as_bytes())
                 .expect("failed to write hack file");

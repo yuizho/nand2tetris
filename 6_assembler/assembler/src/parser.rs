@@ -142,15 +142,18 @@ impl CommandType {
             panic!("unexpected syntax {}", instruction)
         }
     }
-}
 
-pub fn convert_code(command_type: CommandType) -> Option<i32> {
-    match command_type {
-        CommandType::A(symbol) => Some(symbol),
-        CommandType::C(dest, cmp, jmp) => {
-            Some(0b1110000000000000 + convert_comp(cmp) + convert_dest(&dest) + convert_jump(&jmp))
+    pub fn to_binary_code(&self) -> Option<i32> {
+        match self {
+            CommandType::A(symbol) => Some(symbol.clone()),
+            CommandType::C(dest, cmp, jmp) => Some(
+                0b1110000000000000
+                    + convert_comp(cmp.clone())
+                    + convert_dest(&dest)
+                    + convert_jump(&jmp),
+            ),
+            _ => None,
         }
-        _ => None,
     }
 }
 
