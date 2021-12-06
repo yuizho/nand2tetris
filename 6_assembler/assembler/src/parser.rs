@@ -35,14 +35,18 @@ impl SymbolTable {
         let mut index = 0;
         for content in contents.iter() {
             let trimed = content.trim();
-            if trimed.starts_with("(") {
-                let symbol = trimed.replace("(", "").replace(")", "");
-                println!("label symbol is {},  code index is {}", symbol, index);
-                self.symbols.insert(symbol, index);
-            } else if trimed.starts_with("//") || trimed.is_empty() {
+
+            if trimed.starts_with("//") || trimed.is_empty() {
                 continue;
-            } else {
-                index += 1;
+            }
+
+            match &trimed[..1] {
+                "(" => {
+                    let symbol = trimed.replace("(", "").replace(")", "");
+                    println!("label symbol is {},  code index is {}", symbol, index);
+                    self.symbols.insert(symbol, index);
+                }
+                _ => index += 1,
             }
         }
     }
