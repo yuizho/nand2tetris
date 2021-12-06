@@ -52,7 +52,6 @@ impl SymbolTable {
             symbol, self.memory_index
         );
         self.symbols.insert(symbol, self.memory_index);
-        // TODO: this memory address is different from the sample code.
         self.memory_index += 1;
     }
 
