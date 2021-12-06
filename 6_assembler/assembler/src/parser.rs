@@ -8,9 +8,14 @@ pub struct SymbolTable {
 }
 
 impl SymbolTable {
+    /**
+     * create symbols hash map which just has label symbols and reserved symbols.
+     * symbols of variables will be put at next phase.
+     */
     pub fn create(contents: &Vec<String>) -> Self {
         let mut symbols: HashMap<String, i32> = HashMap::new();
         let mut index = 0;
+        // put label symbols
         for content in contents.iter() {
             let trimed = content.trim();
             if trimed.starts_with("(") {
@@ -47,7 +52,8 @@ impl SymbolTable {
             symbol, self.memory_index
         );
         self.symbols.insert(symbol, self.memory_index);
-        //self.memory_index += 1;
+        // TODO: this memory address is different from the sample code.
+        self.memory_index += 1;
     }
 
     pub fn contains(&self, symbol: &String) -> bool {
@@ -86,6 +92,9 @@ impl Parser {
         self.current_line += 1
     }
 
+    /**
+     * parse nimonic codes to CommandType obj with resolving variable symbols.
+     */
     pub fn command_type(&mut self) -> CommandType {
         CommandType::instruction_of(&self.contents[self.current_line], &mut self.symbol_table)
     }
