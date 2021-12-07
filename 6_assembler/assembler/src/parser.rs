@@ -159,6 +159,7 @@ impl CommandType {
 
     pub fn to_binary_code(&self) -> Option<i32> {
         match self {
+            CommandType::UnresolvedA(_) => panic!("Unexpected CommandType::UnresovedA"),
             CommandType::A(symbol) => Some(symbol.clone()),
             CommandType::C(dest, cmp, jmp) => Some(
                 0b1110000000000000
