@@ -60,11 +60,11 @@ impl SymbolTable {
         self.memory_index += 1;
     }
 
-    pub fn contains(&self, symbol: &String) -> bool {
+    pub fn contains(&self, symbol: &str) -> bool {
         self.symbols.contains_key(symbol)
     }
 
-    pub fn get_address(&self, symbol: &String) -> Option<i32> {
+    pub fn get_address(&self, symbol: &str) -> Option<i32> {
         self.symbols.get(symbol).map(|i| i.clone())
     }
 }
@@ -76,7 +76,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn create(filename: &String) -> Self {
+    pub fn create(filename: &str) -> Self {
         let mut contents = String::new();
         let mut f = File::open(filename).expect("file not found");
         f.read_to_string(&mut contents).expect("filed to read file");
@@ -131,7 +131,7 @@ pub enum CommandType {
 }
 
 impl CommandType {
-    pub fn from_nimonic_code(instruction: &String) -> Self {
+    pub fn from_nimonic_code(instruction: &str) -> Self {
         let removed_comments = &instruction[..instruction.find("//").unwrap_or(instruction.len())];
         let trimed = removed_comments.trim();
 
@@ -162,17 +162,14 @@ impl CommandType {
             CommandType::UnresolvedA(_) => panic!("Unexpected CommandType::UnresovedA"),
             CommandType::A(symbol) => Some(symbol.clone()),
             CommandType::C(dest, cmp, jmp) => Some(
-                0b1110000000000000
-                    + convert_comp(cmp.clone())
-                    + convert_dest(&dest)
-                    + convert_jump(&jmp),
+                0b1110000000000000 + convert_comp(cmp) + convert_dest(&dest) + convert_jump(&jmp),
             ),
             _ => None,
         }
     }
 }
 
-fn convert_comp(cmp: String) -> i32 {
+fn convert_comp(cmp: &str) -> i32 {
     let trimed_cmp = cmp.replace(" ", "");
     match trimed_cmp.as_str() {
         "0" => 0b0101010000000,
