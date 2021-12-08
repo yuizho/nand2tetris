@@ -3,8 +3,8 @@ use std::fs::File;
 use std::io::Read;
 
 pub struct SymbolTable {
-    symbols: HashMap<String, i32>,
-    memory_index: i32,
+    symbols: HashMap<String, u16>,
+    memory_index: u16,
 }
 
 impl SymbolTable {
@@ -12,7 +12,7 @@ impl SymbolTable {
      * create symbols hash map which just has reserved symbols.
      */
     pub fn create() -> Self {
-        let mut symbols: HashMap<String, i32> = HashMap::new();
+        let mut symbols: HashMap<String, u16> = HashMap::new();
         // put reserved symbols
         for i in 0..17 {
             symbols.insert(format!("R{}", i), i);
@@ -64,7 +64,7 @@ impl SymbolTable {
         self.symbols.contains_key(symbol)
     }
 
-    pub fn get_address(&self, symbol: &str) -> Option<&i32> {
+    pub fn get_address(&self, symbol: &str) -> Option<&u16> {
         self.symbols.get(symbol)
     }
 }
@@ -125,7 +125,7 @@ impl Parser {
 #[derive(Debug)]
 pub enum CommandType {
     UnresolvedA(String),
-    A(i32),
+    A(u16),
     C(Option<String>, String, Option<String>),
     Blank,
 }
@@ -140,7 +140,7 @@ impl CommandType {
             trimed if trimed.starts_with("(") => CommandType::Blank,
             trimed if trimed.starts_with("@") => {
                 let symbol = trimed[1..].to_string();
-                if let Ok(address) = symbol.parse::<i32>() {
+                if let Ok(address) = symbol.parse::<u16>() {
                     return CommandType::A(address);
                 }
                 CommandType::UnresolvedA(symbol)
@@ -157,7 +157,7 @@ impl CommandType {
         }
     }
 
-    pub fn to_binary_code(&self) -> Option<i32> {
+    pub fn to_binary_code(&self) -> Option<u16> {
         match self {
             CommandType::UnresolvedA(_) => panic!("Unexpected CommandType::UnresovedA"),
             CommandType::A(symbol) => Some(symbol.clone()),
@@ -169,7 +169,7 @@ impl CommandType {
     }
 }
 
-fn convert_comp(cmp: &str) -> i32 {
+fn convert_comp(cmp: &str) -> u16 {
     let trimed_cmp = cmp.replace(" ", "");
     match trimed_cmp.as_str() {
         "0" => 0b0101010000000,
@@ -204,7 +204,7 @@ fn convert_comp(cmp: &str) -> i32 {
     }
 }
 
-fn convert_dest(dest: &Option<String>) -> i32 {
+fn convert_dest(dest: &Option<String>) -> u16 {
     match dest.as_deref() {
         Some("M") => 0b001000,
         Some("D") => 0b010000,
@@ -218,7 +218,7 @@ fn convert_dest(dest: &Option<String>) -> i32 {
     }
 }
 
-fn convert_jump(jmp: &Option<String>) -> i32 {
+fn convert_jump(jmp: &Option<String>) -> u16 {
     match jmp.as_deref() {
         Some("JGT") => 0b001,
         Some("JEQ") => 0b010,
