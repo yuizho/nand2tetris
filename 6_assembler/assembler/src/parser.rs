@@ -51,12 +51,12 @@ impl SymbolTable {
         }
     }
 
-    pub fn put_variable_symbol(&mut self, symbol: String) {
+    pub fn put_variable_symbol(&mut self, symbol: &str) {
         println!(
             "variable symbol is {},  memory address is {}",
             symbol, self.memory_index
         );
-        self.symbols.insert(symbol, self.memory_index);
+        self.symbols.insert(String::from(symbol), self.memory_index);
         self.memory_index += 1;
     }
 
@@ -64,8 +64,8 @@ impl SymbolTable {
         self.symbols.contains_key(symbol)
     }
 
-    pub fn get_address(&self, symbol: &str) -> Option<i32> {
-        self.symbols.get(symbol).map(|i| i.clone())
+    pub fn get_address(&self, symbol: &str) -> Option<&i32> {
+        self.symbols.get(symbol)
     }
 }
 
@@ -112,10 +112,10 @@ impl Parser {
         if let CommandType::UnresolvedA(symbol) = command_type {
             // get address from symbol table
             if !self.symbol_table.contains(&symbol) {
-                self.symbol_table.put_variable_symbol(symbol.clone())
+                self.symbol_table.put_variable_symbol(&symbol)
             }
             let address = self.symbol_table.get_address(&symbol).unwrap();
-            return CommandType::A(address);
+            return CommandType::A(*address);
         }
 
         command_type
