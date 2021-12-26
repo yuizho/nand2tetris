@@ -57,7 +57,7 @@ impl CodeWriter {
     }
 
     pub fn write_command(&mut self, command_type: &command_type::CommandType) {
-        let instruction = command_type.to_binary_code();
+        let instruction = command_type.to_assembly_code();
         self.buf_writer
             .write(instruction.as_bytes())
             .expect("failed to write hack file");

@@ -1,16 +1,9 @@
+use uuid::Uuid;
+
 #[derive(PartialEq, Debug)]
 pub enum CommandType {
-    // binary arithmetic
-    Add,
-    Sub,
-    Eq,
-    Gt,
-    Lt,
-    And,
-    Or,
-    // unary arithmetic
-    Neg,
-    Not,
+    BinaryArithmetic(BinaryArithmetic),
+    UnaryArithmetic(UnaryArithmetic),
     // memory access
     CPush(Segment, usize),
 }
@@ -20,15 +13,15 @@ impl CommandType {
         let trimed = command[..command.find("//").unwrap_or(command.len())].trim();
 
         match trimed {
-            "add" => CommandType::Add,
-            "sub" => CommandType::Sub,
-            "eq" => CommandType::Eq,
-            "gt" => CommandType::Gt,
-            "lt" => CommandType::Lt,
-            "and" => CommandType::And,
-            "or" => CommandType::Or,
-            "neg" => CommandType::Neg,
-            "not" => CommandType::Not,
+            "add" => CommandType::BinaryArithmetic(BinaryArithmetic::Add),
+            "sub" => CommandType::BinaryArithmetic(BinaryArithmetic::Sub),
+            "eq" => CommandType::BinaryArithmetic(BinaryArithmetic::Eq),
+            "gt" => CommandType::BinaryArithmetic(BinaryArithmetic::Gt),
+            "lt" => CommandType::BinaryArithmetic(BinaryArithmetic::Lt),
+            "and" => CommandType::BinaryArithmetic(BinaryArithmetic::And),
+            "or" => CommandType::BinaryArithmetic(BinaryArithmetic::Or),
+            "neg" => CommandType::UnaryArithmetic(UnaryArithmetic::Neg),
+            "not" => CommandType::UnaryArithmetic(UnaryArithmetic::Not),
             trimed if trimed.starts_with("push") => {
                 let (_, params) = trimed.split_once(" ").unwrap();
                 let (segment, index) = params.split_once(" ").unwrap();
@@ -41,16 +34,73 @@ impl CommandType {
         }
     }
 
-    pub fn to_binary_code(&self) -> String {
+    pub fn to_assembly_code(&self) -> String {
         match self {
-            CommandType::Add => {
-                "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D+M\n@SP\nM=M+1".to_string()
-            }
+            CommandType::BinaryArithmetic(binary) => binary.to_assembly_code(),
+            CommandType::UnaryArithmetic(unary) => unary.to_assembly_code(),
             CommandType::CPush(Segment::Constant, index) => {
                 format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index)
             }
             _ => panic!("unexpected command"),
         }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum BinaryArithmetic {
+    Add,
+    Sub,
+    Eq,
+    Gt,
+    Lt,
+    And,
+    Or,
+}
+
+impl BinaryArithmetic {
+    pub fn to_assembly_code(&self) -> String {
+        let uuid = Uuid::new_v4();
+        let specific_command = match self {
+            BinaryArithmetic::Add => "M=D+M".to_string(),
+            BinaryArithmetic::Sub => "M=M-D".to_string(),
+            // TODO: refactoring
+            BinaryArithmetic::Eq => format!(
+                "D=D-M\n@SP\nA=M\nM=-1\n@{}\nD;JEQ\n@SP\nA=M\nM=0\n({})",
+                uuid, uuid
+            ),
+            BinaryArithmetic::Gt => format!(
+                "D=D-M\n@SP\nA=M\nM=-1\n@{}\nD;JLT\n@SP\nA=M\nM=0\n({})",
+                uuid, uuid
+            ),
+            BinaryArithmetic::Lt => format!(
+                "D=D-M\n@SP\nA=M\nM=-1\n@{}\nD;JGT\n@SP\nA=M\nM=0\n({})",
+                uuid, uuid
+            ),
+            BinaryArithmetic::And => "M=D&M".to_string(),
+            BinaryArithmetic::Or => "M=D|M".to_string(),
+        };
+
+        format!(
+            "@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\n{}\n@SP\nM=M+1\n",
+            specific_command
+        )
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum UnaryArithmetic {
+    Neg,
+    Not,
+}
+
+impl UnaryArithmetic {
+    pub fn to_assembly_code(&self) -> String {
+        let specific_command = match self {
+            UnaryArithmetic::Neg => "M=-M",
+            UnaryArithmetic::Not => "M=!M",
+        };
+
+        format!("@SP\nM=M-1\nA=M\n{}\n@SP\nM=M+1\n", specific_command)
     }
 }
 
@@ -97,7 +147,7 @@ mod tests {
     #[test]
     fn add() {
         let actual = CommandType::from_command("add");
-        assert_eq!(actual, CommandType::Add);
+        assert_eq!(actual, CommandType::BinaryArithmetic(BinaryArithmetic::Add));
     }
 
     #[test]
