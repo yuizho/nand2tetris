@@ -7,14 +7,15 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let filename = get_filename(&args);
 
-    let mut f = File::open(filename).expect("file not found");
-    let mut parser = translator::Parser::create(&mut f);
+    let f = File::open(filename).expect("file not found");
+    let mut parser = translator::Parser::create(f);
     let mut code_writer = translator::CodeWriter::create(filename.replace(".vm", ".asm").as_str());
 
     while parser.has_more_commands() {
+        parser.advance();
         let command_type = parser.command_type();
+        println!("{:?}", command_type);
         code_writer.write_command(&command_type);
-        parser.advance()
     }
 
     code_writer.flush()

@@ -6,6 +6,7 @@ pub enum CommandType {
     UnaryArithmetic(UnaryArithmetic),
     // memory access
     CPush(Segment, usize),
+    Blank,
 }
 
 impl CommandType {
@@ -41,6 +42,7 @@ impl CommandType {
             CommandType::CPush(Segment::Constant, index) => {
                 format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index)
             }
+            CommandType::Blank => "".to_string(),
             _ => panic!("unexpected command"),
         }
     }

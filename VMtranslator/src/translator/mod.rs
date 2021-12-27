@@ -1,44 +1,48 @@
 use std::fs::File;
 use std::io::Read;
-use std::io::{BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Seek, Write};
 
 mod command_type;
 
-pub struct Parser {
-    instructions: Vec<String>,
-    current_line: usize,
+pub struct Parser<T: Read + Seek> {
+    buf_reader: BufReader<T>,
+    current_command: String,
+    reached_to_eof: bool,
 }
 
-impl Parser {
-    // TODO: use BufReader
-    pub fn create(f: &mut File) -> Self {
-        let mut instructions = String::new();
-        f.read_to_string(&mut instructions)
-            .expect("filed to read file");
-
-        // TODO: use logger
-        println!("{}", instructions);
-
+impl<T: Read + Seek> Parser<T> {
+    pub fn create(read: T) -> Self {
         Parser {
-            instructions: instructions
-                .split("\n")
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.starts_with("//") && s.len() > 0)
-                .collect(),
-            current_line: 0,
+            buf_reader: BufReader::new(read),
+            current_command: "".to_string(),
+            reached_to_eof: false,
         }
     }
 
     pub fn has_more_commands(&self) -> bool {
-        self.instructions.len() > self.current_line
+        !self.reached_to_eof
     }
 
     pub fn advance(&mut self) {
-        self.current_line += 1
+        let command = &mut String::new();
+        // If this function returns [`Ok(0)`], the stream has reached EOF.
+        let reached_to_eof = self
+            .buf_reader
+            .read_line(command)
+            .expect("failed current_command line")
+            == 0;
+        self.current_command = command.to_string();
+        self.reached_to_eof = reached_to_eof
     }
 
     pub fn command_type(&self) -> command_type::CommandType {
-        command_type::CommandType::from_command(&self.instructions[self.current_line])
+        let command = &self.current_command;
+
+        if command.trim().starts_with("//") || command.trim().is_empty() {
+            return command_type::CommandType::Blank;
+        }
+
+        command_type::CommandType::from_command(&command)
     }
 }
 
