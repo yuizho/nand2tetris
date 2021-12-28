@@ -46,17 +46,14 @@ impl<T: Read + Seek> Parser<T> {
     }
 }
 
-pub struct CodeWriter {
-    buf_writer: BufWriter<File>,
+pub struct CodeWriter<T: Write> {
+    buf_writer: BufWriter<T>,
 }
 
-impl CodeWriter {
-    // TODO: wants to pass BufWriter
-    pub fn create(file_name: &str) -> Self {
+impl<T: Write> CodeWriter<T> {
+    pub fn create(writer: T) -> Self {
         CodeWriter {
-            buf_writer: BufWriter::new(
-                File::create(file_name).expect("failed to create asm file."),
-            ),
+            buf_writer: BufWriter::new(writer),
         }
     }
 

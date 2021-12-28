@@ -9,7 +9,10 @@ fn main() {
 
     let f = File::open(filename).expect("file not found");
     let mut parser = translator::Parser::create(f);
-    let mut code_writer = translator::CodeWriter::create(filename.replace(".vm", ".asm").as_str());
+
+    let mut code_writer = translator::CodeWriter::create(
+        File::create(filename.replace(".vm", ".asm").as_str()).expect("failed to create asm file."),
+    );
 
     while parser.has_more_commands() {
         parser.advance();
