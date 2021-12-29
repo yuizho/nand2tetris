@@ -1,4 +1,3 @@
-use std::fs::File;
 use std::io::Read;
 use std::io::{BufRead, BufReader, BufWriter, Seek, Write};
 
@@ -46,14 +45,14 @@ impl<T: Read + Seek> Parser<T> {
     }
 }
 
-pub struct CodeWriter<T: Write> {
-    buf_writer: BufWriter<T>,
+pub struct CodeWriter<'a, T: Write> {
+    buf_writer: &'a mut BufWriter<T>,
 }
 
-impl<T: Write> CodeWriter<T> {
-    pub fn create(writer: T) -> Self {
+impl<'a, T: Write> CodeWriter<'a, T> {
+    pub fn create(buf_writer: &'a mut BufWriter<T>) -> Self {
         CodeWriter {
-            buf_writer: BufWriter::new(writer),
+            buf_writer: buf_writer,
         }
     }
 
@@ -66,5 +65,71 @@ impl<T: Write> CodeWriter<T> {
 
     pub fn flush(&mut self) {
         self.buf_writer.flush().expect("failed to write asm file");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::translator::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn read() {
+        // given
+        let data = "push constant 7
+        push constant 8
+        add"
+        .as_bytes();
+
+        // when
+        let mut parser = Parser::create(Cursor::new(&data));
+        let mut actual = Vec::new();
+        while parser.has_more_commands() {
+            parser.advance();
+            actual.push(parser.command_type());
+        }
+
+        // then
+        assert_eq!(actual.len(), 4);
+        assert_eq!(
+            actual.get(0).unwrap(),
+            &command_type::CommandType::CPush(command_type::Segment::Constant, 7)
+        );
+        assert_eq!(
+            actual.get(1).unwrap(),
+            &command_type::CommandType::CPush(command_type::Segment::Constant, 8)
+        );
+        assert_eq!(
+            actual.get(2).unwrap(),
+            &command_type::CommandType::BinaryArithmetic(command_type::BinaryArithmetic::Add)
+        );
+        assert_eq!(actual.get(3).unwrap(), &command_type::CommandType::Blank);
+    }
+
+    #[test]
+    fn write() {
+        // given
+        let cursor = Cursor::new(Vec::new());
+        let mut buf_writer = BufWriter::new(cursor);
+
+        // when
+        let mut writer = CodeWriter::create(&mut buf_writer);
+        writer.write_command(&command_type::CommandType::CPush(
+            command_type::Segment::Constant,
+            7,
+        ));
+        writer.write_command(&command_type::CommandType::BinaryArithmetic(
+            command_type::BinaryArithmetic::And,
+        ));
+        writer.write_command(&command_type::CommandType::Blank);
+        writer.flush();
+
+        // then
+        let actual_bytes = buf_writer.into_inner().unwrap().into_inner();
+        let actual = actual_bytes.iter().map(|&s| s as char).collect::<String>();
+        assert_eq!(
+            actual,
+            "@7\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D&M\n@SP\nM=M+1\n"
+        );
     }
 }

@@ -1,5 +1,6 @@
 use std::env;
 use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Seek, Write};
 
 mod translator;
 
@@ -10,9 +11,10 @@ fn main() {
     let f = File::open(filename).expect("file not found");
     let mut parser = translator::Parser::create(f);
 
-    let mut code_writer = translator::CodeWriter::create(
+    let mut buf_writer = BufWriter::new(
         File::create(filename.replace(".vm", ".asm").as_str()).expect("failed to create asm file."),
     );
+    let mut code_writer = translator::CodeWriter::create(&mut buf_writer);
 
     while parser.has_more_commands() {
         parser.advance();
