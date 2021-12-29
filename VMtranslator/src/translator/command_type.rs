@@ -4,8 +4,8 @@ use uuid::Uuid;
 pub enum CommandType {
     BinaryArithmetic(BinaryArithmetic),
     UnaryArithmetic(UnaryArithmetic),
-    // memory access
     CPush(Segment, usize),
+    CPop(Segment, usize),
     Blank,
 }
 
@@ -31,6 +31,14 @@ impl CommandType {
                     index.parse::<usize>().unwrap(),
                 )
             }
+            trimed if trimed.starts_with("pop") => {
+                let (_, params) = trimed.split_once(" ").unwrap();
+                let (segment, index) = params.split_once(" ").unwrap();
+                CommandType::CPop(
+                    Segment::from_command(segment),
+                    index.parse::<usize>().unwrap(),
+                )
+            }
             _ => panic!("unexpected command type {}", command),
         }
     }
@@ -39,9 +47,63 @@ impl CommandType {
         match self {
             CommandType::BinaryArithmetic(binary) => binary.to_assembly_code(),
             CommandType::UnaryArithmetic(unary) => unary.to_assembly_code(),
-            CommandType::CPush(Segment::Constant, index) => {
-                format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index)
-            }
+            CommandType::CPush(segment, index) => match segment {
+                Segment::Constant => format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index),
+                // TODO: Refactor
+                Segment::Local => format!(
+                    "@LCL\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    index
+                ),
+                Segment::Argument => format!(
+                    "@ARG\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    index
+                ),
+                Segment::This => format!(
+                    "@THIS\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    index
+                ),
+                Segment::That => format!(
+                    "@THAT\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    index
+                ),
+                Segment::Pointer => format!(
+                    "@R3\nD=A\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    index
+                ),
+                Segment::Temp => format!(
+                    "@R5\nD=A\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    index
+                ),
+                _ => panic!("push is not implemented on {:?}", segment),
+            },
+            CommandType::CPop(segment, index) => match segment {
+                // TODO: Refactor
+                Segment::Local => format!(
+                    "@LCL\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
+                    index
+                ),
+                Segment::Argument => format!(
+                    "@ARG\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
+                    index
+                ),
+                Segment::This => format!(
+                    "@THIS\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
+                    index
+                ),
+                Segment::That => format!(
+                    "@THAT\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
+                    index
+                ),
+                Segment::Pointer => format!(
+                    "@R3\nD=A\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
+                    index
+                ),
+                Segment::Temp => format!(
+                    "@R5\nD=A\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
+                    index
+                ),
+                _ => panic!("pop is not implemented on {:?}", segment),
+            },
             CommandType::Blank => "".to_string(),
             _ => panic!("unexpected command"),
         }
