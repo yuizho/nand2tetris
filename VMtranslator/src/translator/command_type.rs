@@ -49,61 +49,17 @@ impl CommandType {
             CommandType::UnaryArithmetic(unary) => unary.to_assembly_code(),
             CommandType::CPush(segment, index) => match segment {
                 Segment::Constant => format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index),
-                // TODO: Refactor
-                Segment::Local => format!(
-                    "@LCL\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                segment => format!(
+                    "{}\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
+                    segment.get_ram_base_address_command(),
                     index
                 ),
-                Segment::Argument => format!(
-                    "@ARG\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
-                    index
-                ),
-                Segment::This => format!(
-                    "@THIS\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
-                    index
-                ),
-                Segment::That => format!(
-                    "@THAT\nD=M\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
-                    index
-                ),
-                Segment::Pointer => format!(
-                    "@R3\nD=A\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
-                    index
-                ),
-                Segment::Temp => format!(
-                    "@R5\nD=A\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
-                    index
-                ),
-                _ => panic!("push is not implemented on {:?}", segment),
             },
-            CommandType::CPop(segment, index) => match segment {
-                // TODO: Refactor
-                Segment::Local => format!(
-                    "@LCL\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
-                    index
-                ),
-                Segment::Argument => format!(
-                    "@ARG\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
-                    index
-                ),
-                Segment::This => format!(
-                    "@THIS\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
-                    index
-                ),
-                Segment::That => format!(
-                    "@THAT\nD=M\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
-                    index
-                ),
-                Segment::Pointer => format!(
-                    "@R3\nD=A\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
-                    index
-                ),
-                Segment::Temp => format!(
-                    "@R5\nD=A\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\n@13\nA=M\nM=D\n",
-                    index
-                ),
-                _ => panic!("pop is not implemented on {:?}", segment),
-            },
+            CommandType::CPop(segment, index) => format!(
+                "{}\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\nM=0\n@13\nA=M\nM=D\n",
+                segment.get_ram_base_address_command(),
+                index
+            ),
             CommandType::Blank => "".to_string(),
             _ => panic!("unexpected command"),
         }
@@ -193,6 +149,19 @@ impl Segment {
             "pointer" => Segment::Pointer,
             "temp" => Segment::Temp,
             _ => panic!("unexpected segment {}", trimed),
+        }
+    }
+
+    pub fn get_ram_base_address_command(&self) -> &str {
+        match self {
+            Segment::Argument => "@ARG\nD=M",
+            Segment::Local => "@LCL\nD=M",
+            Segment::Static => "", // TODO
+            Segment::Constant => panic!("constant doesn't have base address."),
+            Segment::This => "@THIS\nD=M",
+            Segment::That => "@THAT\nD=M",
+            Segment::Pointer => "@R3\nD=A",
+            Segment::Temp => "@R5\nD=A",
         }
     }
 }
