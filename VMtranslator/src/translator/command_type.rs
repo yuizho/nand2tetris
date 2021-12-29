@@ -61,25 +61,24 @@ pub enum BinaryArithmetic {
 
 impl BinaryArithmetic {
     pub fn to_assembly_code(&self) -> String {
-        let uuid = Uuid::new_v4();
         let specific_command = match self {
             BinaryArithmetic::Add => "M=D+M".to_string(),
             BinaryArithmetic::Sub => "M=M-D".to_string(),
-            // TODO: refactoring
-            BinaryArithmetic::Eq => format!(
-                "D=D-M\n@SP\nA=M\nM=-1\n@{}\nD;JEQ\n@SP\nA=M\nM=0\n({})",
-                uuid, uuid
-            ),
-            BinaryArithmetic::Gt => format!(
-                "D=D-M\n@SP\nA=M\nM=-1\n@{}\nD;JLT\n@SP\nA=M\nM=0\n({})",
-                uuid, uuid
-            ),
-            BinaryArithmetic::Lt => format!(
-                "D=D-M\n@SP\nA=M\nM=-1\n@{}\nD;JGT\n@SP\nA=M\nM=0\n({})",
-                uuid, uuid
-            ),
             BinaryArithmetic::And => "M=D&M".to_string(),
             BinaryArithmetic::Or => "M=D|M".to_string(),
+            logical_arithmetic => {
+                let specific_command = match logical_arithmetic {
+                    BinaryArithmetic::Eq => "D;JEQ",
+                    BinaryArithmetic::Gt => "D;JLT",
+                    BinaryArithmetic::Lt => "D;JGT",
+                    _ => panic!("unreachable statement of BynaryArithmetic"),
+                };
+                let uuid = Uuid::new_v4();
+                format!(
+                    "D=D-M\n@SP\nA=M\nM=-1\n@{}\n{}\n@SP\nA=M\nM=0\n({})",
+                    uuid, specific_command, uuid
+                )
+            }
         };
 
         format!(
