@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Seek, Write};
+use std::io::BufWriter;
 
 mod translator;
 
