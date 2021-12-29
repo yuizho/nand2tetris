@@ -34,14 +34,14 @@ impl<T: Read + Seek> Parser<T> {
         self.reached_to_eof = reached_to_eof
     }
 
-    pub fn command_type(&self) -> command_type::CommandType {
+    pub fn command_type(&self, vm_name: &str) -> command_type::CommandType {
         let command = &self.current_command;
 
         if command.trim().starts_with("//") || command.trim().is_empty() {
             return command_type::CommandType::Blank;
         }
 
-        command_type::CommandType::from_command(&command)
+        command_type::CommandType::from_command(&command, vm_name)
     }
 }
 
@@ -86,7 +86,7 @@ mod tests {
         let mut actual = Vec::new();
         while parser.has_more_commands() {
             parser.advance();
-            actual.push(parser.command_type());
+            actual.push(parser.command_type("test"));
         }
 
         // then

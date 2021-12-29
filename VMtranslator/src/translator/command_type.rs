@@ -1,5 +1,8 @@
 use uuid::Uuid;
 
+const COMMAND_PUSH_DATA_TO_STACK: &str = "@SP\nA=M\nM=D\n@SP\nM=M+1";
+const COMMAND_POP_DATA_FROM_STACK: &str = "@SP\nA=M\nD=M\nM=0";
+
 #[derive(PartialEq, Debug)]
 pub enum CommandType {
     BinaryArithmetic(BinaryArithmetic),
@@ -10,7 +13,7 @@ pub enum CommandType {
 }
 
 impl CommandType {
-    pub fn from_command(command: &str) -> Self {
+    pub fn from_command(command: &str, vm_name: &str) -> Self {
         let trimed = command[..command.find("//").unwrap_or(command.len())].trim();
 
         match trimed {
@@ -27,7 +30,7 @@ impl CommandType {
                 let (_, params) = trimed.split_once(" ").unwrap();
                 let (segment, index) = params.split_once(" ").unwrap();
                 CommandType::CPush(
-                    Segment::from_command(segment),
+                    Segment::from_command(segment, vm_name),
                     index.parse::<usize>().unwrap(),
                 )
             }
@@ -35,7 +38,7 @@ impl CommandType {
                 let (_, params) = trimed.split_once(" ").unwrap();
                 let (segment, index) = params.split_once(" ").unwrap();
                 CommandType::CPop(
-                    Segment::from_command(segment),
+                    Segment::from_command(segment, vm_name),
                     index.parse::<usize>().unwrap(),
                 )
             }
@@ -48,18 +51,32 @@ impl CommandType {
             CommandType::BinaryArithmetic(binary) => binary.to_assembly_code(),
             CommandType::UnaryArithmetic(unary) => unary.to_assembly_code(),
             CommandType::CPush(segment, index) => match segment {
-                Segment::Constant => format!("@{}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index),
+                Segment::Constant => format!("@{}\nD=A\n{}\n", index, COMMAND_PUSH_DATA_TO_STACK),
+                Segment::Static(vm_name) => {
+                    format!(
+                        "@{}.{}\nD=M\n{}\n",
+                        vm_name, index, COMMAND_PUSH_DATA_TO_STACK
+                    )
+                }
                 segment => format!(
-                    "{}\n@{}\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n",
-                    segment.get_ram_base_address_command(),
-                    index
+                    "{}\nD=M\n{}\n",
+                    segment.get_ram_base_address_command(&index),
+                    COMMAND_PUSH_DATA_TO_STACK
                 ),
             },
-            CommandType::CPop(segment, index) => format!(
-                "{}\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\nM=0\n@13\nA=M\nM=D\n",
-                segment.get_ram_base_address_command(),
-                index
-            ),
+            CommandType::CPop(segment, index) => match segment {
+                Segment::Static(vm_name) => {
+                    format!(
+                        "@SP\nM=M-1\n{}\n@{}.{}\nM=D\n",
+                        COMMAND_POP_DATA_FROM_STACK, vm_name, index
+                    )
+                }
+                segment => format!(
+                    "{}\n@R13\nM=D\n@SP\nM=M-1\n{}\n@13\nA=M\nM=D\n",
+                    segment.get_ram_base_address_command(&index),
+                    COMMAND_POP_DATA_FROM_STACK
+                ),
+            },
             CommandType::Blank => "".to_string(),
             _ => panic!("unexpected command"),
         }
@@ -127,7 +144,7 @@ impl UnaryArithmetic {
 pub enum Segment {
     Argument,
     Local,
-    Static,
+    Static(String),
     Constant,
     This,
     That,
@@ -136,13 +153,13 @@ pub enum Segment {
 }
 
 impl Segment {
-    pub fn from_command(segment_str: &str) -> Self {
+    pub fn from_command(segment_str: &str, vm_name: &str) -> Self {
         let trimed = segment_str.trim();
 
         match trimed {
             "argument" => Segment::Argument,
             "local" => Segment::Local,
-            "static" => Segment::Static,
+            "static" => Segment::Static(vm_name.to_string()),
             "constant" => Segment::Constant,
             "this" => Segment::This,
             "that" => Segment::That,
@@ -152,16 +169,15 @@ impl Segment {
         }
     }
 
-    pub fn get_ram_base_address_command(&self) -> &str {
+    pub fn get_ram_base_address_command(&self, index: &usize) -> String {
         match self {
-            Segment::Argument => "@ARG\nD=M",
-            Segment::Local => "@LCL\nD=M",
-            Segment::Static => "", // TODO
-            Segment::Constant => panic!("constant doesn't have base address."),
-            Segment::This => "@THIS\nD=M",
-            Segment::That => "@THAT\nD=M",
-            Segment::Pointer => "@R3\nD=A",
-            Segment::Temp => "@R5\nD=A",
+            Segment::Argument => format!("@ARG\nD=M\n@{}\nA=D+A", index),
+            Segment::Local => format!("@LCL\nD=M\n@{}\nA=D+A", index),
+            Segment::This => format!("@THIS\nD=M\n@{}\nA=D+A", index),
+            Segment::That => format!("@THAT\nD=M\n@{}\nA=D+A", index),
+            Segment::Pointer => format!("@R3\nD=A\n@{}\nA=D+A", index),
+            Segment::Temp => format!("@R5\nD=A\n@{}\nA=D+A", index),
+            segment => panic!("{:?} doesn't have base address.", segment),
         }
     }
 }
@@ -172,19 +188,19 @@ mod tests {
 
     #[test]
     fn push_constant() {
-        let actual = CommandType::from_command("push constant 7");
+        let actual = CommandType::from_command("push constant 7", "test");
         assert_eq!(actual, CommandType::CPush(Segment::Constant, 7));
     }
 
     #[test]
     fn add() {
-        let actual = CommandType::from_command("add");
+        let actual = CommandType::from_command("add", "test");
         assert_eq!(actual, CommandType::BinaryArithmetic(BinaryArithmetic::Add));
     }
 
     #[test]
     fn trim_comments() {
-        let actual = CommandType::from_command("push constant 7 // this is comments");
+        let actual = CommandType::from_command("push constant 7 // this is comments", "test");
         assert_eq!(actual, CommandType::CPush(Segment::Constant, 7));
     }
 }

@@ -23,7 +23,8 @@ fn main() {
 
         while parser.has_more_commands() {
             parser.advance();
-            let command_type = parser.command_type();
+            let vm_name = filename.as_path().file_stem().unwrap().to_str().unwrap();
+            let command_type = parser.command_type(vm_name);
             println!("{:?}", command_type);
             code_writer.write_command(&command_type);
         }
