@@ -1,5 +1,6 @@
 use std::env;
 use std::ffi::OsStr;
+use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -9,8 +10,17 @@ mod translator;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let filenames = get_filenames(&args);
+
+    let absolute_path = fs::canonicalize(filenames.first().unwrap()).unwrap();
+    let new_filename = absolute_path.parent().unwrap().join(format!(
+        "{}.asm",
+        absolute_path.file_stem().unwrap().to_str().unwrap()
+    ));
+
     let mut buf_writer =
-        BufWriter::new(File::create("out.asm").expect("failed to create asm file."));
+        BufWriter::new(File::create(new_filename).expect("failed to create asm file."));
+
+    // TODO: call Sys.init fucntion at first
 
     for filename in filenames {
         println!("converts {:?} to .asm file", filename);
