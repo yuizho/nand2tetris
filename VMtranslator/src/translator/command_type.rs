@@ -59,8 +59,9 @@ impl CommandType {
                     )
                 }
                 segment => format!(
-                    "{}\nD=M\n{}\n",
-                    segment.get_ram_base_address_command(&index),
+                    "{}\n@{}\nA=D+A\nD=M\n{}\n",
+                    segment.get_ram_base_address_command(),
+                    index,
                     COMMAND_PUSH_DATA_TO_STACK
                 ),
             },
@@ -72,8 +73,9 @@ impl CommandType {
                     )
                 }
                 segment => format!(
-                    "{}\n@R13\nM=D\n@SP\nM=M-1\n{}\n@13\nA=M\nM=D\n",
-                    segment.get_ram_base_address_command(&index),
+                    "{}\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n{}\n@13\nA=M\nM=D\n",
+                    segment.get_ram_base_address_command(),
+                    index,
                     COMMAND_POP_DATA_FROM_STACK
                 ),
             },
@@ -169,14 +171,14 @@ impl Segment {
         }
     }
 
-    pub fn get_ram_base_address_command(&self, index: &usize) -> String {
+    pub fn get_ram_base_address_command(&self) -> String {
         match self {
-            Segment::Argument => format!("@ARG\nD=M\n@{}\nA=D+A", index),
-            Segment::Local => format!("@LCL\nD=M\n@{}\nA=D+A", index),
-            Segment::This => format!("@THIS\nD=M\n@{}\nA=D+A", index),
-            Segment::That => format!("@THAT\nD=M\n@{}\nA=D+A", index),
-            Segment::Pointer => format!("@R3\nD=A\n@{}\nA=D+A", index),
-            Segment::Temp => format!("@R5\nD=A\n@{}\nA=D+A", index),
+            Segment::Argument => format!("@ARG\nD=M"),
+            Segment::Local => format!("@LCL\nD=M"),
+            Segment::This => format!("@THIS\nD=M"),
+            Segment::That => format!("@THAT\nD=M"),
+            Segment::Pointer => format!("@R3\nD=A"),
+            Segment::Temp => format!("@R5\nD=A"),
             segment => panic!("{:?} doesn't have base address.", segment),
         }
     }
