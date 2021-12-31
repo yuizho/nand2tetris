@@ -12,9 +12,10 @@ fn main() {
     let filenames = get_filenames(&args);
 
     let absolute_path = fs::canonicalize(filenames.first().unwrap()).unwrap();
-    let new_filename = absolute_path.parent().unwrap().join(format!(
+    let dir_path = absolute_path.parent().unwrap();
+    let new_filename = dir_path.join(format!(
         "{}.asm",
-        absolute_path.file_stem().unwrap().to_str().unwrap()
+        dir_path.file_stem().unwrap().to_str().unwrap()
     ));
 
     let mut buf_writer =
@@ -28,7 +29,6 @@ fn main() {
 
         let f = File::open(&filename).expect("file not found");
         let mut parser = translator::Parser::create(f);
-
 
         while parser.has_more_commands() {
             parser.advance();
