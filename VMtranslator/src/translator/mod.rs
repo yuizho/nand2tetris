@@ -56,11 +56,22 @@ impl<'a, T: Write> CodeWriter<'a, T> {
         }
     }
 
+    pub fn write_init(&mut self) {
+        let init_commands = format!(
+            "{}\n{}\n",
+            "@256\nD=A\n@SP\nM=D",
+            command_type::CommandType::Call("Sys.init".to_string(), 0).to_assembly_code()
+        );
+        self.buf_writer
+            .write(init_commands.as_bytes())
+            .expect("failed to write init commands");
+    }
+
     pub fn write_command(&mut self, command_type: &command_type::CommandType) {
         let instruction = command_type.to_assembly_code();
         self.buf_writer
             .write(instruction.as_bytes())
-            .expect("failed to write hack file");
+            .expect("failed to write asm file");
     }
 }
 

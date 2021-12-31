@@ -19,8 +19,9 @@ fn main() {
 
     let mut buf_writer =
         BufWriter::new(File::create(new_filename).expect("failed to create asm file."));
+    let mut code_writer = translator::CodeWriter::create(&mut buf_writer);
 
-    // TODO: call Sys.init fucntion at first
+    code_writer.write_init();
 
     for filename in filenames {
         println!("converts {:?} to .asm file", filename);
@@ -28,7 +29,6 @@ fn main() {
         let f = File::open(&filename).expect("file not found");
         let mut parser = translator::Parser::create(f);
 
-        let mut code_writer = translator::CodeWriter::create(&mut buf_writer);
 
         while parser.has_more_commands() {
             parser.advance();
