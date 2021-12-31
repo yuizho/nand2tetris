@@ -62,10 +62,6 @@ impl<'a, T: Write> CodeWriter<'a, T> {
             .write(instruction.as_bytes())
             .expect("failed to write hack file");
     }
-
-    pub fn flush(&mut self) {
-        self.buf_writer.flush().expect("failed to write asm file");
-    }
 }
 
 #[cfg(test)]
@@ -122,7 +118,7 @@ mod tests {
             command_type::BinaryArithmetic::And,
         ));
         writer.write_command(&command_type::CommandType::Blank);
-        writer.flush();
+        buf_writer.flush().unwrap();
 
         // then
         let actual_bytes = buf_writer.into_inner().unwrap().into_inner();

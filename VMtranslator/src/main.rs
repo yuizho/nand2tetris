@@ -1,7 +1,7 @@
 use std::env;
 use std::ffi::OsStr;
 use std::fs::File;
-use std::io::BufWriter;
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 mod translator;
@@ -9,6 +9,8 @@ mod translator;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let filenames = get_filenames(&args);
+    let mut buf_writer =
+        BufWriter::new(File::create("out.asm").expect("failed to create asm file."));
 
     for filename in filenames {
         println!("converts {:?} to .asm file", filename);
@@ -16,9 +18,6 @@ fn main() {
         let f = File::open(&filename).expect("file not found");
         let mut parser = translator::Parser::create(f);
 
-        let mut buf_writer = BufWriter::new(
-            File::create(&filename.with_extension("asm")).expect("failed to create asm file."),
-        );
         let mut code_writer = translator::CodeWriter::create(&mut buf_writer);
 
         while parser.has_more_commands() {
@@ -28,9 +27,9 @@ fn main() {
             println!("{:?}", command_type);
             code_writer.write_command(&command_type);
         }
-
-        code_writer.flush()
     }
+
+    buf_writer.flush().expect("failed to write asm file");
 }
 
 fn get_filenames(args: &Vec<String>) -> Vec<PathBuf> {
