@@ -12,6 +12,9 @@ pub enum CommandType {
     Label(String),
     GoTo(String),
     IfGoTo(String),
+    Function(String, usize),
+    Call(String, usize),
+    Return,
     Blank,
 }
 
@@ -57,6 +60,17 @@ impl CommandType {
                 let (_, label_name) = trimed.split_once(" ").unwrap();
                 CommandType::IfGoTo(label_name.to_string())
             }
+            trimed if trimed.starts_with("function") => {
+                let (_, params) = trimed.split_once(" ").unwrap();
+                let (name, local_val_cnt) = params.split_once(" ").unwrap();
+                CommandType::Function(name.to_string(), local_val_cnt.parse::<usize>().unwrap())
+            }
+            trimed if trimed.starts_with("call") => {
+                let (_, params) = trimed.split_once(" ").unwrap();
+                let (name, arg_cnt) = params.split_once(" ").unwrap();
+                CommandType::Call(name.to_string(), arg_cnt.parse::<usize>().unwrap())
+            }
+            trimed if trimed.starts_with("return") => CommandType::Return,
             _ => panic!("unexpected command type {}", command),
         }
     }
@@ -100,8 +114,47 @@ impl CommandType {
             CommandType::IfGoTo(label_name) => {
                 format!("{}\n@{}\nD;JNE\n", COMMAND_POP_DATA_FROM_STACK, label_name)
             }
+            CommandType::Function(name, local_val_cnt) => {
+                let mut commands = format!("({})\n", name);
+                for _ in 0..local_val_cnt.clone() {
+                    commands.push_str(
+                        CommandType::CPush(Segment::Constant, 0)
+                            .to_assembly_code()
+                            .as_str(),
+                    );
+                }
+                commands
+            }
+            CommandType::Call(name, arg_cnt) => {
+                let return_address = Uuid::new_v4();
+                format!(
+                    "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
+                    format!("@{}\nD=A\n{}", return_address, COMMAND_PUSH_DATA_TO_STACK), // set return-address
+                    "@LCL\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@ARG\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@THIS\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@THAT\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    format!("@SP\nD=M\n@{}\nD=D-A\n@5\nD=D-A\n@ARG\nM=D", arg_cnt), // set current arguments address to ARG
+                    "@SP\nD=M\n@LCL\nM=D\n@SP\nM=M+1", // set current local address to LCL
+                    format!("@{}\n0;JMP", name),       // jump to function
+                    format!("({})", return_address)    // set return-address label
+                )
+            }
+            CommandType::Return => {
+                format!(
+                    "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
+                    "@SP\nA=M-1\nD=M\n@R13\nM=D", // save return value to tmp
+                    "@ARG\nD=M\n@R14\nM=D",       // save ARG index to tmp
+                    "@5\nD=A\n@LCL\nA=M-D\nD=M\n@R15\nM=D", // save return-address to tmp
+                    "@1\nD=A\n@LCL\nA=M-D\nD=M\n@THAT\nM=D", // restore that
+                    "@2\nD=A\n@LCL\nA=M-D\nD=M\n@THIS\nM=D", // restore this
+                    "@3\nD=A\n@LCL\nA=M-D\nD=M\n@ARG\nM=D", // restore arg
+                    "@4\nD=A\n@LCL\nA=M-D\nD=M\n@LCL\nM=D", // restore local
+                    "@R13\nD=M\n@14\nA=M\nM=D\n@14\nD=M\n@SP\nM=D+1", // set return value
+                    "@R15\nA=M\n0;JMP"            // jump to return-adderss
+                )
+            }
             CommandType::Blank => "".to_string(),
-            _ => panic!("unexpected command"),
         }
     }
 }
