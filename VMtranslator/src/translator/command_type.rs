@@ -126,18 +126,18 @@ impl CommandType {
                 commands
             }
             CommandType::Call(name, arg_cnt) => {
-                let return_address = Uuid::new_v4();
+                let return_address = format!("return-{}", Uuid::new_v4().to_string());
                 format!(
                     "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
                     format!("@{}\nD=A\n{}", return_address, COMMAND_PUSH_DATA_TO_STACK), // set return-address
-                    "@LCL\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
-                    "@ARG\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
-                    "@THIS\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
-                    "@THAT\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@LCL\nD=M\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@ARG\nD=M\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@THIS\nD=M\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
+                    "@THAT\nD=M\n".to_string() + COMMAND_PUSH_DATA_TO_STACK,
                     format!("@SP\nD=M\n@{}\nD=D-A\n@5\nD=D-A\n@ARG\nM=D", arg_cnt), // set current arguments address to ARG
-                    "@SP\nD=M\n@LCL\nM=D\n@SP\nM=M+1", // set current local address to LCL
-                    format!("@{}\n0;JMP", name),       // jump to function
-                    format!("({})", return_address)    // set return-address label
+                    "@SP\nD=M\n@LCL\nM=D", // set current local address to LCL
+                    format!("@{}\n0;JMP", name), // jump to function
+                    format!("({})", return_address)  // set return-address label
                 )
             }
             CommandType::Return => {
