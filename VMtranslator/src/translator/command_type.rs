@@ -226,4 +226,22 @@ mod tests {
         let actual = CommandType::from_command("push constant 7 // this is comments", "test");
         assert_eq!(actual, CommandType::CPush(Segment::Constant, 7));
     }
+
+    #[test]
+    fn push_assebly_code() {
+        let actual = CommandType::CPush(Segment::Argument, 2).to_assembly_code();
+        assert_eq!(
+            actual,
+            "@ARG\nD=M\n@2\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"
+        );
+    }
+
+    #[test]
+    fn pop_assebly_code() {
+        let actual = CommandType::CPop(Segment::Argument, 2).to_assembly_code();
+        assert_eq!(
+            actual,
+            "@ARG\nD=M\n@2\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n@SP\nA=M\nD=M\nM=0\n@13\nA=M\nM=D\n"
+        );
+    }
 }
