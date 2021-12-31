@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 const COMMAND_PUSH_DATA_TO_STACK: &str = "@SP\nA=M\nM=D\n@SP\nM=M+1";
-const COMMAND_POP_DATA_FROM_STACK: &str = "@SP\nA=M\nD=M\nM=0";
+const COMMAND_POP_DATA_FROM_STACK: &str = "@SP\nM=M-1\n@SP\nA=M\nD=M\nM=0";
 
 #[derive(PartialEq, Debug)]
 pub enum CommandType {
@@ -9,6 +9,9 @@ pub enum CommandType {
     UnaryArithmetic(UnaryArithmetic),
     CPush(Segment, usize),
     CPop(Segment, usize),
+    Label(String),
+    GoTo(String),
+    IfGoTo(String),
     Blank,
 }
 
@@ -42,6 +45,18 @@ impl CommandType {
                     index.parse::<usize>().unwrap(),
                 )
             }
+            trimed if trimed.starts_with("label") => {
+                let (_, name) = trimed.split_once(" ").unwrap();
+                CommandType::Label(name.to_string())
+            }
+            trimed if trimed.starts_with("goto") => {
+                let (_, label_name) = trimed.split_once(" ").unwrap();
+                CommandType::GoTo(label_name.to_string())
+            }
+            trimed if trimed.starts_with("if-goto") => {
+                let (_, label_name) = trimed.split_once(" ").unwrap();
+                CommandType::IfGoTo(label_name.to_string())
+            }
             _ => panic!("unexpected command type {}", command),
         }
     }
@@ -68,17 +83,23 @@ impl CommandType {
             CommandType::CPop(segment, index) => match segment {
                 Segment::Static(vm_name) => {
                     format!(
-                        "@SP\nM=M-1\n{}\n@{}.{}\nM=D\n",
+                        "{}\n@{}.{}\nM=D\n",
                         COMMAND_POP_DATA_FROM_STACK, vm_name, index
                     )
                 }
                 segment => format!(
-                    "{}\n@{}\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\n{}\n@13\nA=M\nM=D\n",
+                    "{}\n@{}\nD=D+A\n@R13\nM=D\n{}\n@13\nA=M\nM=D\n",
                     segment.get_ram_base_address_command(),
                     index,
                     COMMAND_POP_DATA_FROM_STACK
                 ),
             },
+            CommandType::Label(name) => format!("({})\n", name),
+            // TODO: label needs prefix of function?
+            CommandType::GoTo(label_name) => format!("@{}\n0;JMP\n", label_name),
+            CommandType::IfGoTo(label_name) => {
+                format!("{}\n@{}\nD;JNE\n", COMMAND_POP_DATA_FROM_STACK, label_name)
+            }
             CommandType::Blank => "".to_string(),
             _ => panic!("unexpected command"),
         }
