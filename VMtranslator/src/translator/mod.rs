@@ -6,6 +6,7 @@ mod command_type;
 pub struct Parser<T: Read + Seek> {
     buf_reader: BufReader<T>,
     current_command: String,
+    current_function: String,
     reached_to_eof: bool,
 }
 
@@ -14,6 +15,7 @@ impl<T: Read + Seek> Parser<T> {
         Parser {
             buf_reader: BufReader::new(read),
             current_command: "".to_string(),
+            current_function: "".to_string(),
             reached_to_eof: false,
         }
     }
@@ -34,14 +36,21 @@ impl<T: Read + Seek> Parser<T> {
         self.reached_to_eof = reached_to_eof
     }
 
-    pub fn command_type(&self, vm_name: &str) -> command_type::CommandType {
+    pub fn command_type(&mut self, vm_name: &str) -> command_type::CommandType {
         let command = &self.current_command;
 
         if command.trim().starts_with("//") || command.trim().is_empty() {
             return command_type::CommandType::Blank;
         }
 
-        command_type::CommandType::from_command(&command, vm_name)
+        let command_type =
+            command_type::CommandType::from_command(&command, vm_name, &self.current_function);
+
+        if let command_type::CommandType::Function(function_name, _) = &command_type {
+            self.current_function = function_name.clone();
+        }
+
+        command_type
     }
 }
 

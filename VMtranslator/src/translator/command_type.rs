@@ -9,9 +9,9 @@ pub enum CommandType {
     UnaryArithmetic(UnaryArithmetic),
     CPush(Segment, usize),
     CPop(Segment, usize),
-    Label(String),
-    GoTo(String),
-    IfGoTo(String),
+    Label(String, String),
+    GoTo(String, String),
+    IfGoTo(String, String),
     Function(String, usize),
     Call(String, usize),
     Return,
@@ -19,7 +19,7 @@ pub enum CommandType {
 }
 
 impl CommandType {
-    pub fn from_command(command: &str, vm_name: &str) -> Self {
+    pub fn from_command(command: &str, vm_name: &str, function_name: &str) -> Self {
         let trimed = command[..command.find("//").unwrap_or(command.len())].trim();
 
         match trimed {
@@ -50,15 +50,15 @@ impl CommandType {
             }
             trimed if trimed.starts_with("label") => {
                 let (_, name) = trimed.split_once(" ").unwrap();
-                CommandType::Label(name.to_string())
+                CommandType::Label(function_name.to_string(), name.to_string())
             }
             trimed if trimed.starts_with("goto") => {
                 let (_, label_name) = trimed.split_once(" ").unwrap();
-                CommandType::GoTo(label_name.to_string())
+                CommandType::GoTo(function_name.to_string(), label_name.to_string())
             }
             trimed if trimed.starts_with("if-goto") => {
                 let (_, label_name) = trimed.split_once(" ").unwrap();
-                CommandType::IfGoTo(label_name.to_string())
+                CommandType::IfGoTo(function_name.to_string(), label_name.to_string())
             }
             trimed if trimed.starts_with("function") => {
                 let (_, params) = trimed.split_once(" ").unwrap();
@@ -108,11 +108,15 @@ impl CommandType {
                     COMMAND_POP_DATA_FROM_STACK
                 ),
             },
-            CommandType::Label(name) => format!("({})\n", name),
-            // TODO: label needs prefix of function?
-            CommandType::GoTo(label_name) => format!("@{}\n0;JMP\n", label_name),
-            CommandType::IfGoTo(label_name) => {
-                format!("{}\n@{}\nD;JNE\n", COMMAND_POP_DATA_FROM_STACK, label_name)
+            CommandType::Label(function_name, name) => format!("({}${})\n", function_name, name),
+            CommandType::GoTo(function_name, label_name) => {
+                format!("@{}${}\n0;JMP\n", function_name, label_name)
+            }
+            CommandType::IfGoTo(function_name, label_name) => {
+                format!(
+                    "{}\n@{}${}\nD;JNE\n",
+                    COMMAND_POP_DATA_FROM_STACK, function_name, label_name
+                )
             }
             CommandType::Function(name, local_val_cnt) => {
                 let mut commands = format!("({})\n", name);
@@ -264,19 +268,20 @@ mod tests {
 
     #[test]
     fn push_constant() {
-        let actual = CommandType::from_command("push constant 7", "test");
+        let actual = CommandType::from_command("push constant 7", "test", "function");
         assert_eq!(actual, CommandType::CPush(Segment::Constant, 7));
     }
 
     #[test]
     fn add() {
-        let actual = CommandType::from_command("add", "test");
+        let actual = CommandType::from_command("add", "test", "function");
         assert_eq!(actual, CommandType::BinaryArithmetic(BinaryArithmetic::Add));
     }
 
     #[test]
     fn trim_comments() {
-        let actual = CommandType::from_command("push constant 7 // this is comments", "test");
+        let actual =
+            CommandType::from_command("push constant 7 // this is comments", "test", "function");
         assert_eq!(actual, CommandType::CPush(Segment::Constant, 7));
     }
 
