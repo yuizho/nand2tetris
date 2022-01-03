@@ -5,29 +5,21 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
+mod analyzer;
+use analyzer::tokenizer::JackTokenizer;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let file_names = get_source_file_paths(&args);
 
     for file_name in file_names {
         let f = File::open(&file_name).expect("file not found");
-        let mut buf_reader = BufReader::new(f);
-        let mut readed = String::new();
-        buf_reader
-            .read_to_string(&mut readed)
-            .expect("failed to read file");
-        let chars = readed.chars().collect::<Vec<char>>();
 
-        let mut buf_writer = BufWriter::new(
-            File::create(create_output_file_path(&args)).expect("failed to create xml file."),
-        );
-        for c in chars {
-            buf_writer
-                .write(c.to_string().as_bytes())
-                .expect("failed to write data");
+        let mut tokenizer = JackTokenizer::new(f);
+        while (tokenizer.has_more_tokens()) {
+            let token = tokenizer.advance();
+            println!("{:?}", token);
         }
-
-        buf_writer.flush().expect("failed to flush result");
     }
 }
 
