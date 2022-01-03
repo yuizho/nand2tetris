@@ -48,6 +48,7 @@ pub enum TokenType {
     NUMBER(i32),
     STRING(String),
     KEYWORD(Keyword),
+    EOF,
 }
 
 impl TokenType {

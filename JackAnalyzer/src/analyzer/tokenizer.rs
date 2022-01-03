@@ -33,8 +33,10 @@ impl JackTokenizer {
 
     pub fn advance(&mut self) -> token::TokenType {
         self.skip_whitespace();
+        let empty = 0 as char;
 
         let token = match self.current_char {
+            '"' => token::TokenType::STRING(self.read_string()),
             '{' => token::TokenType::LBRACE,
             '}' => token::TokenType::RBRACE,
             '(' => token::TokenType::LPAREN,
@@ -54,8 +56,11 @@ impl JackTokenizer {
             '>' => token::TokenType::GT,
             '=' => token::TokenType::ASSIGN,
             '~' => token::TokenType::TILDE,
-            _ if self.is_letter() => token::TokenType::lookup_identify(&self.read_identifier()),
-            _ if self.is_digit() => token::TokenType::NUMBER(self.read_number()),
+            _ if self.is_letter() => {
+                return token::TokenType::lookup_identify(&self.read_identifier())
+            }
+            _ if self.is_digit() => return token::TokenType::NUMBER(self.read_number()),
+            c if c == empty => token::TokenType::EOF,
             c => panic!("unexpected token: {}", c),
         };
 
@@ -65,7 +70,7 @@ impl JackTokenizer {
 
     fn read_number(&mut self) -> i32 {
         let start_position = self.position;
-        while self.is_letter() {
+        while self.is_digit() {
             self.read_char();
         }
         let readed = self.input[start_position..self.position]
@@ -78,6 +83,17 @@ impl JackTokenizer {
         let start_position = self.position;
         while self.is_letter() {
             self.read_char();
+        }
+        self.input[start_position..self.position].iter().collect()
+    }
+
+    fn read_string(&mut self) -> String {
+        let start_position = self.position + 1;
+        loop {
+            self.read_char();
+            if self.current_char == '"' {
+                break;
+            }
         }
         self.input[start_position..self.position].iter().collect()
     }
@@ -104,11 +120,44 @@ impl JackTokenizer {
 
     fn read_char(&mut self) {
         if !self.has_more_tokens() {
-            panic!("the read position reached to EOF.");
+            let empty = 0 as char;
+            self.current_char = empty;
+            return;
         }
         self.current_char = self.input[self.read_position];
 
         self.position = self.read_position;
         self.read_position += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::analyzer::token::*;
+    use crate::analyzer::tokenizer::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn read_simple_class() {
+        let source = "class Main {\nstatic boolean test;\n }\n".as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut actual: Vec<TokenType> = Vec::new();
+        while tokenizer.has_more_tokens() {
+            actual.push(tokenizer.advance());
+        }
+
+        assert_eq!(
+            actual,
+            vec![
+                TokenType::KEYWORD(Keyword::CLASS),
+                TokenType::IDNETIFIER("Main".to_string()),
+                TokenType::LBRACE,
+                TokenType::KEYWORD(Keyword::STATIC),
+                TokenType::KEYWORD(Keyword::BOOLEAN),
+                TokenType::IDNETIFIER("test".to_string()),
+                TokenType::SEMICOLON,
+                TokenType::RBRACE,
+            ]
+        );
     }
 }
