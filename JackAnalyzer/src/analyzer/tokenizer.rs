@@ -2,6 +2,8 @@ use std::io::{BufReader, Read};
 
 use super::token;
 
+const EMPTY_CHAR: char = 0 as char;
+
 pub struct JackTokenizer {
     input: Vec<char>,
     position: usize,
@@ -33,7 +35,6 @@ impl JackTokenizer {
 
     pub fn advance(&mut self) -> token::TokenType {
         self.skip_whitespace();
-        let empty = 0 as char;
 
         let token = match self.current_char {
             '"' => token::TokenType::STRING(self.read_string()),
@@ -49,7 +50,17 @@ impl JackTokenizer {
             '+' => token::TokenType::PLUS,
             '-' => token::TokenType::MINUS,
             '*' => token::TokenType::ASTERISK,
-            '/' => token::TokenType::SLASH,
+            '/' => {
+                if self.peek_char() == '/' {
+                    self.skip_line_comments();
+                    token::TokenType::COMMENTS
+                } else if self.peek_char() == '*' {
+                    self.skip_multi_line_comments();
+                    token::TokenType::COMMENTS
+                } else {
+                    token::TokenType::SLASH
+                }
+            }
             '&' => token::TokenType::AND,
             '|' => token::TokenType::OR,
             '<' => token::TokenType::LT,
@@ -60,12 +71,28 @@ impl JackTokenizer {
                 return token::TokenType::lookup_identify(&self.read_identifier())
             }
             _ if self.is_digit() => return token::TokenType::NUMBER(self.read_number()),
-            c if c == empty => token::TokenType::EOF,
+            c if c == EMPTY_CHAR => token::TokenType::EOF,
             c => panic!("unexpected token: {}", c),
         };
 
         self.read_char();
         token
+    }
+
+    fn skip_line_comments(&mut self) {
+        while self.current_char != '\n' {
+            self.read_char();
+        }
+    }
+
+    fn skip_multi_line_comments(&mut self) {
+        loop {
+            self.read_char();
+            if self.current_char == '*' && self.peek_char() == '/' {
+                self.read_char();
+                break;
+            }
+        }
     }
 
     fn read_number(&mut self) -> i32 {
@@ -120,14 +147,21 @@ impl JackTokenizer {
 
     fn read_char(&mut self) {
         if !self.has_more_tokens() {
-            let empty = 0 as char;
-            self.current_char = empty;
-            return;
-        }
-        self.current_char = self.input[self.read_position];
+            self.current_char = EMPTY_CHAR;
+        } else {
+            self.current_char = self.input[self.read_position];
 
-        self.position = self.read_position;
-        self.read_position += 1;
+            self.position = self.read_position;
+            self.read_position += 1;
+        }
+    }
+
+    fn peek_char(&mut self) -> char {
+        if self.has_more_tokens() {
+            self.input[self.read_position]
+        } else {
+            EMPTY_CHAR
+        }
     }
 }
 
@@ -156,6 +190,35 @@ mod tests {
                 TokenType::KEYWORD(Keyword::BOOLEAN),
                 TokenType::IDNETIFIER("test".to_string()),
                 TokenType::SEMICOLON,
+                TokenType::RBRACE,
+            ]
+        );
+    }
+
+    #[test]
+    fn read_source_which_has_comments() {
+        let source =
+            "class Main {\n// comments\nstatic boolean test; //comments\n/* comments\nmulti line */\n }\n"
+                .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut actual: Vec<TokenType> = Vec::new();
+        while tokenizer.has_more_tokens() {
+            actual.push(tokenizer.advance());
+        }
+
+        assert_eq!(
+            actual,
+            vec![
+                TokenType::KEYWORD(Keyword::CLASS),
+                TokenType::IDNETIFIER("Main".to_string()),
+                TokenType::LBRACE,
+                TokenType::COMMENTS,
+                TokenType::KEYWORD(Keyword::STATIC),
+                TokenType::KEYWORD(Keyword::BOOLEAN),
+                TokenType::IDNETIFIER("test".to_string()),
+                TokenType::SEMICOLON,
+                TokenType::COMMENTS,
+                TokenType::COMMENTS,
                 TokenType::RBRACE,
             ]
         );

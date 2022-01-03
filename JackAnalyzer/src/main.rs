@@ -2,14 +2,21 @@ use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 mod analyzer;
+use analyzer::compiler::CompilationEngine;
 use analyzer::tokenizer::JackTokenizer;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let file_names = get_source_file_paths(&args);
+
+    let new_file_name = create_output_file_path(&args);
+    let mut buf_writer =
+        BufWriter::new(File::create(new_file_name).expect("failed to create xml file."));
+    let mut compilation_engine = CompilationEngine::new(&mut buf_writer);
 
     for file_name in file_names {
         let f = File::open(&file_name).expect("file not found");
@@ -17,9 +24,11 @@ fn main() {
         let mut tokenizer = JackTokenizer::new(f);
         while tokenizer.has_more_tokens() {
             let token = tokenizer.advance();
-            println!("{:?}", token);
+            compilation_engine.compile(token);
         }
     }
+
+    buf_writer.flush().expect("failed to flush");
 }
 
 fn get_source_file_paths(args: &Vec<String>) -> Vec<PathBuf> {

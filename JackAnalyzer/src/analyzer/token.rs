@@ -23,6 +23,34 @@ pub enum Keyword {
     RETURN,
 }
 
+impl Keyword {
+    pub fn to_string(&self) -> &str {
+        match self {
+            Keyword::CLASS => "class",
+            Keyword::CONSTRUCTOR => "constructor",
+            Keyword::FUNCTION => "function",
+            Keyword::METHOD => "method",
+            Keyword::FIELD => "field",
+            Keyword::STATIC => "static",
+            Keyword::VAR => "var",
+            Keyword::INT => "int",
+            Keyword::CHAR => "char",
+            Keyword::BOOLEAN => "boolean",
+            Keyword::VOID => "void",
+            Keyword::TRUE => "true",
+            Keyword::FALSE => "false",
+            Keyword::NULL => "null",
+            Keyword::THIS => "this",
+            Keyword::LET => "let",
+            Keyword::DO => "do",
+            Keyword::IF => "if",
+            Keyword::ELSE => "else",
+            Keyword::WHILE => "while",
+            Keyword::RETURN => "return",
+        }
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub enum TokenType {
     LBRACE,    // "{"
@@ -48,6 +76,7 @@ pub enum TokenType {
     NUMBER(i32),
     STRING(String),
     KEYWORD(Keyword),
+    COMMENTS,
     EOF,
 }
 
@@ -76,6 +105,32 @@ impl TokenType {
             "while" => TokenType::KEYWORD(Keyword::WHILE),
             "return" => TokenType::KEYWORD(Keyword::RETURN),
             _ => TokenType::IDNETIFIER(identify.to_string()),
+        }
+    }
+
+    pub fn to_string(&self) -> &str {
+        match self {
+            TokenType::LBRACE => "{",
+            TokenType::RBRACE => "}",
+            TokenType::LPAREN => "(",
+            TokenType::RPAREN => ")",
+            TokenType::LBRACKET => "[",
+            TokenType::RBRACKET => "]",
+            TokenType::DOT => ".",
+            TokenType::COMMA => ",",
+            TokenType::SEMICOLON => ";",
+            TokenType::PLUS => "+",
+            TokenType::MINUS => "-",
+            TokenType::ASTERISK => "*",
+            TokenType::SLASH => "/",
+            TokenType::AND => "&amp;",
+            TokenType::OR => "|",
+            TokenType::LT => "&lt;",
+            TokenType::GT => "&gt;",
+            TokenType::ASSIGN => "=",
+            TokenType::TILDE => "~",
+            TokenType::KEYWORD(keyword) => keyword.to_string(),
+            _ => "",
         }
     }
 }
