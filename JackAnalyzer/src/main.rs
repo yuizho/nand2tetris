@@ -2,7 +2,6 @@ use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
 mod analyzer;
@@ -16,7 +15,7 @@ fn main() {
         let f = File::open(&file_name).expect("file not found");
 
         let mut tokenizer = JackTokenizer::new(f);
-        while (tokenizer.has_more_tokens()) {
+        while tokenizer.has_more_tokens() {
             let token = tokenizer.advance();
             println!("{:?}", token);
         }
