@@ -1,55 +1,51 @@
 use super::token;
 
-pub trait Node {
-    fn token_literal(&self) -> String;
+#[derive(PartialEq, Debug)]
+pub enum Node {
+    Program(Vec<Statement>),
+    Statement(Statement),
+    Expression(Expression),
 }
-
-pub trait Statement: Node {
-    fn statement_node(&self);
-}
-
-pub trait Expression: Node {
-    fn expession_node(&self);
-}
-
-pub struct Program<T: Statement> {
-    statements: Vec<T>,
-}
-impl<T: Statement> Node for Program<T> {
-    fn token_literal(&self) -> String {
-        if self.statements.len() > 0 {
-            self.statements[0].token_literal()
-        } else {
-            "".to_string()
+impl Node {
+    pub fn token_literal(&self) -> String {
+        match self {
+            Self::Program(statements) => {
+                if statements.len() > 0 {
+                    statements[0].token_literal()
+                } else {
+                    "".to_string()
+                }
+            }
+            Self::Statement(statement) => statement.token_literal(),
+            Self::Expression(expression) => expression.token_literal(),
         }
     }
 }
 
-pub struct LetStatement {
-    token: token::TokenType,
-    identifier: Identifier,
-    value: dyn Expression,
+#[derive(PartialEq, Debug)]
+pub enum Statement {
+    LetStatement(token::TokenType, Expression, Expression),
 }
-impl Node for LetStatement {
-    fn token_literal(&self) -> String {
-        // TODO: needs implement
-        "".to_string()
+impl Statement {
+    pub fn statement_node(&self) {}
+    pub fn token_literal(&self) -> String {
+        match self {
+            Self::LetStatement(token, _, _) => token.get_literal(),
+        }
     }
-}
-impl Statement for LetStatement {
-    fn statement_node(&self) {}
 }
 
-pub struct Identifier {
-    token: token::TokenType,
-    value: String,
+#[derive(PartialEq, Debug)]
+pub enum Expression {
+    Identifier(token::TokenType),
+    Dummy,
 }
-impl Node for Identifier {
-    fn token_literal(&self) -> String {
-        // TODO: needs implement
-        "".to_string()
+impl Expression {
+    pub fn expession_node(&self) {}
+    pub fn token_literal(&self) -> String {
+        match self {
+            Self::Identifier(token) => token.get_literal(),
+            Self::Dummy => "".to_string(),
+        }
     }
-}
-impl Statement for Identifier {
-    fn statement_node(&self) {}
 }

@@ -1,4 +1,4 @@
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Keyword {
     CLASS,
     CONSTRUCTOR,
@@ -24,7 +24,7 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    pub fn to_string(&self) -> &str {
+    pub fn get_literal(&self) -> &str {
         match self {
             Keyword::CLASS => "class",
             Keyword::CONSTRUCTOR => "constructor",
@@ -51,7 +51,7 @@ impl Keyword {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum TokenType {
     LBRACE,    // "{"
     RBRACE,    // "}"
@@ -108,29 +108,32 @@ impl TokenType {
         }
     }
 
-    pub fn to_string(&self) -> &str {
+    pub fn get_literal(&self) -> String {
         match self {
-            TokenType::LBRACE => "{",
-            TokenType::RBRACE => "}",
-            TokenType::LPAREN => "(",
-            TokenType::RPAREN => ")",
-            TokenType::LBRACKET => "[",
-            TokenType::RBRACKET => "]",
-            TokenType::DOT => ".",
-            TokenType::COMMA => ",",
-            TokenType::SEMICOLON => ";",
-            TokenType::PLUS => "+",
-            TokenType::MINUS => "-",
-            TokenType::ASTERISK => "*",
-            TokenType::SLASH => "/",
-            TokenType::AND => "&amp;",
-            TokenType::OR => "|",
-            TokenType::LT => "&lt;",
-            TokenType::GT => "&gt;",
-            TokenType::ASSIGN => "=",
-            TokenType::TILDE => "~",
-            TokenType::KEYWORD(keyword) => keyword.to_string(),
-            _ => "",
+            TokenType::LBRACE => "{".to_string(),
+            TokenType::RBRACE => "}".to_string(),
+            TokenType::LPAREN => "(".to_string(),
+            TokenType::RPAREN => ")".to_string(),
+            TokenType::LBRACKET => "[".to_string(),
+            TokenType::RBRACKET => "]".to_string(),
+            TokenType::DOT => ".".to_string(),
+            TokenType::COMMA => ",".to_string(),
+            TokenType::SEMICOLON => ";".to_string(),
+            TokenType::PLUS => "+".to_string(),
+            TokenType::MINUS => "-".to_string(),
+            TokenType::ASTERISK => "*".to_string(),
+            TokenType::SLASH => "/".to_string(),
+            TokenType::AND => "&amp;".to_string(),
+            TokenType::OR => "|".to_string(),
+            TokenType::LT => "&lt;".to_string(),
+            TokenType::GT => "&gt;".to_string(),
+            TokenType::ASSIGN => "=".to_string(),
+            TokenType::TILDE => "~".to_string(),
+            TokenType::KEYWORD(keyword) => keyword.get_literal().to_string(),
+            TokenType::IDNETIFIER(ident) => ident.to_string(),
+            TokenType::NUMBER(num) => num.to_string(),
+            TokenType::STRING(str) => str.to_string(),
+            _ => "".to_string(),
         }
     }
 }
