@@ -25,12 +25,14 @@ impl Node {
 #[derive(PartialEq, Debug)]
 pub enum Statement {
     LetStatement(token::TokenType, Expression, Expression),
+    ReturnStatement(token::TokenType, Option<Expression>),
 }
 impl Statement {
     pub fn statement_node(&self) {}
     pub fn token_literal(&self) -> String {
         match self {
             Self::LetStatement(token, _, _) => token.get_literal(),
+            Self::ReturnStatement(token, _) => token.get_literal(),
         }
     }
 }
