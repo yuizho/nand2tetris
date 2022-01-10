@@ -59,7 +59,7 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
-        while !self.current_token_is(TokenType::SEMICOLON) {
+        while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
             self.advance();
         }
 
@@ -72,7 +72,7 @@ impl<'a> Parser<'a> {
 
     fn parse_return_statement(&mut self) -> Statement {
         self.advance();
-        while !self.current_token_is(TokenType::SEMICOLON) {
+        while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
             self.advance();
         }
 
@@ -81,6 +81,10 @@ impl<'a> Parser<'a> {
 
     fn current_token_is(&self, token: TokenType) -> bool {
         self.cur_token == token
+    }
+
+    fn current_token_is_eof_or(&self, token: TokenType) -> bool {
+        self.current_token_is(token) || self.cur_token == TokenType::EOF
     }
 }
 
