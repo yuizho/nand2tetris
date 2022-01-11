@@ -7,20 +7,6 @@ pub enum Node {
     Expression(Expression),
 }
 impl Node {
-    pub fn token_literal(&self) -> String {
-        match self {
-            Self::Program(statements) => {
-                if statements.len() > 0 {
-                    statements[0].token_literal()
-                } else {
-                    "".to_string()
-                }
-            }
-            Self::Statement(statement) => statement.token_literal(),
-            Self::Expression(expression) => expression.token_literal(),
-        }
-    }
-
     pub fn to_xml(&self) -> String {
         match self {
             Self::Program(staements) => staements
@@ -41,12 +27,6 @@ pub enum Statement {
 }
 impl Statement {
     pub fn statement_node(&self) {}
-    pub fn token_literal(&self) -> String {
-        match self {
-            Self::LetStatement(token, _, _) => token.get_xml_tag(),
-            Self::ReturnStatement(token, _) => token.get_xml_tag(),
-        }
-    }
     pub fn to_xml(&self) -> String {
         match self {
             Self::LetStatement(_, identifier, expression) => {
@@ -74,13 +54,6 @@ pub enum Expression {
 }
 impl Expression {
     pub fn expession_node(&self) {}
-    pub fn token_literal(&self) -> String {
-        match self {
-            Self::Identifier(token) => token.get_xml_tag(),
-            Self::Dummy => "".to_string(),
-        }
-    }
-
     pub fn to_xml(&self) -> String {
         match self {
             Self::Identifier(token) => {
