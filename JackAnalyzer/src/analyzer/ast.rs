@@ -43,8 +43,8 @@ impl Statement {
     pub fn statement_node(&self) {}
     pub fn token_literal(&self) -> String {
         match self {
-            Self::LetStatement(token, _, _) => token.get_literal(),
-            Self::ReturnStatement(token, _) => token.get_literal(),
+            Self::LetStatement(token, _, _) => token.get_xml_tag(),
+            Self::ReturnStatement(token, _) => token.get_xml_tag(),
         }
     }
     pub fn to_xml(&self) -> String {
@@ -52,14 +52,14 @@ impl Statement {
             Self::LetStatement(_, identifier, expression) => {
                 format!(
                     "<letStatement>\n  {}\n  {}\n  {}\n  {}\n  {}\n</letStatement>",
-                    TokenType::KEYWORD(Keyword::LET).get_literal(),
+                    TokenType::KEYWORD(Keyword::LET).get_xml_tag(),
                     identifier.to_xml(),
-                    TokenType::ASSIGN.get_literal(),
+                    TokenType::ASSIGN.get_xml_tag(),
                     format!(
                         "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
                         expression.to_xml()
                     ),
-                    TokenType::SEMICOLON.get_literal()
+                    TokenType::SEMICOLON.get_xml_tag()
                 )
             }
             Self::ReturnStatement(_, _) => "return".to_string(),
@@ -76,7 +76,7 @@ impl Expression {
     pub fn expession_node(&self) {}
     pub fn token_literal(&self) -> String {
         match self {
-            Self::Identifier(token) => token.get_literal(),
+            Self::Identifier(token) => token.get_xml_tag(),
             Self::Dummy => "".to_string(),
         }
     }
@@ -84,7 +84,7 @@ impl Expression {
     pub fn to_xml(&self) -> String {
         match self {
             Self::Identifier(token) => {
-                format!("{}", token.get_literal())
+                format!("{}", token.get_xml_tag())
             }
             Self::Dummy => "dummy".to_string(),
         }
@@ -97,7 +97,7 @@ mod tests {
     use crate::analyzer::token::*;
 
     #[test]
-    fn to_xml() {
+    fn let_statement_to_xml() {
         let program = Node::Program(vec![Statement::LetStatement(
             TokenType::KEYWORD(Keyword::LET),
             Expression::Identifier(TokenType::IDNETIFIER("myVar".to_string())),

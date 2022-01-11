@@ -35,12 +35,12 @@ impl<'a> Parser<'a> {
                 Keyword::RETURN => self.parse_return_statement(),
                 _ => panic!(
                     "unexpected token to parse statement(keyword): {}",
-                    self.cur_token.get_literal()
+                    self.cur_token.get_xml_tag()
                 ),
             },
             _ => panic!(
                 "unexpected token to parse statement: {}",
-                self.cur_token.get_literal()
+                self.cur_token.get_xml_tag()
             ),
         }
     }
@@ -54,7 +54,7 @@ impl<'a> Parser<'a> {
 
         // TODO: might has [9]
         if !self.current_token_is(TokenType::ASSIGN) {
-            panic!("unexpected syntax: {}", self.cur_token.get_literal());
+            panic!("unexpected syntax: {}", self.cur_token.get_xml_tag());
         }
 
         self.advance();

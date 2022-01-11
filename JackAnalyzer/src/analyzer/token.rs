@@ -24,7 +24,7 @@ pub enum Keyword {
 }
 
 impl Keyword {
-    pub fn get_literal(&self) -> &str {
+    pub fn get_xml_tag(&self) -> &str {
         match self {
             Keyword::CLASS => "<keyword> class </keyword>",
             Keyword::CONSTRUCTOR => "<keyword> constructor </keyword>",
@@ -108,7 +108,7 @@ impl TokenType {
         }
     }
 
-    pub fn get_literal(&self) -> String {
+    pub fn get_xml_tag(&self) -> String {
         match self {
             TokenType::LBRACE => "<symbol> { </symbol>".to_string(),
             TokenType::RBRACE => "<symbol> } </symbol>".to_string(),
@@ -129,7 +129,7 @@ impl TokenType {
             TokenType::GT => "<symbol> &gt; </symbol>".to_string(),
             TokenType::ASSIGN => "<symbol> = </symbol>".to_string(),
             TokenType::TILDE => "<symbol> ~ </symbol>".to_string(),
-            TokenType::KEYWORD(keyword) => keyword.get_literal().to_string(),
+            TokenType::KEYWORD(keyword) => keyword.get_xml_tag().to_string(),
             TokenType::IDNETIFIER(ident) => format!("<identifier> {} </identifier>", ident),
             TokenType::NUMBER(num) => format!("<integerConstant> {} </integerConstant>", num),
             TokenType::STRING(str) => format!("<stringConstant> {} </stringConstant>", str),
