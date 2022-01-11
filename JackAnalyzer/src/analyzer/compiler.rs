@@ -15,16 +15,16 @@ impl<'a, T: Write> CompilationEngine<'a, T> {
     pub fn compile(&mut self, token: TokenType) {
         let tag = match token {
             TokenType::KEYWORD(keyword) => {
-                format!("<keyword> {} </keyword>\n", keyword.get_literal())
+                format!("{}\n", keyword.get_literal())
             }
             TokenType::IDNETIFIER(identifier) => {
-                format!("<identifier> {} </identifier>\n", identifier.to_string())
+                format!("{}\n", identifier)
             }
-            TokenType::STRING(str) => format!("<stringConstant> {} </stringConstant>\n", str),
-            TokenType::NUMBER(num) => format!("<integerConstant> {} </integerConstant>\n", num),
+            TokenType::STRING(str) => format!("{}\n", str),
+            TokenType::NUMBER(num) => format!("{}\n", num),
             TokenType::COMMENTS => "".to_string(),
             TokenType::EOF => "".to_string(),
-            symbol => format!("<symbol> {} </symbol>\n", symbol.get_literal()),
+            symbol => format!("{}\n", symbol.get_literal()),
         };
         self.buf_writer
             .write(tag.as_bytes())

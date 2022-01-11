@@ -1,4 +1,4 @@
-use super::token;
+use super::token::{Keyword, TokenType};
 
 #[derive(PartialEq, Debug)]
 pub enum Node {
@@ -36,8 +36,8 @@ impl Node {
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
-    LetStatement(token::TokenType, Expression, Expression),
-    ReturnStatement(token::TokenType, Option<Expression>),
+    LetStatement(TokenType, Expression, Expression),
+    ReturnStatement(TokenType, Option<Expression>),
 }
 impl Statement {
     pub fn statement_node(&self) {}
@@ -52,14 +52,14 @@ impl Statement {
             Self::LetStatement(_, identifier, expression) => {
                 format!(
                     "<letStatement>\n  {}\n  {}\n  {}\n  {}\n  {}\n</letStatement>",
-                    "<keyword> let </keyword>",
+                    TokenType::KEYWORD(Keyword::LET).get_literal(),
                     identifier.to_xml(),
-                    "<symbol> = </symbol>",
+                    TokenType::ASSIGN.get_literal(),
                     format!(
                         "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
                         expression.to_xml()
                     ),
-                    "<symbol> ; </symbol>"
+                    TokenType::SEMICOLON.get_literal()
                 )
             }
             Self::ReturnStatement(_, _) => "return".to_string(),
@@ -69,7 +69,7 @@ impl Statement {
 
 #[derive(PartialEq, Debug)]
 pub enum Expression {
-    Identifier(token::TokenType),
+    Identifier(TokenType),
     Dummy,
 }
 impl Expression {
@@ -84,7 +84,7 @@ impl Expression {
     pub fn to_xml(&self) -> String {
         match self {
             Self::Identifier(token) => {
-                format!("<identifier> {} </identifier>", token.get_literal())
+                format!("{}", token.get_literal())
             }
             Self::Dummy => "dummy".to_string(),
         }
