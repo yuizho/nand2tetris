@@ -24,6 +24,7 @@ impl Node {
 pub enum Statement {
     LetStatement(Expression, Expression),
     ReturnStatement(Option<Expression>),
+    ExpressionStatement(Expression),
 }
 impl Statement {
     pub fn statement_node(&self) {}
@@ -60,6 +61,8 @@ impl Statement {
                     TokenType::SEMICOLON.get_xml_tag()
                 )
             }
+
+            Self::ExpressionStatement(_) => "".to_string(),
         }
     }
 }

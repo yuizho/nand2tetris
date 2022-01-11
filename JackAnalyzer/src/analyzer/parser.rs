@@ -2,6 +2,12 @@ use super::ast::*;
 use super::token::*;
 use super::tokenizer::*;
 
+#[derive(PartialEq, PartialOrd, Debug)]
+enum Priority {
+    LOWEST = 0,
+    EQUALS = 1,
+}
+
 pub struct Parser<'a> {
     tokenizer: &'a mut JackTokenizer,
     cur_token: TokenType,
@@ -38,10 +44,7 @@ impl<'a> Parser<'a> {
                     self.cur_token.get_xml_tag()
                 ),
             },
-            _ => panic!(
-                "unexpected token to parse statement: {}",
-                self.cur_token.get_xml_tag()
-            ),
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -73,6 +76,34 @@ impl<'a> Parser<'a> {
         }
 
         Statement::ReturnStatement(Some(Expression::Dummy))
+    }
+
+    fn parse_expression_statement(&mut self) -> Statement {
+        let expression = self.parse_expression(Priority::LOWEST);
+
+        while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
+            self.advance();
+        }
+        Statement::ExpressionStatement(expression)
+    }
+
+    fn parse_expression(&self, priority: Priority) -> Expression {
+        let left_expression = self.parse_prefix_expression(&self.cur_token);
+        left_expression
+    }
+
+    fn parse_identifier(&self) -> Expression {
+        Expression::Identifier(self.cur_token.clone())
+    }
+
+    fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
+        match token {
+            TokenType::IDNETIFIER(_) => self.parse_identifier(),
+            _ => panic!(
+                "unexpected token is passed to get_prefix_parse_function: {:?}",
+                token
+            ),
+        }
     }
 
     fn current_token_is(&self, token: TokenType) -> bool {
@@ -133,6 +164,30 @@ mod tests {
                 assert_eq!(
                     statements,
                     vec![Statement::ReturnStatement(Some(Expression::Dummy))]
+                );
+            }
+            _ => panic!("unexpected Node variant"),
+        }
+    }
+
+    #[test]
+    fn identifier_expression() {
+        let source = "
+        foobar;
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        match actual {
+            Node::Program(statements) => {
+                assert_eq!(statements.len(), 1);
+                assert_eq!(
+                    statements,
+                    vec![Statement::ExpressionStatement(Expression::Identifier(
+                        TokenType::IDNETIFIER("foobar".to_string())
+                    ))]
                 );
             }
             _ => panic!("unexpected Node variant"),
