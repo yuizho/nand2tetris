@@ -42,7 +42,24 @@ impl Statement {
                     TokenType::SEMICOLON.get_xml_tag()
                 )
             }
-            Self::ReturnStatement(_) => "return".to_string(),
+
+            Self::ReturnStatement(Some(expression)) => format!(
+                "<returnStatement>\n  {}\n  {}\n  {}\n</returnStatement>",
+                TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
+                format!(
+                    "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
+                    expression.to_xml()
+                ),
+                TokenType::SEMICOLON.get_xml_tag()
+            ),
+
+            Self::ReturnStatement(None) => {
+                format!(
+                    "<returnStatement>\n  {}\n  {}\n</returnStatement>",
+                    TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
+                    TokenType::SEMICOLON.get_xml_tag()
+                )
+            }
         }
     }
 }
@@ -59,6 +76,7 @@ impl Expression {
             Self::Identifier(token) => {
                 format!("{}", token.get_xml_tag())
             }
+
             Self::Dummy => "dummy".to_string(),
         }
     }
@@ -89,6 +107,39 @@ mod tests {
   </expression>
   <symbol> ; </symbol>
 </letStatement>"
+        )
+    }
+
+    #[test]
+    fn return_statement_no_identifier_to_xml() {
+        let program = Node::Program(vec![Statement::ReturnStatement(None)]);
+
+        assert_eq!(
+            program.to_xml(),
+            "<returnStatement>
+  <keyword> return </keyword>
+  <symbol> ; </symbol>
+</returnStatement>"
+        )
+    }
+
+    #[test]
+    fn return_statement_that_has_identifier_to_xml() {
+        let program = Node::Program(vec![Statement::ReturnStatement(Some(
+            Expression::Identifier(TokenType::IDNETIFIER("square".to_string())),
+        ))]);
+
+        assert_eq!(
+            program.to_xml(),
+            "<returnStatement>
+  <keyword> return </keyword>
+  <expression>
+    <term>
+      <identifier> square </identifier>
+    </term>
+  </expression>
+  <symbol> ; </symbol>
+</returnStatement>"
         )
     }
 }
