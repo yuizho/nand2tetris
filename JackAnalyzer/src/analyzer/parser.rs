@@ -63,11 +63,7 @@ impl<'a> Parser<'a> {
             self.advance();
         }
 
-        Statement::LetStatement(
-            TokenType::KEYWORD(Keyword::LET),
-            identifier,
-            Expression::Dummy,
-        )
+        Statement::LetStatement(identifier, Expression::Dummy)
     }
 
     fn parse_return_statement(&mut self) -> Statement {
@@ -76,7 +72,7 @@ impl<'a> Parser<'a> {
             self.advance();
         }
 
-        Statement::ReturnStatement(TokenType::KEYWORD(Keyword::RETURN), Some(Expression::Dummy))
+        Statement::ReturnStatement(Some(Expression::Dummy))
     }
 
     fn current_token_is(&self, token: TokenType) -> bool {
@@ -112,7 +108,6 @@ mod tests {
                 assert_eq!(
                     statements,
                     vec![Statement::LetStatement(
-                        TokenType::KEYWORD(Keyword::LET),
                         Expression::Identifier(TokenType::IDNETIFIER("x".to_string())),
                         Expression::Dummy
                     )]
@@ -137,10 +132,7 @@ mod tests {
                 assert_eq!(statements.len(), 1);
                 assert_eq!(
                     statements,
-                    vec![Statement::ReturnStatement(
-                        TokenType::KEYWORD(Keyword::RETURN),
-                        Some(Expression::Dummy)
-                    )]
+                    vec![Statement::ReturnStatement(Some(Expression::Dummy))]
                 );
             }
             _ => panic!("unexpected Node variant"),

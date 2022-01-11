@@ -22,14 +22,14 @@ impl Node {
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
-    LetStatement(TokenType, Expression, Expression),
-    ReturnStatement(TokenType, Option<Expression>),
+    LetStatement(Expression, Expression),
+    ReturnStatement(Option<Expression>),
 }
 impl Statement {
     pub fn statement_node(&self) {}
     pub fn to_xml(&self) -> String {
         match self {
-            Self::LetStatement(_, identifier, expression) => {
+            Self::LetStatement(identifier, expression) => {
                 format!(
                     "<letStatement>\n  {}\n  {}\n  {}\n  {}\n  {}\n</letStatement>",
                     TokenType::KEYWORD(Keyword::LET).get_xml_tag(),
@@ -42,7 +42,7 @@ impl Statement {
                     TokenType::SEMICOLON.get_xml_tag()
                 )
             }
-            Self::ReturnStatement(_, _) => "return".to_string(),
+            Self::ReturnStatement(_) => "return".to_string(),
         }
     }
 }
@@ -72,7 +72,6 @@ mod tests {
     #[test]
     fn let_statement_to_xml() {
         let program = Node::Program(vec![Statement::LetStatement(
-            TokenType::KEYWORD(Keyword::LET),
             Expression::Identifier(TokenType::IDNETIFIER("myVar".to_string())),
             Expression::Identifier(TokenType::IDNETIFIER("anotherVar".to_string())),
         )]);
