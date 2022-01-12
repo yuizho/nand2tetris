@@ -62,7 +62,7 @@ impl Statement {
                 )
             }
 
-            Self::ExpressionStatement(_) => "".to_string(),
+            Self::ExpressionStatement(expression) => expression.to_xml(),
         }
     }
 }
