@@ -150,4 +150,22 @@ mod tests {
 </returnStatement>"
         )
     }
+
+    #[test]
+    fn identifier_expression_to_xml() {
+        let program = Node::Program(vec![Statement::ExpressionStatement(
+            Expression::Identifier(TokenType::IDNETIFIER("foo".to_string())),
+        )]);
+
+        assert_eq!(program.to_xml(), "<identifier> foo </identifier>")
+    }
+
+    #[test]
+    fn integer_constant_expression_to_xml() {
+        let program = Node::Program(vec![Statement::ExpressionStatement(
+            Expression::IntegerConstant(TokenType::NUMBER(10)),
+        )]);
+
+        assert_eq!(program.to_xml(), "<integerConstant> 10 </integerConstant>")
+    }
 }
