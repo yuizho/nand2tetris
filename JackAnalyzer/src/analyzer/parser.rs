@@ -96,9 +96,14 @@ impl<'a> Parser<'a> {
         Expression::Identifier(self.cur_token.clone())
     }
 
+    fn parse_integer_constant(&self) -> Expression {
+        Expression::IntegerConstant(self.cur_token.clone())
+    }
+
     fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
         match token {
             TokenType::IDNETIFIER(_) => self.parse_identifier(),
+            TokenType::NUMBER(_) => self.parse_integer_constant(),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
@@ -187,6 +192,30 @@ mod tests {
                     statements,
                     vec![Statement::ExpressionStatement(Expression::Identifier(
                         TokenType::IDNETIFIER("foobar".to_string())
+                    ))]
+                );
+            }
+            _ => panic!("unexpected Node variant"),
+        }
+    }
+
+    #[test]
+    fn integer_constant_expression() {
+        let source = "
+        5;
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        match actual {
+            Node::Program(statements) => {
+                assert_eq!(statements.len(), 1);
+                assert_eq!(
+                    statements,
+                    vec![Statement::ExpressionStatement(Expression::IntegerConstant(
+                        TokenType::NUMBER(5)
                     ))]
                 );
             }

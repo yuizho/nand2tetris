@@ -70,6 +70,7 @@ impl Statement {
 #[derive(PartialEq, Debug)]
 pub enum Expression {
     Identifier(TokenType),
+    IntegerConstant(TokenType),
     Dummy,
 }
 impl Expression {
@@ -77,6 +78,10 @@ impl Expression {
     pub fn to_xml(&self) -> String {
         match self {
             Self::Identifier(token) => {
+                format!("{}", token.get_xml_tag())
+            }
+
+            Self::IntegerConstant(token) => {
                 format!("{}", token.get_xml_tag())
             }
 
