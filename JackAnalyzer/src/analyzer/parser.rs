@@ -62,20 +62,29 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
+        let expression = self.parse_expression(Priority::LOWEST);
+
         while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
             self.advance();
         }
 
-        Statement::LetStatement(identifier, Expression::Dummy)
+        Statement::LetStatement(identifier, expression)
     }
 
     fn parse_return_statement(&mut self) -> Statement {
         self.advance();
+
+        let expression = if (self.current_token_is(TokenType::SEMICOLON)) {
+            None
+        } else {
+            Some(self.parse_expression(Priority::LOWEST))
+        };
+
         while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
             self.advance();
         }
 
-        Statement::ReturnStatement(Some(Expression::Dummy))
+        Statement::ReturnStatement(expression)
     }
 
     fn parse_expression_statement(&mut self) -> Statement {
@@ -132,6 +141,7 @@ mod tests {
     fn let_statements() {
         let source = "
         let x = 5;
+        let y = x;
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
@@ -140,13 +150,19 @@ mod tests {
 
         match actual {
             Node::Program(statements) => {
-                assert_eq!(statements.len(), 1);
+                assert_eq!(statements.len(), 2);
                 assert_eq!(
                     statements,
-                    vec![Statement::LetStatement(
-                        Expression::Identifier(TokenType::IDNETIFIER("x".to_string())),
-                        Expression::Dummy
-                    )]
+                    vec![
+                        Statement::LetStatement(
+                            Expression::Identifier(TokenType::IDNETIFIER("x".to_string())),
+                            Expression::IntegerConstant(TokenType::NUMBER(5))
+                        ),
+                        Statement::LetStatement(
+                            Expression::Identifier(TokenType::IDNETIFIER("y".to_string())),
+                            Expression::Identifier(TokenType::IDNETIFIER("x".to_string()))
+                        )
+                    ]
                 );
             }
             _ => panic!("unexpected Node variant"),
@@ -156,7 +172,9 @@ mod tests {
     #[test]
     fn return_statements() {
         let source = "
-        return 5
+        return 5;
+        return x;
+        return;
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
@@ -165,10 +183,18 @@ mod tests {
 
         match actual {
             Node::Program(statements) => {
-                assert_eq!(statements.len(), 1);
+                assert_eq!(statements.len(), 3);
                 assert_eq!(
                     statements,
-                    vec![Statement::ReturnStatement(Some(Expression::Dummy))]
+                    vec![
+                        Statement::ReturnStatement(Some(Expression::IntegerConstant(
+                            TokenType::NUMBER(5)
+                        ))),
+                        Statement::ReturnStatement(Some(Expression::Identifier(
+                            TokenType::IDNETIFIER("x".to_string())
+                        ))),
+                        Statement::ReturnStatement(None)
+                    ]
                 );
             }
             _ => panic!("unexpected Node variant"),
