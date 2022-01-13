@@ -78,7 +78,6 @@ impl Node for Statement {
 pub enum Expression {
     Identifier(IdentifierToken),
     IntegerConstant(i32),
-    Dummy,
 }
 impl Node for Expression {
     fn to_xml(&self) -> String {
@@ -90,8 +89,6 @@ impl Node for Expression {
             Self::IntegerConstant(num) => {
                 format!("{}", num.get_xml_tag())
             }
-
-            Self::Dummy => "dummy".to_string(),
         }
     }
 }
