@@ -51,8 +51,8 @@ impl<'a> Parser<'a> {
     fn parse_let_statement(&mut self) -> Statement {
         self.advance();
 
-        let identifier = if let TokenType::IDNETIFIER(identifier_token) = &self.cur_token {
-            Expression::Identifier(identifier_token.clone())
+        let identifier_token = if let TokenType::IDNETIFIER(identifier_token) = &self.cur_token {
+            identifier_token.clone()
         } else {
             panic!(
                 "failed to get identifier keyword by cur_token: {:?}",
@@ -75,7 +75,7 @@ impl<'a> Parser<'a> {
             self.advance();
         }
 
-        Statement::LetStatement(identifier, expression)
+        Statement::LetStatement(identifier_token, expression)
     }
 
     fn parse_return_statement(&mut self) -> Statement {
@@ -162,15 +162,15 @@ mod tests {
                     statements,
                     vec![
                         Statement::LetStatement(
-                            Expression::Identifier(IdentifierToken {
+                            IdentifierToken {
                                 identifier: "x".to_string(),
-                            }),
+                            },
                             Expression::IntegerConstant(5)
                         ),
                         Statement::LetStatement(
-                            Expression::Identifier(IdentifierToken {
+                            IdentifierToken {
                                 identifier: "y".to_string(),
-                            }),
+                            },
                             Expression::Identifier(IdentifierToken {
                                 identifier: "x".to_string(),
                             })

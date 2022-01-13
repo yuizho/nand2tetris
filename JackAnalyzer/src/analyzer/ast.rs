@@ -22,7 +22,7 @@ impl Node {
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
-    LetStatement(Expression, Expression),
+    LetStatement(IdentifierToken, Expression),
     ReturnStatement(Option<Expression>),
     ExpressionStatement(Expression),
 }
@@ -34,7 +34,7 @@ impl Statement {
                 format!(
                     "<letStatement>\n  {}\n  {}\n  {}\n  {}\n  {}\n</letStatement>",
                     TokenType::KEYWORD(Keyword::LET).get_xml_tag(),
-                    identifier.to_xml(),
+                    identifier.get_xml_tag(),
                     TokenType::ASSIGN.get_xml_tag(),
                     format!(
                         "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
@@ -98,9 +98,9 @@ mod tests {
     #[test]
     fn let_statement_to_xml() {
         let program = Node::Program(vec![Statement::LetStatement(
-            Expression::Identifier(IdentifierToken {
+            IdentifierToken {
                 identifier: "myVar".to_string(),
-            }),
+            },
             Expression::Identifier(IdentifierToken {
                 identifier: "anotherVar".to_string(),
             }),
