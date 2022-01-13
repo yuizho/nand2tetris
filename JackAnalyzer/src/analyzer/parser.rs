@@ -55,16 +55,28 @@ impl<'a> Parser<'a> {
             identifier_token.clone()
         } else {
             panic!(
-                "failed to get identifier keyword by cur_token: {:?}",
+                "failed to get identifier keyword of let: {:?}",
                 self.cur_token
             )
         };
 
         self.advance();
 
-        // TODO: might has [9]
+        let index_expression = if self.current_token_is(TokenType::LBRACKET) {
+            self.advance();
+            let expression = self.parse_expression(Priority::LOWEST);
+            self.advance();
+            if !self.current_token_is(TokenType::RBRACKET) {
+                panic!("unexpected syntax of let: {}", self.cur_token.get_xml_tag());
+            }
+            self.advance();
+            Some(expression)
+        } else {
+            None
+        };
+
         if !self.current_token_is(TokenType::ASSIGN) {
-            panic!("unexpected syntax: {}", self.cur_token.get_xml_tag());
+            panic!("unexpected syntax of let: {}", self.cur_token.get_xml_tag());
         }
 
         self.advance();
@@ -75,7 +87,7 @@ impl<'a> Parser<'a> {
             self.advance();
         }
 
-        Statement::LetStatement(identifier_token, expression)
+        Statement::LetStatement(identifier_token, index_expression, expression)
     }
 
     fn parse_return_statement(&mut self) -> Statement {
@@ -149,13 +161,15 @@ mod tests {
         let source = "
         let x = 5;
         let y = x;
+        let z[i] = y;
+        let z[0] =  y;
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(actual.statements.len(), 4);
         assert_eq!(
             actual.statements,
             vec![
@@ -163,14 +177,36 @@ mod tests {
                     IdentifierToken {
                         identifier: "x".to_string(),
                     },
+                    None,
                     Expression::IntegerConstant(5)
                 ),
                 Statement::LetStatement(
                     IdentifierToken {
                         identifier: "y".to_string(),
                     },
+                    None,
                     Expression::Identifier(IdentifierToken {
                         identifier: "x".to_string(),
+                    })
+                ),
+                Statement::LetStatement(
+                    IdentifierToken {
+                        identifier: "z".to_string(),
+                    },
+                    Some(Expression::Identifier(IdentifierToken {
+                        identifier: "i".to_string(),
+                    })),
+                    Expression::Identifier(IdentifierToken {
+                        identifier: "y".to_string(),
+                    })
+                ),
+                Statement::LetStatement(
+                    IdentifierToken {
+                        identifier: "z".to_string(),
+                    },
+                    Some(Expression::IntegerConstant(0)),
+                    Expression::Identifier(IdentifierToken {
+                        identifier: "y".to_string(),
                     })
                 )
             ]

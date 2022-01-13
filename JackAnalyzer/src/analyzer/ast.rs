@@ -19,18 +19,29 @@ impl Node for Program {
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
-    LetStatement(IdentifierToken, Expression),
+    LetStatement(IdentifierToken, Option<Expression>, Expression),
     ReturnStatement(Option<Expression>),
     ExpressionStatement(Expression),
 }
 impl Node for Statement {
     fn to_xml(&self) -> String {
         match self {
-            Self::LetStatement(identifier, expression) => {
+            Self::LetStatement(identifier, index_expression, expression) => {
                 format!(
-                    "<letStatement>\n  {}\n  {}\n  {}\n  {}\n  {}\n</letStatement>",
+                    "<letStatement>\n  {}\n  {}\n  {}{}\n  {}\n  {}\n</letStatement>",
                     TokenType::KEYWORD(Keyword::LET).get_xml_tag(),
                     identifier.get_xml_tag(),
+                    match index_expression {
+                        Some(exp) => {
+                            format!(
+                                "{}\n  {}\n  {}\n  ",
+                                TokenType::LBRACKET.get_xml_tag(),
+                                exp.to_xml(),
+                                TokenType::RBRACKET.get_xml_tag()
+                            )
+                        }
+                        None => "".to_string(),
+                    },
                     TokenType::ASSIGN.get_xml_tag(),
                     format!(
                         "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
@@ -97,6 +108,7 @@ mod tests {
                 IdentifierToken {
                     identifier: "myVar".to_string(),
                 },
+                None,
                 Expression::Identifier(IdentifierToken {
                     identifier: "anotherVar".to_string(),
                 }),
@@ -108,6 +120,40 @@ mod tests {
             "<letStatement>
   <keyword> let </keyword>
   <identifier> myVar </identifier>
+  <symbol> = </symbol>
+  <expression>
+    <term>
+      <identifier> anotherVar </identifier>
+    </term>
+  </expression>
+  <symbol> ; </symbol>
+</letStatement>"
+        )
+    }
+
+    fn let_statement_for_array_to_xml() {
+        let program = Program {
+            statements: vec![Statement::LetStatement(
+                IdentifierToken {
+                    identifier: "myVar".to_string(),
+                },
+                Some(Expression::Identifier(IdentifierToken {
+                    identifier: "i".to_string(),
+                })),
+                Expression::Identifier(IdentifierToken {
+                    identifier: "anotherVar".to_string(),
+                }),
+            )],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<letStatement>
+  <keyword> let </keyword>
+  <identifier> myVar </identifier>
+  <symbol> [ </symbol>
+  <identifier> i </identifier>
+  <symbol> ] </symbol>
   <symbol> = </symbol>
   <expression>
     <term>
