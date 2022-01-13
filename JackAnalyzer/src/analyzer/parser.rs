@@ -93,7 +93,7 @@ impl<'a> Parser<'a> {
     fn parse_return_statement(&mut self) -> Statement {
         self.advance();
 
-        let expression = if (self.current_token_is(TokenType::SEMICOLON)) {
+        let expression = if self.current_token_is(TokenType::SEMICOLON) {
             None
         } else {
             Some(self.parse_expression(Priority::LOWEST))
@@ -120,8 +120,8 @@ impl<'a> Parser<'a> {
         left_expression
     }
 
-    fn parse_identifier(&self, identifierToken: &IdentifierToken) -> Expression {
-        Expression::Identifier(identifierToken.clone())
+    fn parse_identifier(&self, identifier_token: &IdentifierToken) -> Expression {
+        Expression::Identifier(identifier_token.clone())
     }
 
     fn parse_integer_constant(&self, num: &i32) -> Expression {
@@ -130,7 +130,7 @@ impl<'a> Parser<'a> {
 
     fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
         match token {
-            TokenType::IDNETIFIER(identifierToken) => self.parse_identifier(identifierToken),
+            TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
@@ -150,10 +150,7 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::analyzer::ast::*;
     use crate::analyzer::parser::*;
-    use crate::analyzer::token::*;
-    use crate::analyzer::tokenizer::*;
     use std::io::Cursor;
 
     #[test]
