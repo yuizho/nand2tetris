@@ -25,13 +25,13 @@ impl<'a> Parser<'a> {
         self.cur_token = self.tokenizer.advance()
     }
 
-    pub fn parse_program(&mut self) -> Node {
+    pub fn parse_program(&mut self) -> Program {
         let mut statements = vec![];
         while self.tokenizer.has_more_tokens() {
             statements.push(self.parse_statement());
             self.advance()
         }
-        Node::Program(statements)
+        Program { statements }
     }
 
     fn parse_statement(&mut self) -> Statement {
@@ -155,31 +155,26 @@ mod tests {
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        match actual {
-            Node::Program(statements) => {
-                assert_eq!(statements.len(), 2);
-                assert_eq!(
-                    statements,
-                    vec![
-                        Statement::LetStatement(
-                            IdentifierToken {
-                                identifier: "x".to_string(),
-                            },
-                            Expression::IntegerConstant(5)
-                        ),
-                        Statement::LetStatement(
-                            IdentifierToken {
-                                identifier: "y".to_string(),
-                            },
-                            Expression::Identifier(IdentifierToken {
-                                identifier: "x".to_string(),
-                            })
-                        )
-                    ]
-                );
-            }
-            _ => panic!("unexpected Node variant"),
-        }
+        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::LetStatement(
+                    IdentifierToken {
+                        identifier: "x".to_string(),
+                    },
+                    Expression::IntegerConstant(5)
+                ),
+                Statement::LetStatement(
+                    IdentifierToken {
+                        identifier: "y".to_string(),
+                    },
+                    Expression::Identifier(IdentifierToken {
+                        identifier: "x".to_string(),
+                    })
+                )
+            ]
+        );
     }
 
     #[test]
@@ -194,22 +189,17 @@ mod tests {
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        match actual {
-            Node::Program(statements) => {
-                assert_eq!(statements.len(), 3);
-                assert_eq!(
-                    statements,
-                    vec![
-                        Statement::ReturnStatement(Some(Expression::IntegerConstant(5))),
-                        Statement::ReturnStatement(Some(Expression::Identifier(IdentifierToken {
-                            identifier: "x".to_string(),
-                        }))),
-                        Statement::ReturnStatement(None)
-                    ]
-                );
-            }
-            _ => panic!("unexpected Node variant"),
-        }
+        assert_eq!(actual.statements.len(), 3);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ReturnStatement(Some(Expression::IntegerConstant(5))),
+                Statement::ReturnStatement(Some(Expression::Identifier(IdentifierToken {
+                    identifier: "x".to_string(),
+                }))),
+                Statement::ReturnStatement(None)
+            ]
+        );
     }
 
     #[test]
@@ -222,20 +212,15 @@ mod tests {
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        match actual {
-            Node::Program(statements) => {
-                assert_eq!(statements.len(), 1);
-                assert_eq!(
-                    statements,
-                    vec![Statement::ExpressionStatement(Expression::Identifier(
-                        IdentifierToken {
-                            identifier: "foobar".to_string(),
-                        }
-                    ))]
-                );
-            }
-            _ => panic!("unexpected Node variant"),
-        }
+        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(
+            actual.statements,
+            vec![Statement::ExpressionStatement(Expression::Identifier(
+                IdentifierToken {
+                    identifier: "foobar".to_string(),
+                }
+            ))]
+        );
     }
 
     #[test]
@@ -248,17 +233,12 @@ mod tests {
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        match actual {
-            Node::Program(statements) => {
-                assert_eq!(statements.len(), 1);
-                assert_eq!(
-                    statements,
-                    vec![Statement::ExpressionStatement(Expression::IntegerConstant(
-                        5
-                    ))]
-                );
-            }
-            _ => panic!("unexpected Node variant"),
-        }
+        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(
+            actual.statements,
+            vec![Statement::ExpressionStatement(Expression::IntegerConstant(
+                5
+            ))]
+        );
     }
 }

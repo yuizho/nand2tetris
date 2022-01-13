@@ -1,22 +1,19 @@
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
 
-#[derive(PartialEq, Debug)]
-pub enum Node {
-    Program(Vec<Statement>),
-    Statement(Statement),
-    Expression(Expression),
+pub trait Node {
+    fn to_xml(&self) -> String;
 }
-impl Node {
-    pub fn to_xml(&self) -> String {
-        match self {
-            Self::Program(staements) => staements
-                .iter()
-                .map(|s| s.to_xml())
-                .collect::<Vec<_>>()
-                .join("\n"),
-            Self::Statement(statement) => statement.to_xml(),
-            Self::Expression(expression) => expression.to_xml(),
-        }
+
+pub struct Program {
+    pub statements: Vec<Statement>,
+}
+impl Node for Program {
+    fn to_xml(&self) -> String {
+        self.statements
+            .iter()
+            .map(|s| s.to_xml())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -26,9 +23,8 @@ pub enum Statement {
     ReturnStatement(Option<Expression>),
     ExpressionStatement(Expression),
 }
-impl Statement {
-    pub fn statement_node(&self) {}
-    pub fn to_xml(&self) -> String {
+impl Node for Statement {
+    fn to_xml(&self) -> String {
         match self {
             Self::LetStatement(identifier, expression) => {
                 format!(
@@ -73,9 +69,8 @@ pub enum Expression {
     IntegerConstant(i32),
     Dummy,
 }
-impl Expression {
-    pub fn expession_node(&self) {}
-    pub fn to_xml(&self) -> String {
+impl Node for Expression {
+    fn to_xml(&self) -> String {
         match self {
             Self::Identifier(token) => {
                 format!("{}", token.get_xml_tag())
@@ -97,14 +92,16 @@ mod tests {
 
     #[test]
     fn let_statement_to_xml() {
-        let program = Node::Program(vec![Statement::LetStatement(
-            IdentifierToken {
-                identifier: "myVar".to_string(),
-            },
-            Expression::Identifier(IdentifierToken {
-                identifier: "anotherVar".to_string(),
-            }),
-        )]);
+        let program = Program {
+            statements: vec![Statement::LetStatement(
+                IdentifierToken {
+                    identifier: "myVar".to_string(),
+                },
+                Expression::Identifier(IdentifierToken {
+                    identifier: "anotherVar".to_string(),
+                }),
+            )],
+        };
 
         assert_eq!(
             program.to_xml(),
@@ -124,7 +121,9 @@ mod tests {
 
     #[test]
     fn return_statement_no_identifier_to_xml() {
-        let program = Node::Program(vec![Statement::ReturnStatement(None)]);
+        let program = Program {
+            statements: vec![Statement::ReturnStatement(None)],
+        };
 
         assert_eq!(
             program.to_xml(),
@@ -137,11 +136,13 @@ mod tests {
 
     #[test]
     fn return_statement_that_has_identifier_to_xml() {
-        let program = Node::Program(vec![Statement::ReturnStatement(Some(
-            Expression::Identifier(IdentifierToken {
-                identifier: "square".to_string(),
-            }),
-        ))]);
+        let program = Program {
+            statements: vec![Statement::ReturnStatement(Some(Expression::Identifier(
+                IdentifierToken {
+                    identifier: "square".to_string(),
+                },
+            )))],
+        };
 
         assert_eq!(
             program.to_xml(),
@@ -159,20 +160,24 @@ mod tests {
 
     #[test]
     fn identifier_expression_to_xml() {
-        let program = Node::Program(vec![Statement::ExpressionStatement(
-            Expression::Identifier(IdentifierToken {
-                identifier: "foo".to_string(),
-            }),
-        )]);
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::Identifier(
+                IdentifierToken {
+                    identifier: "foo".to_string(),
+                },
+            ))],
+        };
 
         assert_eq!(program.to_xml(), "<identifier> foo </identifier>")
     }
 
     #[test]
     fn integer_constant_expression_to_xml() {
-        let program = Node::Program(vec![Statement::ExpressionStatement(
-            Expression::IntegerConstant(10),
-        )]);
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::IntegerConstant(
+                10,
+            ))],
+        };
 
         assert_eq!(program.to_xml(), "<integerConstant> 10 </integerConstant>")
     }
