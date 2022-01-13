@@ -23,31 +23,51 @@ pub enum Keyword {
     RETURN,
 }
 
-impl Keyword {
-    pub fn get_xml_tag(&self) -> &str {
+pub trait Token {
+    fn get_xml_tag(&self) -> String;
+}
+
+impl Token for Keyword {
+    fn get_xml_tag(&self) -> String {
         match self {
-            Keyword::CLASS => "<keyword> class </keyword>",
-            Keyword::CONSTRUCTOR => "<keyword> constructor </keyword>",
-            Keyword::FUNCTION => "<keyword> function </keyword>",
-            Keyword::METHOD => "<keyword> method </keyword>",
-            Keyword::FIELD => "<keyword> field </keyword>",
-            Keyword::STATIC => "<keyword> static </keyword>",
-            Keyword::VAR => "<keyword> var </keyword>",
-            Keyword::INT => "<keyword> int </keyword>",
-            Keyword::CHAR => "<keyword> char </keyword>",
-            Keyword::BOOLEAN => "<keyword> boolean </keyword>",
-            Keyword::VOID => "<keyword> void </keyword>",
-            Keyword::TRUE => "<keyword> true </keyword>",
-            Keyword::FALSE => "<keyword> false </keyword>",
-            Keyword::NULL => "<keyword> null </keyword>",
-            Keyword::THIS => "<keyword> this </keyword>",
-            Keyword::LET => "<keyword> let </keyword>",
-            Keyword::DO => "<keyword> do </keyword>",
-            Keyword::IF => "<keyword> if </keyword>",
-            Keyword::ELSE => "<keyword> else </keyword>",
-            Keyword::WHILE => "<keyword> while </keyword>",
-            Keyword::RETURN => "<keyword> return </keyword>",
+            Keyword::CLASS => "<keyword> class </keyword>".to_string(),
+            Keyword::CONSTRUCTOR => "<keyword> constructor </keyword>".to_string(),
+            Keyword::FUNCTION => "<keyword> function </keyword>".to_string(),
+            Keyword::METHOD => "<keyword> method </keyword>".to_string(),
+            Keyword::FIELD => "<keyword> field </keyword>".to_string(),
+            Keyword::STATIC => "<keyword> static </keyword>".to_string(),
+            Keyword::VAR => "<keyword> var </keyword>".to_string(),
+            Keyword::INT => "<keyword> int </keyword>".to_string(),
+            Keyword::CHAR => "<keyword> char </keyword>".to_string(),
+            Keyword::BOOLEAN => "<keyword> boolean </keyword>".to_string(),
+            Keyword::VOID => "<keyword> void </keyword>".to_string(),
+            Keyword::TRUE => "<keyword> true </keyword>".to_string(),
+            Keyword::FALSE => "<keyword> false </keyword>".to_string(),
+            Keyword::NULL => "<keyword> null </keyword>".to_string(),
+            Keyword::THIS => "<keyword> this </keyword>".to_string(),
+            Keyword::LET => "<keyword> let </keyword>".to_string(),
+            Keyword::DO => "<keyword> do </keyword>".to_string(),
+            Keyword::IF => "<keyword> if </keyword>".to_string(),
+            Keyword::ELSE => "<keyword> else </keyword>".to_string(),
+            Keyword::WHILE => "<keyword> while </keyword>".to_string(),
+            Keyword::RETURN => "<keyword> return </keyword>".to_string(),
         }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct IdentifierToken {
+    pub identifier: String,
+}
+impl Token for IdentifierToken {
+    fn get_xml_tag(&self) -> String {
+        format!("<identifier> {} </identifier>", self.identifier)
+    }
+}
+
+impl Token for i32 {
+    fn get_xml_tag(&self) -> String {
+        format!("<integerConstant> {} </integerConstant>", self)
     }
 }
 
@@ -72,7 +92,7 @@ pub enum TokenType {
     GT,        // ">"
     ASSIGN,    // "="
     TILDE,     // ~
-    IDNETIFIER(String),
+    IDNETIFIER(IdentifierToken),
     NUMBER(i32),
     STRING(String),
     KEYWORD(Keyword),
@@ -104,7 +124,9 @@ impl TokenType {
             "else" => TokenType::KEYWORD(Keyword::ELSE),
             "while" => TokenType::KEYWORD(Keyword::WHILE),
             "return" => TokenType::KEYWORD(Keyword::RETURN),
-            _ => TokenType::IDNETIFIER(identify.to_string()),
+            _ => TokenType::IDNETIFIER(IdentifierToken {
+                identifier: identify.to_string(),
+            }),
         }
     }
 
@@ -129,9 +151,9 @@ impl TokenType {
             TokenType::GT => "<symbol> &gt; </symbol>".to_string(),
             TokenType::ASSIGN => "<symbol> = </symbol>".to_string(),
             TokenType::TILDE => "<symbol> ~ </symbol>".to_string(),
-            TokenType::KEYWORD(keyword) => keyword.get_xml_tag().to_string(),
-            TokenType::IDNETIFIER(ident) => format!("<identifier> {} </identifier>", ident),
-            TokenType::NUMBER(num) => format!("<integerConstant> {} </integerConstant>", num),
+            TokenType::KEYWORD(keyword) => keyword.get_xml_tag(),
+            TokenType::IDNETIFIER(ident) => ident.get_xml_tag(),
+            TokenType::NUMBER(num) => num.get_xml_tag(),
             TokenType::STRING(str) => format!("<stringConstant> {} </stringConstant>", str),
             _ => "".to_string(),
         }

@@ -51,7 +51,14 @@ impl<'a> Parser<'a> {
     fn parse_let_statement(&mut self) -> Statement {
         self.advance();
 
-        let identifier = Expression::Identifier(self.cur_token.clone());
+        let identifier = if let TokenType::IDNETIFIER(identifier_token) = &self.cur_token {
+            Expression::Identifier(identifier_token.clone())
+        } else {
+            panic!(
+                "failed to get identifier keyword by cur_token: {:?}",
+                self.cur_token
+            )
+        };
 
         self.advance();
 
@@ -101,18 +108,18 @@ impl<'a> Parser<'a> {
         left_expression
     }
 
-    fn parse_identifier(&self) -> Expression {
-        Expression::Identifier(self.cur_token.clone())
+    fn parse_identifier(&self, identifierToken: &IdentifierToken) -> Expression {
+        Expression::Identifier(identifierToken.clone())
     }
 
-    fn parse_integer_constant(&self) -> Expression {
-        Expression::IntegerConstant(self.cur_token.clone())
+    fn parse_integer_constant(&self, num: &i32) -> Expression {
+        Expression::IntegerConstant(num.clone())
     }
 
     fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
         match token {
-            TokenType::IDNETIFIER(_) => self.parse_identifier(),
-            TokenType::NUMBER(_) => self.parse_integer_constant(),
+            TokenType::IDNETIFIER(identifierToken) => self.parse_identifier(identifierToken),
+            TokenType::NUMBER(num) => self.parse_integer_constant(num),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
@@ -155,12 +162,18 @@ mod tests {
                     statements,
                     vec![
                         Statement::LetStatement(
-                            Expression::Identifier(TokenType::IDNETIFIER("x".to_string())),
-                            Expression::IntegerConstant(TokenType::NUMBER(5))
+                            Expression::Identifier(IdentifierToken {
+                                identifier: "x".to_string(),
+                            }),
+                            Expression::IntegerConstant(5)
                         ),
                         Statement::LetStatement(
-                            Expression::Identifier(TokenType::IDNETIFIER("y".to_string())),
-                            Expression::Identifier(TokenType::IDNETIFIER("x".to_string()))
+                            Expression::Identifier(IdentifierToken {
+                                identifier: "y".to_string(),
+                            }),
+                            Expression::Identifier(IdentifierToken {
+                                identifier: "x".to_string(),
+                            })
                         )
                     ]
                 );
@@ -187,12 +200,10 @@ mod tests {
                 assert_eq!(
                     statements,
                     vec![
-                        Statement::ReturnStatement(Some(Expression::IntegerConstant(
-                            TokenType::NUMBER(5)
-                        ))),
-                        Statement::ReturnStatement(Some(Expression::Identifier(
-                            TokenType::IDNETIFIER("x".to_string())
-                        ))),
+                        Statement::ReturnStatement(Some(Expression::IntegerConstant(5))),
+                        Statement::ReturnStatement(Some(Expression::Identifier(IdentifierToken {
+                            identifier: "x".to_string(),
+                        }))),
                         Statement::ReturnStatement(None)
                     ]
                 );
@@ -217,7 +228,9 @@ mod tests {
                 assert_eq!(
                     statements,
                     vec![Statement::ExpressionStatement(Expression::Identifier(
-                        TokenType::IDNETIFIER("foobar".to_string())
+                        IdentifierToken {
+                            identifier: "foobar".to_string(),
+                        }
                     ))]
                 );
             }
@@ -241,7 +254,7 @@ mod tests {
                 assert_eq!(
                     statements,
                     vec![Statement::ExpressionStatement(Expression::IntegerConstant(
-                        TokenType::NUMBER(5)
+                        5
                     ))]
                 );
             }

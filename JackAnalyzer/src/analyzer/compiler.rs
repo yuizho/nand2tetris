@@ -1,4 +1,4 @@
-use super::token::TokenType;
+use super::token::{Token, TokenType};
 use std::io::{BufWriter, Write};
 
 pub struct CompilationEngine<'a, T: Write> {
@@ -18,7 +18,7 @@ impl<'a, T: Write> CompilationEngine<'a, T> {
                 format!("{}\n", keyword.get_xml_tag())
             }
             TokenType::IDNETIFIER(identifier) => {
-                format!("{}\n", identifier)
+                format!("{}\n", identifier.get_xml_tag())
             }
             TokenType::STRING(str) => format!("{}\n", str),
             TokenType::NUMBER(num) => format!("{}\n", num),

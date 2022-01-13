@@ -1,4 +1,4 @@
-use super::token::{Keyword, TokenType};
+use super::token::{IdentifierToken, Keyword, Token, TokenType};
 
 #[derive(PartialEq, Debug)]
 pub enum Node {
@@ -69,8 +69,8 @@ impl Statement {
 
 #[derive(PartialEq, Debug)]
 pub enum Expression {
-    Identifier(TokenType),
-    IntegerConstant(TokenType),
+    Identifier(IdentifierToken),
+    IntegerConstant(i32),
     Dummy,
 }
 impl Expression {
@@ -81,8 +81,8 @@ impl Expression {
                 format!("{}", token.get_xml_tag())
             }
 
-            Self::IntegerConstant(token) => {
-                format!("{}", token.get_xml_tag())
+            Self::IntegerConstant(num) => {
+                format!("{}", num.get_xml_tag())
             }
 
             Self::Dummy => "dummy".to_string(),
@@ -98,8 +98,12 @@ mod tests {
     #[test]
     fn let_statement_to_xml() {
         let program = Node::Program(vec![Statement::LetStatement(
-            Expression::Identifier(TokenType::IDNETIFIER("myVar".to_string())),
-            Expression::Identifier(TokenType::IDNETIFIER("anotherVar".to_string())),
+            Expression::Identifier(IdentifierToken {
+                identifier: "myVar".to_string(),
+            }),
+            Expression::Identifier(IdentifierToken {
+                identifier: "anotherVar".to_string(),
+            }),
         )]);
 
         assert_eq!(
@@ -134,7 +138,9 @@ mod tests {
     #[test]
     fn return_statement_that_has_identifier_to_xml() {
         let program = Node::Program(vec![Statement::ReturnStatement(Some(
-            Expression::Identifier(TokenType::IDNETIFIER("square".to_string())),
+            Expression::Identifier(IdentifierToken {
+                identifier: "square".to_string(),
+            }),
         ))]);
 
         assert_eq!(
@@ -154,7 +160,9 @@ mod tests {
     #[test]
     fn identifier_expression_to_xml() {
         let program = Node::Program(vec![Statement::ExpressionStatement(
-            Expression::Identifier(TokenType::IDNETIFIER("foo".to_string())),
+            Expression::Identifier(IdentifierToken {
+                identifier: "foo".to_string(),
+            }),
         )]);
 
         assert_eq!(program.to_xml(), "<identifier> foo </identifier>")
@@ -163,7 +171,7 @@ mod tests {
     #[test]
     fn integer_constant_expression_to_xml() {
         let program = Node::Program(vec![Statement::ExpressionStatement(
-            Expression::IntegerConstant(TokenType::NUMBER(10)),
+            Expression::IntegerConstant(10),
         )]);
 
         assert_eq!(program.to_xml(), "<integerConstant> 10 </integerConstant>")
