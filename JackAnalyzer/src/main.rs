@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 
 mod analyzer;
 use analyzer::compiler::CompilationEngine;
+use analyzer::parser::Parser;
 use analyzer::tokenizer::JackTokenizer;
 
 fn main() {
@@ -20,12 +21,10 @@ fn main() {
 
     for file_name in file_names {
         let f = File::open(&file_name).expect("file not found");
-
         let mut tokenizer = JackTokenizer::new(f);
-        while tokenizer.has_more_tokens() {
-            let token = tokenizer.advance();
-            compilation_engine.compile(token);
-        }
+        let mut parser = Parser::new(&mut tokenizer);
+        let program_ast = parser.parse_program();
+        compilation_engine.compile(program_ast);
     }
 
     buf_writer.flush().expect("failed to flush");

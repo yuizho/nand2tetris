@@ -1,6 +1,7 @@
-use super::token::{Token, TokenType};
+use super::ast::{Node, Program};
 use std::io::{BufWriter, Write};
 
+// TODO: consider changing this struct's name
 pub struct CompilationEngine<'a, T: Write> {
     buf_writer: &'a mut BufWriter<T>,
 }
@@ -12,22 +13,10 @@ impl<'a, T: Write> CompilationEngine<'a, T> {
         }
     }
 
-    pub fn compile(&mut self, token: TokenType) {
-        let tag = match token {
-            TokenType::KEYWORD(keyword) => {
-                format!("{}\n", keyword.get_xml_tag())
-            }
-            TokenType::IDNETIFIER(identifier) => {
-                format!("{}\n", identifier.get_xml_tag())
-            }
-            TokenType::STRING(str) => format!("{}\n", str),
-            TokenType::NUMBER(num) => format!("{}\n", num),
-            TokenType::COMMENTS => "".to_string(),
-            TokenType::EOF => "".to_string(),
-            symbol => format!("{}\n", symbol.get_xml_tag()),
-        };
+    pub fn compile(&mut self, program_ast: Program) {
+        let xml = program_ast.to_xml();
         self.buf_writer
-            .write(tag.as_bytes())
+            .write(xml.as_bytes())
             .expect("failed to write tags");
     }
 }
