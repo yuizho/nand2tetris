@@ -128,6 +128,7 @@ mod tests {
         )
     }
 
+    #[test]
     fn let_statement_for_array_to_xml() {
         let program = Program {
             statements: vec![Statement::LetStatement(
