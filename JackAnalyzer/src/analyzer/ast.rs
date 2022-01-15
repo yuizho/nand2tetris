@@ -78,6 +78,7 @@ impl Node for Statement {
 pub enum Expression {
     Identifier(IdentifierToken),
     IntegerConstant(i32),
+    StringConstant(String),
 }
 impl Node for Expression {
     fn to_xml(&self) -> String {
@@ -88,6 +89,10 @@ impl Node for Expression {
 
             Self::IntegerConstant(num) => {
                 format!("{}", num.get_xml_tag())
+            }
+
+            Self::StringConstant(s) => {
+                format!("{}", s.get_xml_tag())
             }
         }
     }
@@ -224,5 +229,19 @@ mod tests {
         };
 
         assert_eq!(program.to_xml(), "<integerConstant> 10 </integerConstant>")
+    }
+
+    #[test]
+    fn string_constant_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::StringConstant(
+                "str value!!".to_string(),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<stringConstant> str value!! </stringConstant>"
+        )
     }
 }

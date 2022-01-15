@@ -128,10 +128,15 @@ impl<'a> Parser<'a> {
         Expression::IntegerConstant(num.clone())
     }
 
+    fn parse_string_constant(&self, str_value: &String) -> Expression {
+        Expression::StringConstant(str_value.clone())
+    }
+
     fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
         match token {
             TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
+            TokenType::STRING(str_value) => self.parse_string_constant(str_value),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
@@ -160,13 +165,14 @@ mod tests {
         let y = x;
         let z[i] = y;
         let z[0] =  y;
+        let z = \"foo\";
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        assert_eq!(actual.statements.len(), 4);
+        assert_eq!(actual.statements.len(), 5);
         assert_eq!(
             actual.statements,
             vec![
@@ -205,7 +211,14 @@ mod tests {
                     Expression::Identifier(IdentifierToken {
                         identifier: "y".to_string(),
                     })
-                )
+                ),
+                Statement::LetStatement(
+                    IdentifierToken {
+                        identifier: "z".to_string(),
+                    },
+                    None,
+                    Expression::StringConstant("foo".to_string())
+                ),
             ]
         );
     }
@@ -271,6 +284,25 @@ mod tests {
             actual.statements,
             vec![Statement::ExpressionStatement(Expression::IntegerConstant(
                 5
+            ))]
+        );
+    }
+
+    #[test]
+    fn string_constant_expression() {
+        let source = "
+        \"str value!!\";
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(
+            actual.statements,
+            vec![Statement::ExpressionStatement(Expression::StringConstant(
+                "str value!!".to_string()
             ))]
         );
     }

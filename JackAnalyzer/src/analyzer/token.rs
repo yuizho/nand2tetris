@@ -71,6 +71,12 @@ impl Token for i32 {
     }
 }
 
+impl Token for String {
+    fn get_xml_tag(&self) -> String {
+        format!("<stringConstant> {} </stringConstant>", self)
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum TokenType {
     LBRACE,    // "{"
