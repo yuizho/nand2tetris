@@ -2,12 +2,6 @@ use super::ast::*;
 use super::token::*;
 use super::tokenizer::*;
 
-#[derive(PartialEq, PartialOrd, Debug)]
-enum Priority {
-    LOWEST = 0,
-    EQUALS = 1,
-}
-
 pub struct Parser<'a> {
     tokenizer: &'a mut JackTokenizer,
     cur_token: TokenType,
@@ -64,7 +58,7 @@ impl<'a> Parser<'a> {
 
         let index_expression = if self.current_token_is(TokenType::LBRACKET) {
             self.advance();
-            let expression = self.parse_expression(Priority::LOWEST);
+            let expression = self.parse_expression();
             self.advance();
             if !self.current_token_is(TokenType::RBRACKET) {
                 panic!("unexpected syntax of let: {}", self.cur_token.get_xml_tag());
@@ -81,7 +75,7 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
-        let expression = self.parse_expression(Priority::LOWEST);
+        let expression = self.parse_expression();
 
         while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
             self.advance();
@@ -96,7 +90,7 @@ impl<'a> Parser<'a> {
         let expression = if self.current_token_is(TokenType::SEMICOLON) {
             None
         } else {
-            Some(self.parse_expression(Priority::LOWEST))
+            Some(self.parse_expression())
         };
 
         while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
@@ -107,7 +101,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression_statement(&mut self) -> Statement {
-        let expression = self.parse_expression(Priority::LOWEST);
+        let expression = self.parse_expression();
 
         while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
             self.advance();
@@ -115,8 +109,8 @@ impl<'a> Parser<'a> {
         Statement::ExpressionStatement(expression)
     }
 
-    fn parse_expression(&self, priority: Priority) -> Expression {
-        let left_expression = self.parse_prefix_expression(&self.cur_token);
+    fn parse_expression(&mut self) -> Expression {
+        let left_expression = self.parse_prefix_expression();
         left_expression
     }
 
@@ -132,11 +126,32 @@ impl<'a> Parser<'a> {
         Expression::new(Term::StringConstant(str_value.clone()))
     }
 
-    fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
+    fn parse_unary_op_constant(&mut self) -> Expression {
+        let op = self.cur_token.clone();
+
+        self.advance();
+
+        let term = match self.parse_expression() {
+            Expression {
+                left_term,
+                binary_op: None,
+            } => left_term,
+            Expression {
+                left_term: _,
+                binary_op: Some(_),
+            } => panic!("unary op expression can't have expression."),
+        };
+
+        Expression::new(Term::UnaryOp(UnaryOpToken::new(op), Box::new(term)))
+    }
+
+    fn parse_prefix_expression(&mut self) -> Expression {
+        let token = &self.cur_token;
         match token {
             TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
             TokenType::STRING(str_value) => self.parse_string_constant(str_value),
+            TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
@@ -306,6 +321,35 @@ mod tests {
             vec![Statement::ExpressionStatement(Expression::new(
                 Term::StringConstant("str value!!".to_string())
             ))]
+        );
+    }
+
+    #[test]
+    fn unary_op_expression() {
+        let source = "
+        -1;
+        ~i;
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
+                    UnaryOpToken::new(TokenType::MINUS),
+                    Box::new(Term::IntegerConstant(1))
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
+                    UnaryOpToken::new(TokenType::TILDE),
+                    Box::new(Term::Identifier(IdentifierToken {
+                        identifier: "i".to_string(),
+                    }))
+                ))),
+            ]
         );
     }
 }
