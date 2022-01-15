@@ -70,8 +70,8 @@ impl Node for Statement {
 
 #[derive(PartialEq, Debug)]
 pub struct Expression {
-    left_term: Term,
-    binary_op: Option<BinaryOp>,
+    pub left_term: Term,
+    pub binary_op: Option<BinaryOp>,
 }
 impl Expression {
     pub fn new(term: Term) -> Self {
@@ -108,11 +108,25 @@ impl Node for BinaryOp {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct UnaryOpToken {
+    token: TokenType,
+}
+impl UnaryOpToken {
+    pub fn new(token: TokenType) -> Self {
+        match token {
+            TokenType::TILDE | TokenType::MINUS => UnaryOpToken { token },
+            _ => panic!("unexpected token type is used as unary op: {:?}", token),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Term {
     Identifier(IdentifierToken),
     IntegerConstant(i32),
     StringConstant(String),
     //BynaryOp(TokenType, Expression), // TODO: make OpToken
+    UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
     fn to_xml(&self) -> String {
@@ -128,6 +142,12 @@ impl Node for Term {
             Self::StringConstant(s) => {
                 format!("<term>\n{}\n</term>", s.get_xml_tag())
             }
+
+            Self::UnaryOp(op, term) => format!(
+                "<term>\n{}\n{}\n</term>",
+                op.token.get_xml_tag(),
+                term.to_xml()
+            ),
         }
     }
 }
@@ -277,25 +297,6 @@ mod tests {
     }
 
     #[test]
-    fn integer_constant_expression_to_xml() {
-        let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression {
-                left_term: Term::IntegerConstant(10),
-                binary_op: None,
-            })],
-        };
-
-        assert_eq!(
-            program.to_xml(),
-            "<expression>
-<term>
-<integerConstant> 10 </integerConstant>
-</term>
-</expression>"
-        )
-    }
-
-    #[test]
     fn string_constant_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression {
@@ -309,6 +310,61 @@ mod tests {
             "<expression>
 <term>
 <stringConstant> str value!! </stringConstant>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn unary_op_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::StringConstant("str value!!".to_string()),
+                binary_op: None,
+            })],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<stringConstant> str value!! </stringConstant>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn integer_constant_expression_to_xml() {
+        let program = Program {
+            statements: vec![
+                Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
+                    UnaryOpToken::new(TokenType::MINUS),
+                    Box::new(Term::IntegerConstant(1)),
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
+                    UnaryOpToken::new(TokenType::TILDE),
+                    Box::new(Term::IntegerConstant(10)),
+                ))),
+            ],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<symbol> - </symbol>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</term>
+</expression>
+<expression>
+<term>
+<symbol> ~ </symbol>
+<term>
+<integerConstant> 10 </integerConstant>
+</term>
 </term>
 </expression>"
         )
