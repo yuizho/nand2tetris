@@ -70,8 +70,16 @@ impl Node for Statement {
 
 #[derive(PartialEq, Debug)]
 pub struct Expression {
-    pub left_term: Term,
-    pub binary_op: Option<BinaryOp>,
+    left_term: Term,
+    binary_op: Option<BinaryOp>,
+}
+impl Expression {
+    pub fn new(term: Term) -> Self {
+        Expression {
+            left_term: term,
+            binary_op: None,
+        }
+    }
 }
 impl Node for Expression {
     fn to_xml(&self) -> String {
