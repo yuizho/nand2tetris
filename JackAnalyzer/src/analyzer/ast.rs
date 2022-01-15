@@ -193,7 +193,7 @@ mod tests {
 <expression>
 <term>
 <identifier> i </identifier>
-`</term>
+</term>
 </expression>
 <symbol> ] </symbol>
 <symbol> = </symbol>
