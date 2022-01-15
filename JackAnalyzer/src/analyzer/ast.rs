@@ -26,15 +26,15 @@ pub enum Statement {
 impl Node for Statement {
     fn to_xml(&self) -> String {
         match self {
-            Self::LetStatement(identifier, index_expression, expression) => {
+            Self::LetStatement(var_name, index_expression, expression) => {
                 format!(
-                    "<letStatement>\n  {}\n  {}\n  {}{}\n  {}\n  {}\n</letStatement>",
+                    "<letStatement>\n{}\n{}\n{}{}\n{}\n{}\n</letStatement>",
                     TokenType::KEYWORD(Keyword::LET).get_xml_tag(),
-                    identifier.get_xml_tag(),
+                    var_name.get_xml_tag(),
                     match index_expression {
                         Some(exp) => {
                             format!(
-                                "{}\n  {}\n  {}\n  ",
+                                "{}\n{}\n{}\n",
                                 TokenType::LBRACKET.get_xml_tag(),
                                 exp.to_xml(),
                                 TokenType::RBRACKET.get_xml_tag()
@@ -43,27 +43,21 @@ impl Node for Statement {
                         None => "".to_string(),
                     },
                     TokenType::ASSIGN.get_xml_tag(),
-                    format!(
-                        "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
-                        expression.to_xml()
-                    ),
+                    format!("{}", expression.to_xml()),
                     TokenType::SEMICOLON.get_xml_tag()
                 )
             }
 
             Self::ReturnStatement(Some(expression)) => format!(
-                "<returnStatement>\n  {}\n  {}\n  {}\n</returnStatement>",
+                "<returnStatement>\n{}\n{}\n{}\n</returnStatement>",
                 TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
-                format!(
-                    "<expression>\n    <term>\n      {}\n    </term>\n  </expression>",
-                    expression.to_xml()
-                ),
+                format!("{}", expression.to_xml()),
                 TokenType::SEMICOLON.get_xml_tag()
             ),
 
             Self::ReturnStatement(None) => {
                 format!(
-                    "<returnStatement>\n  {}\n  {}\n</returnStatement>",
+                    "<returnStatement>\n{}\n{}\n</returnStatement>",
                     TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
                     TokenType::SEMICOLON.get_xml_tag()
                 )
@@ -75,24 +69,56 @@ impl Node for Statement {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum Expression {
-    Identifier(IdentifierToken),
-    IntegerConstant(i32),
-    StringConstant(String),
+pub struct Expression {
+    pub left_term: Term,
+    pub binary_op: Option<BinaryOp>,
 }
 impl Node for Expression {
     fn to_xml(&self) -> String {
+        let binary_op_tag = match &self.binary_op {
+            Some(binary_op) => binary_op.to_xml(),
+            None => "".to_string(),
+        };
+        format!(
+            "<expression>\n{}\n{}</expression>",
+            self.left_term.to_xml(),
+            binary_op_tag
+        )
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct BinaryOp {
+    op_token: TokenType,
+    right_term: Term,
+}
+impl Node for BinaryOp {
+    fn to_xml(&self) -> String {
+        // TODO: needs impl
+        "".to_string()
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum Term {
+    Identifier(IdentifierToken),
+    IntegerConstant(i32),
+    StringConstant(String),
+    //BynaryOp(TokenType, Expression), // TODO: make OpToken
+}
+impl Node for Term {
+    fn to_xml(&self) -> String {
         match self {
             Self::Identifier(token) => {
-                format!("{}", token.get_xml_tag())
+                format!("<term>\n{}\n</term>", token.get_xml_tag())
             }
 
             Self::IntegerConstant(num) => {
-                format!("{}", num.get_xml_tag())
+                format!("<term>\n{}\n</term>", num.get_xml_tag())
             }
 
             Self::StringConstant(s) => {
-                format!("{}", s.get_xml_tag())
+                format!("<term>\n{}\n</term>", s.get_xml_tag())
             }
         }
     }
@@ -111,24 +137,27 @@ mod tests {
                     identifier: "myVar".to_string(),
                 },
                 None,
-                Expression::Identifier(IdentifierToken {
-                    identifier: "anotherVar".to_string(),
-                }),
+                Expression {
+                    left_term: Term::Identifier(IdentifierToken {
+                        identifier: "anotherVar".to_string(),
+                    }),
+                    binary_op: None,
+                },
             )],
         };
 
         assert_eq!(
             program.to_xml(),
             "<letStatement>
-  <keyword> let </keyword>
-  <identifier> myVar </identifier>
-  <symbol> = </symbol>
-  <expression>
-    <term>
-      <identifier> anotherVar </identifier>
-    </term>
-  </expression>
-  <symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> myVar </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<identifier> anotherVar </identifier>
+</term>
+</expression>
+<symbol> ; </symbol>
 </letStatement>"
         )
     }
@@ -140,30 +169,40 @@ mod tests {
                 IdentifierToken {
                     identifier: "myVar".to_string(),
                 },
-                Some(Expression::Identifier(IdentifierToken {
-                    identifier: "i".to_string(),
-                })),
-                Expression::Identifier(IdentifierToken {
-                    identifier: "anotherVar".to_string(),
+                Some(Expression {
+                    left_term: Term::Identifier(IdentifierToken {
+                        identifier: "i".to_string(),
+                    }),
+                    binary_op: None,
                 }),
+                Expression {
+                    left_term: Term::Identifier(IdentifierToken {
+                        identifier: "anotherVar".to_string(),
+                    }),
+                    binary_op: None,
+                },
             )],
         };
 
         assert_eq!(
             program.to_xml(),
             "<letStatement>
-  <keyword> let </keyword>
-  <identifier> myVar </identifier>
-  <symbol> [ </symbol>
-  <identifier> i </identifier>
-  <symbol> ] </symbol>
-  <symbol> = </symbol>
-  <expression>
-    <term>
-      <identifier> anotherVar </identifier>
-    </term>
-  </expression>
-  <symbol> ; </symbol>
+<keyword> let </keyword>
+<identifier> myVar </identifier>
+<symbol> [ </symbol>
+<expression>
+<term>
+<identifier> i </identifier>
+`</term>
+</expression>
+<symbol> ] </symbol>
+<symbol> = </symbol>
+<expression>
+<term>
+<identifier> anotherVar </identifier>
+</term>
+</expression>
+<symbol> ; </symbol>
 </letStatement>"
         )
     }
@@ -177,8 +216,8 @@ mod tests {
         assert_eq!(
             program.to_xml(),
             "<returnStatement>
-  <keyword> return </keyword>
-  <symbol> ; </symbol>
+<keyword> return </keyword>
+<symbol> ; </symbol>
 </returnStatement>"
         )
     }
@@ -186,23 +225,24 @@ mod tests {
     #[test]
     fn return_statement_that_has_identifier_to_xml() {
         let program = Program {
-            statements: vec![Statement::ReturnStatement(Some(Expression::Identifier(
-                IdentifierToken {
+            statements: vec![Statement::ReturnStatement(Some(Expression {
+                left_term: Term::Identifier(IdentifierToken {
                     identifier: "square".to_string(),
-                },
-            )))],
+                }),
+                binary_op: None,
+            }))],
         };
 
         assert_eq!(
             program.to_xml(),
             "<returnStatement>
-  <keyword> return </keyword>
-  <expression>
-    <term>
-      <identifier> square </identifier>
-    </term>
-  </expression>
-  <symbol> ; </symbol>
+<keyword> return </keyword>
+<expression>
+<term>
+<identifier> square </identifier>
+</term>
+</expression>
+<symbol> ; </symbol>
 </returnStatement>"
         )
     }
@@ -210,38 +250,59 @@ mod tests {
     #[test]
     fn identifier_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::Identifier(
-                IdentifierToken {
+            statements: vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::Identifier(IdentifierToken {
                     identifier: "foo".to_string(),
-                },
-            ))],
+                }),
+                binary_op: None,
+            })],
         };
 
-        assert_eq!(program.to_xml(), "<identifier> foo </identifier>")
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> foo </identifier>
+</term>
+</expression>"
+        )
     }
 
     #[test]
     fn integer_constant_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::IntegerConstant(
-                10,
-            ))],
+            statements: vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::IntegerConstant(10),
+                binary_op: None,
+            })],
         };
 
-        assert_eq!(program.to_xml(), "<integerConstant> 10 </integerConstant>")
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<integerConstant> 10 </integerConstant>
+</term>
+</expression>"
+        )
     }
 
     #[test]
     fn string_constant_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::StringConstant(
-                "str value!!".to_string(),
-            ))],
+            statements: vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::StringConstant("str value!!".to_string()),
+                binary_op: None,
+            })],
         };
 
         assert_eq!(
             program.to_xml(),
-            "<stringConstant> str value!! </stringConstant>"
+            "<expression>
+<term>
+<stringConstant> str value!! </stringConstant>
+</term>
+</expression>"
         )
     }
 }

@@ -121,15 +121,24 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_identifier(&self, identifier_token: &IdentifierToken) -> Expression {
-        Expression::Identifier(identifier_token.clone())
+        Expression {
+            left_term: Term::Identifier(identifier_token.clone()),
+            binary_op: None,
+        }
     }
 
     fn parse_integer_constant(&self, num: &i32) -> Expression {
-        Expression::IntegerConstant(num.clone())
+        Expression {
+            left_term: Term::IntegerConstant(num.clone()),
+            binary_op: None,
+        }
     }
 
     fn parse_string_constant(&self, str_value: &String) -> Expression {
-        Expression::StringConstant(str_value.clone())
+        Expression {
+            left_term: Term::StringConstant(str_value.clone()),
+            binary_op: None,
+        }
     }
 
     fn parse_prefix_expression(&self, token: &TokenType) -> Expression {
@@ -181,43 +190,64 @@ mod tests {
                         identifier: "x".to_string(),
                     },
                     None,
-                    Expression::IntegerConstant(5)
+                    Expression {
+                        left_term: Term::IntegerConstant(5),
+                        binary_op: None
+                    }
                 ),
                 Statement::LetStatement(
                     IdentifierToken {
                         identifier: "y".to_string(),
                     },
                     None,
-                    Expression::Identifier(IdentifierToken {
-                        identifier: "x".to_string(),
-                    })
+                    Expression {
+                        left_term: Term::Identifier(IdentifierToken {
+                            identifier: "x".to_string(),
+                        }),
+                        binary_op: None,
+                    }
                 ),
                 Statement::LetStatement(
                     IdentifierToken {
                         identifier: "z".to_string(),
                     },
-                    Some(Expression::Identifier(IdentifierToken {
-                        identifier: "i".to_string(),
-                    })),
-                    Expression::Identifier(IdentifierToken {
-                        identifier: "y".to_string(),
-                    })
+                    Some(Expression {
+                        left_term: Term::Identifier(IdentifierToken {
+                            identifier: "i".to_string(),
+                        }),
+                        binary_op: None,
+                    }),
+                    Expression {
+                        left_term: Term::Identifier(IdentifierToken {
+                            identifier: "y".to_string(),
+                        }),
+                        binary_op: None,
+                    }
                 ),
                 Statement::LetStatement(
                     IdentifierToken {
                         identifier: "z".to_string(),
                     },
-                    Some(Expression::IntegerConstant(0)),
-                    Expression::Identifier(IdentifierToken {
-                        identifier: "y".to_string(),
-                    })
+                    Some(Expression {
+                        left_term: Term::IntegerConstant(0),
+                        binary_op: None
+                    }),
+                    Expression {
+                        left_term: Term::Identifier(IdentifierToken {
+                            identifier: "y".to_string(),
+                        }),
+                        binary_op: None
+                    }
                 ),
                 Statement::LetStatement(
                     IdentifierToken {
                         identifier: "z".to_string(),
                     },
                     None,
-                    Expression::StringConstant("foo".to_string())
+                    Expression {
+                        left_term: Term::StringConstant("foo".to_string()),
+                        binary_op: None
+                    }
                 ),
             ]
         );
@@ -239,10 +269,16 @@ mod tests {
         assert_eq!(
             actual.statements,
             vec![
-                Statement::ReturnStatement(Some(Expression::IntegerConstant(5))),
-                Statement::ReturnStatement(Some(Expression::Identifier(IdentifierToken {
-                    identifier: "x".to_string(),
-                }))),
+                Statement::ReturnStatement(Some(Expression {
+                    left_term: Term::IntegerConstant(5),
+                    binary_op: None
+                })),
+                Statement::ReturnStatement(Some(Expression {
+                    left_term: Term::Identifier(IdentifierToken {
+                        identifier: "x".to_string(),
+                    }),
+                    binary_op: None
+                })),
                 Statement::ReturnStatement(None)
             ]
         );
@@ -261,11 +297,12 @@ mod tests {
         assert_eq!(actual.statements.len(), 1);
         assert_eq!(
             actual.statements,
-            vec![Statement::ExpressionStatement(Expression::Identifier(
-                IdentifierToken {
+            vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::Identifier(IdentifierToken {
                     identifier: "foobar".to_string(),
-                }
-            ))]
+                }),
+                binary_op: None
+            }),]
         );
     }
 
@@ -282,9 +319,10 @@ mod tests {
         assert_eq!(actual.statements.len(), 1);
         assert_eq!(
             actual.statements,
-            vec![Statement::ExpressionStatement(Expression::IntegerConstant(
-                5
-            ))]
+            vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::IntegerConstant(5),
+                binary_op: None,
+            })]
         );
     }
 
@@ -301,9 +339,10 @@ mod tests {
         assert_eq!(actual.statements.len(), 1);
         assert_eq!(
             actual.statements,
-            vec![Statement::ExpressionStatement(Expression::StringConstant(
-                "str value!!".to_string()
-            ))]
+            vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::StringConstant("str value!!".to_string()),
+                binary_op: None
+            })]
         );
     }
 }
