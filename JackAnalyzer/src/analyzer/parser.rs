@@ -144,17 +144,7 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
-        // TODO: should use parse_prefix_expression?
-        let term = match self.parse_expression() {
-            Expression {
-                left_term,
-                binary_op: None,
-            } => left_term,
-            Expression {
-                left_term: _,
-                binary_op: Some(_),
-            } => panic!("unary op expression can't have expression."),
-        };
+        let term = self.parse_term();
 
         Term::UnaryOp(UnaryOpToken::new(op), Box::new(term))
     }
