@@ -5,18 +5,23 @@ use super::tokenizer::*;
 pub struct Parser<'a> {
     tokenizer: &'a mut JackTokenizer,
     cur_token: TokenType,
+    peek_token: TokenType,
 }
 impl<'a> Parser<'a> {
     pub fn new(tokenizer: &'a mut JackTokenizer) -> Self {
         let cur_token = tokenizer.advance();
+        let peek_token = tokenizer.advance();
         Parser {
             tokenizer,
             cur_token,
+            peek_token,
         }
     }
 
     pub fn advance(&mut self) {
-        self.cur_token = self.tokenizer.advance()
+        // TODO: should use reference
+        self.cur_token = self.peek_token.clone();
+        self.peek_token = self.tokenizer.advance();
     }
 
     pub fn parse_program(&mut self) -> Program {
@@ -111,7 +116,15 @@ impl<'a> Parser<'a> {
 
     fn parse_expression(&mut self) -> Expression {
         let left_term = self.parse_prefix_expression();
-        Expression::new(left_term)
+
+        // TODO: op precedence is not implemented
+        match self.parse_infix_expression() {
+            Some(binary_op) => {
+                self.advance();
+                Expression::new_binary_op(left_term, binary_op)
+            }
+            None => Expression::new(left_term),
+        }
     }
 
     fn parse_identifier(&self, identifier_token: &IdentifierToken) -> Term {
@@ -131,6 +144,7 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
+        // TODO: should use parse_prefix_expression?
         let term = match self.parse_expression() {
             Expression {
                 left_term,
@@ -156,6 +170,21 @@ impl<'a> Parser<'a> {
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
             ),
+        }
+    }
+
+    fn parse_infix_expression(&mut self) -> Option<BinaryOp> {
+        if BinaryOpToken::is_binary_op_token_type(&self.peek_token) {
+            self.advance();
+            let op = BinaryOpToken::new(self.cur_token.clone());
+
+            self.advance();
+
+            let right_term = self.parse_prefix_expression();
+
+            Some(BinaryOp::new(op, right_term))
+        } else {
+            None
         }
     }
 
@@ -327,6 +356,36 @@ mod tests {
                     UnaryOpToken::new(TokenType::TILDE),
                     Box::new(Term::Identifier(IdentifierToken::new("i".to_string(),)))
                 ))),
+            ]
+        );
+    }
+
+    #[test]
+    fn bianry_op_expression() {
+        let source = "
+        1 + i;
+        2 > 3;
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ExpressionStatement(Expression::new_binary_op(
+                    Term::IntegerConstant(1),
+                    BinaryOp::new(
+                        BinaryOpToken::new(TokenType::PLUS),
+                        Term::Identifier(IdentifierToken::new("i".to_string()))
+                    )
+                )),
+                Statement::ExpressionStatement(Expression::new_binary_op(
+                    Term::IntegerConstant(2),
+                    BinaryOp::new(BinaryOpToken::new(TokenType::GT), Term::IntegerConstant(3),)
+                ))
             ]
         );
     }

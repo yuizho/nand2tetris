@@ -144,6 +144,14 @@ pub struct BinaryOpToken {
 }
 impl BinaryOpToken {
     pub fn new(token: TokenType) -> Self {
+        if BinaryOpToken::is_binary_op_token_type(&token) {
+            BinaryOpToken { token }
+        } else {
+            panic!("unexpected token type is used as binary op: {:?}", token)
+        }
+    }
+
+    pub fn is_binary_op_token_type(token: &TokenType) -> bool {
         match token {
             TokenType::PLUS
             | TokenType::MINUS
@@ -153,8 +161,8 @@ impl BinaryOpToken {
             | TokenType::OR
             | TokenType::GT
             | TokenType::LT
-            | TokenType::ASSIGN => BinaryOpToken { token },
-            _ => panic!("unexpected token type is used as binary op: {:?}", token),
+            | TokenType::ASSIGN => true,
+            _ => false,
         }
     }
 }
