@@ -35,14 +35,8 @@ impl<'a> Parser<'a> {
 
     fn parse_statement(&mut self) -> Statement {
         match &self.cur_token {
-            TokenType::KEYWORD(keyword) => match keyword {
-                Keyword::LET => self.parse_let_statement(),
-                Keyword::RETURN => self.parse_return_statement(),
-                _ => panic!(
-                    "unexpected token to parse statement(keyword): {}",
-                    self.cur_token.get_xml_tag()
-                ),
-            },
+            TokenType::KEYWORD(Keyword::LET) => self.parse_let_statement(),
+            TokenType::KEYWORD(Keyword::RETURN) => self.parse_return_statement(),
             _ => self.parse_expression_statement(),
         }
     }
@@ -139,6 +133,10 @@ impl<'a> Parser<'a> {
         Term::StringConstant(str_value.clone())
     }
 
+    fn parse_keyword_constant(&self, keyword: KeywordConstantToken) -> Term {
+        Term::KeywordConstant(keyword)
+    }
+
     fn parse_unary_op_constant(&mut self) -> Term {
         let op = self.cur_token.clone();
 
@@ -155,6 +153,9 @@ impl<'a> Parser<'a> {
             TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
             TokenType::STRING(str_value) => self.parse_string_constant(str_value),
+            TokenType::KEYWORD(keyword) => {
+                self.parse_keyword_constant(KeywordConstantToken::new(keyword.clone()))
+            }
             TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
@@ -332,6 +333,35 @@ mod tests {
             vec![Statement::ExpressionStatement(Expression::new(
                 Term::StringConstant("str value!!".to_string())
             ))]
+        );
+    }
+
+    #[test]
+    fn keyword_constant_expression() {
+        let source = "
+        this;
+        null;
+        false;
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 3);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
+                    KeywordConstantToken::new(Keyword::THIS)
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
+                    KeywordConstantToken::new(Keyword::NULL)
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
+                    KeywordConstantToken::new(Keyword::FALSE)
+                )))
+            ]
         );
     }
 

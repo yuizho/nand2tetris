@@ -169,18 +169,17 @@ impl BinaryOpToken {
 
 #[derive(PartialEq, Debug)]
 pub struct KeywordConstantToken {
-    token: TokenType,
+    keyword: Keyword,
 }
 impl KeywordConstantToken {
-    pub fn new(token: TokenType) -> Self {
-        match token {
-            TokenType::KEYWORD(Keyword::TRUE)
-            | TokenType::KEYWORD(Keyword::FALSE)
-            | TokenType::KEYWORD(Keyword::NULL)
-            | TokenType::KEYWORD(Keyword::THIS) => KeywordConstantToken { token },
+    pub fn new(keyword: Keyword) -> Self {
+        match keyword {
+            Keyword::TRUE | Keyword::FALSE | Keyword::NULL | Keyword::THIS => {
+                KeywordConstantToken { keyword }
+            }
             _ => panic!(
-                "unexpected token type is used as keyword ocnstant: {:?}",
-                token
+                "unexpected keyword is used as keyword ocnstant: {:?}",
+                keyword
             ),
         }
     }
@@ -210,7 +209,7 @@ impl Node for Term {
             }
 
             Self::KeywordConstant(keyword) => {
-                format!("<term>\n{}\n</term>", keyword.token.get_xml_tag())
+                format!("<term>\n{}\n</term>", keyword.keyword.get_xml_tag())
             }
 
             Self::UnaryOp(op, term) => format!(
@@ -401,7 +400,7 @@ mod tests {
     fn keyword_constant_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::KeywordConstant(KeywordConstantToken::new(TokenType::KEYWORD(Keyword::TRUE))),
+                Term::KeywordConstant(KeywordConstantToken::new(Keyword::TRUE)),
             ))],
         };
 
