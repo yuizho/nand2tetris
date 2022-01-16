@@ -20,6 +20,7 @@ impl Node for Program {
 #[derive(PartialEq, Debug)]
 pub enum Statement {
     LetStatement(IdentifierToken, Option<Expression>, Expression),
+    WhileStatement(Expression, Vec<Statement>),
     ReturnStatement(Option<Expression>),
     ExpressionStatement(Expression),
 }
@@ -45,6 +46,26 @@ impl Node for Statement {
                     TokenType::ASSIGN.get_xml_tag(),
                     format!("{}", expression.to_xml()),
                     TokenType::SEMICOLON.get_xml_tag()
+                )
+            }
+
+            Self::WhileStatement(expression, statements) => {
+                format!(
+                    "<whileStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n</whileStatement>",
+                    Keyword::WHILE.get_xml_tag(),
+                    TokenType::LPAREN.get_xml_tag(),
+                    expression.to_xml(),
+                    TokenType::RPAREN.get_xml_tag(),
+                    TokenType::LBRACE.get_xml_tag(),
+                    format!(
+                        "<statements>\n{}\n</statements>",
+                        statements
+                            .iter()
+                            .map(|s| s.to_xml())
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    ),
+                    TokenType::RBRACE.get_xml_tag(),
                 )
             }
 
@@ -332,6 +353,69 @@ mod tests {
 </expression>
 <symbol> ; </symbol>
 </letStatement>"
+        )
+    }
+
+    #[test]
+    fn while_statement_to_xml() {
+        let program = Program {
+            statements: vec![Statement::WhileStatement(
+                Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
+                    Keyword::TRUE,
+                ))),
+                vec![
+                    Statement::LetStatement(
+                        IdentifierToken::new("i".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(1)),
+                    ),
+                    Statement::LetStatement(
+                        IdentifierToken::new("j".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(2)),
+                    ),
+                ],
+            )],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<whileStatement>
+<keyword> while </keyword>
+<symbol> ( </symbol>
+<expression>
+<term>
+<keyword> true </keyword>
+</term>
+</expression>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> i </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<letStatement>
+<keyword> let </keyword>
+<identifier> j </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 2 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+</statements>
+<symbol> } </symbol>
+</whileStatement>"
         )
     }
 
