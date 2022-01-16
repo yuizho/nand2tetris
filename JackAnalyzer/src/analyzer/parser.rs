@@ -122,7 +122,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_var_name(&self, identifier_token: &IdentifierToken) -> Term {
-        Term::VarName(identifier_token.clone())
+        Term::VarName(identifier_token.clone(), None)
 
         // TODO: needs to impl varname with index
     }
@@ -222,19 +222,20 @@ mod tests {
                 Statement::LetStatement(
                     IdentifierToken::new("y".to_string()),
                     None,
-                    Expression::new(Term::VarName(IdentifierToken::new("x".to_string())))
+                    Expression::new(Term::VarName(IdentifierToken::new("x".to_string()), None))
                 ),
                 Statement::LetStatement(
                     IdentifierToken::new("z".to_string()),
-                    Some(Expression::new(Term::VarName(IdentifierToken::new(
-                        "i".to_string()
-                    )))),
-                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string()))),
+                    Some(Expression::new(Term::VarName(
+                        IdentifierToken::new("i".to_string()),
+                        None
+                    ))),
+                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string()), None)),
                 ),
                 Statement::LetStatement(
                     IdentifierToken::new("z".to_string()),
                     Some(Expression::new(Term::IntegerConstant(0))),
-                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string())))
+                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string()), None))
                 ),
                 Statement::LetStatement(
                     IdentifierToken::new("z".to_string()),
@@ -274,7 +275,8 @@ mod tests {
             vec![
                 Statement::ReturnStatement(Some(Expression::new(Term::IntegerConstant(5)))),
                 Statement::ReturnStatement(Some(Expression::new(Term::VarName(
-                    IdentifierToken::new("x".to_string(),)
+                    IdentifierToken::new("x".to_string()),
+                    None
                 )))),
                 Statement::ReturnStatement(None)
             ]
@@ -282,7 +284,7 @@ mod tests {
     }
 
     #[test]
-    fn identifier_expression() {
+    fn var_name_expression() {
         let source = "
         foobar;
         "
@@ -295,7 +297,7 @@ mod tests {
         assert_eq!(
             actual.statements,
             vec![Statement::ExpressionStatement(Expression::new(
-                Term::VarName(IdentifierToken::new("foobar".to_string(),))
+                Term::VarName(IdentifierToken::new("foobar".to_string()), None)
             ))]
         );
     }
@@ -388,7 +390,7 @@ mod tests {
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::TILDE),
-                    Box::new(Term::VarName(IdentifierToken::new("i".to_string(),)))
+                    Box::new(Term::VarName(IdentifierToken::new("i".to_string(),), None))
                 ))),
             ]
         );
@@ -413,7 +415,7 @@ mod tests {
                     Term::IntegerConstant(1),
                     BinaryOp::new(
                         BinaryOpToken::new(TokenType::PLUS),
-                        Term::VarName(IdentifierToken::new("i".to_string()))
+                        Term::VarName(IdentifierToken::new("i".to_string()), None)
                     )
                 )),
                 Statement::ExpressionStatement(Expression::new_binary_op(

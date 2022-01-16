@@ -190,15 +190,22 @@ pub enum Term {
     IntegerConstant(i32),
     StringConstant(String),
     KeywordConstant(KeywordConstantToken),
-    VarName(IdentifierToken),
+    VarName(IdentifierToken, Option<Box<Expression>>),
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
     fn to_xml(&self) -> String {
         match self {
-            Self::VarName(token) => {
-                format!("<term>\n{}\n</term>", token.get_xml_tag())
-            }
+            Self::VarName(token, expression_opt) => match expression_opt {
+                Some(expression) => format!(
+                    "<term>\n{}\n{}\n{}\n{}\n</term>",
+                    token.get_xml_tag(),
+                    TokenType::LBRACKET.get_xml_tag(),
+                    expression.to_xml(),
+                    TokenType::RBRACKET.get_xml_tag(),
+                ),
+                None => format!("<term>\n{}\n</term>", token.get_xml_tag()),
+            },
 
             Self::IntegerConstant(num) => {
                 format!("<term>\n{}\n</term>", num.get_xml_tag())
@@ -230,7 +237,7 @@ mod tests {
     fn expression_with_binary_op() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new_binary_op(
-                Term::VarName(IdentifierToken::new("i".to_string())),
+                Term::VarName(IdentifierToken::new("i".to_string()), None),
                 BinaryOp::new(
                     BinaryOpToken::new(TokenType::PLUS),
                     Term::IntegerConstant(2),
@@ -259,7 +266,7 @@ mod tests {
                 IdentifierToken::new("myVar".to_string()),
                 None,
                 Expression {
-                    left_term: Term::VarName(IdentifierToken::new("anotherVar".to_string())),
+                    left_term: Term::VarName(IdentifierToken::new("anotherVar".to_string()), None),
                     binary_op: None,
                 },
             )],
@@ -287,11 +294,11 @@ mod tests {
             statements: vec![Statement::LetStatement(
                 IdentifierToken::new("myVar".to_string()),
                 Some(Expression {
-                    left_term: Term::VarName(IdentifierToken::new("i".to_string())),
+                    left_term: Term::VarName(IdentifierToken::new("i".to_string()), None),
                     binary_op: None,
                 }),
                 Expression {
-                    left_term: Term::VarName(IdentifierToken::new("anotherVar".to_string())),
+                    left_term: Term::VarName(IdentifierToken::new("anotherVar".to_string()), None),
                     binary_op: None,
                 },
             )],
@@ -339,7 +346,7 @@ mod tests {
     fn return_statement_that_has_identifier_to_xml() {
         let program = Program {
             statements: vec![Statement::ReturnStatement(Some(Expression {
-                left_term: Term::VarName(IdentifierToken::new("square".to_string())),
+                left_term: Term::VarName(IdentifierToken::new("square".to_string()), None),
                 binary_op: None,
             }))],
         };
@@ -359,10 +366,10 @@ mod tests {
     }
 
     #[test]
-    fn identifier_expression_to_xml() {
+    fn var_name_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression {
-                left_term: Term::VarName(IdentifierToken::new("foo".to_string())),
+                left_term: Term::VarName(IdentifierToken::new("foo".to_string()), None),
                 binary_op: None,
             })],
         };
