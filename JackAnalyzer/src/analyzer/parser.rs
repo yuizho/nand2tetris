@@ -121,8 +121,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_identifier(&self, identifier_token: &IdentifierToken) -> Term {
-        Term::Identifier(identifier_token.clone())
+    fn parse_var_name(&self, identifier_token: &IdentifierToken) -> Term {
+        Term::VarName(identifier_token.clone())
+
+        // TODO: needs to impl varname with index
     }
 
     fn parse_integer_constant(&self, num: &i32) -> Term {
@@ -150,7 +152,7 @@ impl<'a> Parser<'a> {
     fn parse_term(&mut self) -> Term {
         let token = &self.cur_token;
         match token {
-            TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
+            TokenType::IDNETIFIER(identifier_token) => self.parse_var_name(identifier_token),
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
             TokenType::STRING(str_value) => self.parse_string_constant(str_value),
             TokenType::KEYWORD(keyword) => {
@@ -220,19 +222,19 @@ mod tests {
                 Statement::LetStatement(
                     IdentifierToken::new("y".to_string()),
                     None,
-                    Expression::new(Term::Identifier(IdentifierToken::new("x".to_string())))
+                    Expression::new(Term::VarName(IdentifierToken::new("x".to_string())))
                 ),
                 Statement::LetStatement(
                     IdentifierToken::new("z".to_string()),
-                    Some(Expression::new(Term::Identifier(IdentifierToken::new(
+                    Some(Expression::new(Term::VarName(IdentifierToken::new(
                         "i".to_string()
                     )))),
-                    Expression::new(Term::Identifier(IdentifierToken::new("y".to_string()))),
+                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string()))),
                 ),
                 Statement::LetStatement(
                     IdentifierToken::new("z".to_string()),
                     Some(Expression::new(Term::IntegerConstant(0))),
-                    Expression::new(Term::Identifier(IdentifierToken::new("y".to_string())))
+                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string())))
                 ),
                 Statement::LetStatement(
                     IdentifierToken::new("z".to_string()),
@@ -271,7 +273,7 @@ mod tests {
             actual.statements,
             vec![
                 Statement::ReturnStatement(Some(Expression::new(Term::IntegerConstant(5)))),
-                Statement::ReturnStatement(Some(Expression::new(Term::Identifier(
+                Statement::ReturnStatement(Some(Expression::new(Term::VarName(
                     IdentifierToken::new("x".to_string(),)
                 )))),
                 Statement::ReturnStatement(None)
@@ -293,7 +295,7 @@ mod tests {
         assert_eq!(
             actual.statements,
             vec![Statement::ExpressionStatement(Expression::new(
-                Term::Identifier(IdentifierToken::new("foobar".to_string(),))
+                Term::VarName(IdentifierToken::new("foobar".to_string(),))
             ))]
         );
     }
@@ -386,7 +388,7 @@ mod tests {
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::TILDE),
-                    Box::new(Term::Identifier(IdentifierToken::new("i".to_string(),)))
+                    Box::new(Term::VarName(IdentifierToken::new("i".to_string(),)))
                 ))),
             ]
         );
@@ -411,7 +413,7 @@ mod tests {
                     Term::IntegerConstant(1),
                     BinaryOp::new(
                         BinaryOpToken::new(TokenType::PLUS),
-                        Term::Identifier(IdentifierToken::new("i".to_string()))
+                        Term::VarName(IdentifierToken::new("i".to_string()))
                     )
                 )),
                 Statement::ExpressionStatement(Expression::new_binary_op(
