@@ -385,6 +385,35 @@ mod tests {
     }
 
     #[test]
+    fn var_name_has_indexexpression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression {
+                left_term: Term::VarName(
+                    IdentifierToken::new("foo".to_string()),
+                    Some(Box::new(Expression::new(Term::IntegerConstant(1)))),
+                ),
+                binary_op: None,
+            })],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> foo </identifier>
+<symbol> [ </symbol>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<symbol> ] </symbol>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
     fn string_constant_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression {
