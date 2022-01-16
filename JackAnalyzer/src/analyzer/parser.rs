@@ -110,23 +110,23 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Expression {
-        let left_expression = self.parse_prefix_expression();
-        left_expression
+        let left_term = self.parse_prefix_expression();
+        Expression::new(left_term)
     }
 
-    fn parse_identifier(&self, identifier_token: &IdentifierToken) -> Expression {
-        Expression::new(Term::Identifier(identifier_token.clone()))
+    fn parse_identifier(&self, identifier_token: &IdentifierToken) -> Term {
+        Term::Identifier(identifier_token.clone())
     }
 
-    fn parse_integer_constant(&self, num: &i32) -> Expression {
-        Expression::new(Term::IntegerConstant(num.clone()))
+    fn parse_integer_constant(&self, num: &i32) -> Term {
+        Term::IntegerConstant(num.clone())
     }
 
-    fn parse_string_constant(&self, str_value: &String) -> Expression {
-        Expression::new(Term::StringConstant(str_value.clone()))
+    fn parse_string_constant(&self, str_value: &String) -> Term {
+        Term::StringConstant(str_value.clone())
     }
 
-    fn parse_unary_op_constant(&mut self) -> Expression {
+    fn parse_unary_op_constant(&mut self) -> Term {
         let op = self.cur_token.clone();
 
         self.advance();
@@ -142,10 +142,10 @@ impl<'a> Parser<'a> {
             } => panic!("unary op expression can't have expression."),
         };
 
-        Expression::new(Term::UnaryOp(UnaryOpToken::new(op), Box::new(term)))
+        Term::UnaryOp(UnaryOpToken::new(op), Box::new(term))
     }
 
-    fn parse_prefix_expression(&mut self) -> Expression {
+    fn parse_prefix_expression(&mut self) -> Term {
         let token = &self.cur_token;
         match token {
             TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
