@@ -151,6 +151,25 @@ impl<'a> Parser<'a> {
         Term::KeywordConstant(keyword)
     }
 
+    fn parse_expression_term(&mut self) -> Term {
+        self.advance();
+
+        let mut expression = self.parse_expression();
+
+        if !self.peek_token_is(TokenType::RPAREN) {
+            expression = match self.parse_binary_op() {
+                Some(binary_op) => {
+                    Expression::new_binary_op(Term::Expresssion(Box::new(expression)), binary_op)
+                }
+                None => panic!("unexpected syntax of expression term: {:?}", self.cur_token),
+            };
+        }
+
+        self.advance();
+
+        Term::Expresssion(Box::new(expression))
+    }
+
     fn parse_unary_op_constant(&mut self, op: TokenType) -> Term {
         self.advance();
 
@@ -168,6 +187,7 @@ impl<'a> Parser<'a> {
             TokenType::KEYWORD(keyword) => {
                 self.parse_keyword_constant(KeywordConstantToken::new(keyword))
             }
+            TokenType::LPAREN => self.parse_expression_term(),
             TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(token),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
@@ -417,6 +437,101 @@ mod tests {
                 Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
                     KeywordConstantToken::new(Keyword::FALSE)
                 )))
+            ]
+        );
+    }
+
+    #[test]
+    fn expression_term() {
+        let source = "
+        (-1);
+        -1 + (2 * 3);
+        -4 + ((5 - 6) / 7);
+        -8 +( ((9 - 10) / 11) * 12);
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 4);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ExpressionStatement(Expression::new(Term::Expresssion(Box::new(
+                    Expression::new(Term::UnaryOp(
+                        UnaryOpToken::new(TokenType::MINUS),
+                        Box::new(Term::IntegerConstant(1))
+                    ))
+                )))),
+                Statement::ExpressionStatement(Expression::new_binary_op(
+                    Term::UnaryOp(
+                        UnaryOpToken::new(TokenType::MINUS),
+                        Box::new(Term::IntegerConstant(1))
+                    ),
+                    BinaryOp::new(
+                        BinaryOpToken::new(TokenType::PLUS),
+                        Term::Expresssion(Box::new(Expression::new_binary_op(
+                            Term::IntegerConstant(2),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::ASTERISK),
+                                Term::IntegerConstant(3)
+                            )
+                        )))
+                    )
+                )),
+                // -4 + ((5 - 6) / 7);
+                Statement::ExpressionStatement(Expression::new_binary_op(
+                    Term::UnaryOp(
+                        UnaryOpToken::new(TokenType::MINUS),
+                        Box::new(Term::IntegerConstant(4))
+                    ),
+                    BinaryOp::new(
+                        BinaryOpToken::new(TokenType::PLUS),
+                        Term::Expresssion(Box::new(Expression::new_binary_op(
+                            Term::Expresssion(Box::new(Expression::new_binary_op(
+                                Term::IntegerConstant(5),
+                                BinaryOp::new(
+                                    BinaryOpToken::new(TokenType::MINUS),
+                                    Term::IntegerConstant(6)
+                                )
+                            ))),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::SLASH),
+                                Term::IntegerConstant(7)
+                            )
+                        )))
+                    )
+                )),
+                // -8 + (((9 - 10) / 11) * 12);
+                Statement::ExpressionStatement(Expression::new_binary_op(
+                    Term::UnaryOp(
+                        UnaryOpToken::new(TokenType::MINUS),
+                        Box::new(Term::IntegerConstant(8))
+                    ),
+                    BinaryOp::new(
+                        BinaryOpToken::new(TokenType::PLUS),
+                        Term::Expresssion(Box::new(Expression::new_binary_op(
+                            Term::Expresssion(Box::new(Expression::new_binary_op(
+                                Term::Expresssion(Box::new(Expression::new_binary_op(
+                                    Term::IntegerConstant(9),
+                                    BinaryOp::new(
+                                        BinaryOpToken::new(TokenType::MINUS),
+                                        Term::IntegerConstant(10)
+                                    )
+                                ))),
+                                BinaryOp::new(
+                                    BinaryOpToken::new(TokenType::SLASH),
+                                    Term::IntegerConstant(11)
+                                )
+                            ))),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::ASTERISK),
+                                Term::IntegerConstant(12)
+                            )
+                        )))
+                    )
+                )),
             ]
         );
     }

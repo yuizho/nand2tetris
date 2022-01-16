@@ -70,7 +70,7 @@ impl Node for Statement {
 
 #[derive(PartialEq, Debug)]
 pub struct Expression {
-    left_term: Term,
+    pub left_term: Term,
     binary_op: Option<BinaryOp>,
 }
 impl Expression {
