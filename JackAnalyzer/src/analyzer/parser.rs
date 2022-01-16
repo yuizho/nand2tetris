@@ -115,7 +115,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self) -> Expression {
-        let left_term = self.parse_prefix_expression();
+        let left_term = self.parse_term();
 
         // TODO: op precedence is not implemented
         match self.parse_infix_expression() {
@@ -159,7 +159,7 @@ impl<'a> Parser<'a> {
         Term::UnaryOp(UnaryOpToken::new(op), Box::new(term))
     }
 
-    fn parse_prefix_expression(&mut self) -> Term {
+    fn parse_term(&mut self) -> Term {
         let token = &self.cur_token;
         match token {
             TokenType::IDNETIFIER(identifier_token) => self.parse_identifier(identifier_token),
@@ -180,7 +180,7 @@ impl<'a> Parser<'a> {
 
             self.advance();
 
-            let right_term = self.parse_prefix_expression();
+            let right_term = self.parse_term();
 
             Some(BinaryOp::new(op, right_term))
         } else {
