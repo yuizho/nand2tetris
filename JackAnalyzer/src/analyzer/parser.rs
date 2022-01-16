@@ -118,7 +118,7 @@ impl<'a> Parser<'a> {
         let left_term = self.parse_term();
 
         // TODO: op precedence is not implemented
-        match self.parse_infix_expression() {
+        match self.parse_binary_op() {
             Some(binary_op) => {
                 self.advance();
                 Expression::new_binary_op(left_term, binary_op)
@@ -163,7 +163,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_infix_expression(&mut self) -> Option<BinaryOp> {
+    fn parse_binary_op(&mut self) -> Option<BinaryOp> {
         if BinaryOpToken::is_binary_op_token_type(&self.peek_token) {
             self.advance();
             let op = BinaryOpToken::new(self.cur_token.clone());
