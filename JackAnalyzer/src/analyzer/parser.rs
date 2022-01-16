@@ -200,13 +200,14 @@ mod tests {
         let z[i] = y;
         let z[0] =  y;
         let z = \"foo\";
+        let z = 1 * 2;
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        assert_eq!(actual.statements.len(), 5);
+        assert_eq!(actual.statements.len(), 6);
         assert_eq!(
             actual.statements,
             vec![
@@ -236,6 +237,17 @@ mod tests {
                     IdentifierToken::new("z".to_string()),
                     None,
                     Expression::new(Term::StringConstant("foo".to_string()))
+                ),
+                Statement::LetStatement(
+                    IdentifierToken::new("z".to_string()),
+                    None,
+                    Expression::new_binary_op(
+                        Term::IntegerConstant(1),
+                        BinaryOp::new(
+                            BinaryOpToken::new(TokenType::ASTERISK),
+                            Term::IntegerConstant(2)
+                        )
+                    )
                 ),
             ]
         );
