@@ -184,15 +184,11 @@ mod tests {
             actual,
             vec![
                 TokenType::KEYWORD(Keyword::CLASS),
-                TokenType::IDNETIFIER(IdentifierToken {
-                    identifier: "Main".to_string(),
-                }),
+                TokenType::IDNETIFIER(IdentifierToken::new("Main".to_string(),)),
                 TokenType::LBRACE,
                 TokenType::KEYWORD(Keyword::STATIC),
                 TokenType::KEYWORD(Keyword::BOOLEAN),
-                TokenType::IDNETIFIER(IdentifierToken {
-                    identifier: "test".to_string(),
-                }),
+                TokenType::IDNETIFIER(IdentifierToken::new("test".to_string(),)),
                 TokenType::SEMICOLON,
                 TokenType::RBRACE,
             ]
@@ -214,16 +210,12 @@ mod tests {
             actual,
             vec![
                 TokenType::KEYWORD(Keyword::CLASS),
-                TokenType::IDNETIFIER(IdentifierToken {
-                    identifier: "Main".to_string(),
-                }),
+                TokenType::IDNETIFIER(IdentifierToken::new("Main".to_string(),)),
                 TokenType::LBRACE,
                 TokenType::COMMENTS,
                 TokenType::KEYWORD(Keyword::STATIC),
                 TokenType::KEYWORD(Keyword::BOOLEAN),
-                TokenType::IDNETIFIER(IdentifierToken {
-                    identifier: "test".to_string(),
-                }),
+                TokenType::IDNETIFIER(IdentifierToken::new("test".to_string(),)),
                 TokenType::SEMICOLON,
                 TokenType::COMMENTS,
                 TokenType::COMMENTS,

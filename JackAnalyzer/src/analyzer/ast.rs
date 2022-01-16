@@ -225,14 +225,10 @@ mod tests {
     fn let_statement_to_xml() {
         let program = Program {
             statements: vec![Statement::LetStatement(
-                IdentifierToken {
-                    identifier: "myVar".to_string(),
-                },
+                IdentifierToken::new("myVar".to_string()),
                 None,
                 Expression {
-                    left_term: Term::Identifier(IdentifierToken {
-                        identifier: "anotherVar".to_string(),
-                    }),
+                    left_term: Term::Identifier(IdentifierToken::new("anotherVar".to_string())),
                     binary_op: None,
                 },
             )],
@@ -258,19 +254,13 @@ mod tests {
     fn let_statement_for_array_to_xml() {
         let program = Program {
             statements: vec![Statement::LetStatement(
-                IdentifierToken {
-                    identifier: "myVar".to_string(),
-                },
+                IdentifierToken::new("myVar".to_string()),
                 Some(Expression {
-                    left_term: Term::Identifier(IdentifierToken {
-                        identifier: "i".to_string(),
-                    }),
+                    left_term: Term::Identifier(IdentifierToken::new("i".to_string())),
                     binary_op: None,
                 }),
                 Expression {
-                    left_term: Term::Identifier(IdentifierToken {
-                        identifier: "anotherVar".to_string(),
-                    }),
+                    left_term: Term::Identifier(IdentifierToken::new("anotherVar".to_string())),
                     binary_op: None,
                 },
             )],
@@ -318,9 +308,7 @@ mod tests {
     fn return_statement_that_has_identifier_to_xml() {
         let program = Program {
             statements: vec![Statement::ReturnStatement(Some(Expression {
-                left_term: Term::Identifier(IdentifierToken {
-                    identifier: "square".to_string(),
-                }),
+                left_term: Term::Identifier(IdentifierToken::new("square".to_string())),
                 binary_op: None,
             }))],
         };
@@ -343,9 +331,7 @@ mod tests {
     fn identifier_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression {
-                left_term: Term::Identifier(IdentifierToken {
-                    identifier: "foo".to_string(),
-                }),
+                left_term: Term::Identifier(IdentifierToken::new("foo".to_string())),
                 binary_op: None,
             })],
         };

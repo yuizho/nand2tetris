@@ -192,45 +192,29 @@ mod tests {
             actual.statements,
             vec![
                 Statement::LetStatement(
-                    IdentifierToken {
-                        identifier: "x".to_string(),
-                    },
+                    IdentifierToken::new("x".to_string()),
                     None,
                     Expression::new(Term::IntegerConstant(5))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken {
-                        identifier: "y".to_string(),
-                    },
+                    IdentifierToken::new("y".to_string()),
                     None,
-                    Expression::new(Term::Identifier(IdentifierToken {
-                        identifier: "x".to_string(),
-                    }))
+                    Expression::new(Term::Identifier(IdentifierToken::new("x".to_string())))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken {
-                        identifier: "z".to_string(),
-                    },
-                    Some(Expression::new(Term::Identifier(IdentifierToken {
-                        identifier: "i".to_string(),
-                    }))),
-                    Expression::new(Term::Identifier(IdentifierToken {
-                        identifier: "y".to_string(),
-                    })),
+                    IdentifierToken::new("z".to_string()),
+                    Some(Expression::new(Term::Identifier(IdentifierToken::new(
+                        "i".to_string()
+                    )))),
+                    Expression::new(Term::Identifier(IdentifierToken::new("y".to_string()))),
                 ),
                 Statement::LetStatement(
-                    IdentifierToken {
-                        identifier: "z".to_string(),
-                    },
+                    IdentifierToken::new("z".to_string()),
                     Some(Expression::new(Term::IntegerConstant(0))),
-                    Expression::new(Term::Identifier(IdentifierToken {
-                        identifier: "y".to_string(),
-                    }))
+                    Expression::new(Term::Identifier(IdentifierToken::new("y".to_string())))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken {
-                        identifier: "z".to_string(),
-                    },
+                    IdentifierToken::new("z".to_string()),
                     None,
                     Expression::new(Term::StringConstant("foo".to_string()))
                 ),
@@ -256,9 +240,7 @@ mod tests {
             vec![
                 Statement::ReturnStatement(Some(Expression::new(Term::IntegerConstant(5)))),
                 Statement::ReturnStatement(Some(Expression::new(Term::Identifier(
-                    IdentifierToken {
-                        identifier: "x".to_string(),
-                    }
+                    IdentifierToken::new("x".to_string(),)
                 )))),
                 Statement::ReturnStatement(None)
             ]
@@ -279,9 +261,7 @@ mod tests {
         assert_eq!(
             actual.statements,
             vec![Statement::ExpressionStatement(Expression::new(
-                Term::Identifier(IdentifierToken {
-                    identifier: "foobar".to_string(),
-                })
+                Term::Identifier(IdentifierToken::new("foobar".to_string(),))
             ))]
         );
     }
@@ -345,9 +325,7 @@ mod tests {
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::TILDE),
-                    Box::new(Term::Identifier(IdentifierToken {
-                        identifier: "i".to_string(),
-                    }))
+                    Box::new(Term::Identifier(IdentifierToken::new("i".to_string(),)))
                 ))),
             ]
         );

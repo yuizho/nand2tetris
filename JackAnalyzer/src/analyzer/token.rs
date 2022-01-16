@@ -57,7 +57,7 @@ impl Token for Keyword {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct IdentifierToken {
-    pub identifier: String,
+    identifier: String,
 }
 impl IdentifierToken {
     pub fn new(identifier: String) -> Self {
