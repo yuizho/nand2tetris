@@ -80,11 +80,18 @@ impl Expression {
             binary_op: None,
         }
     }
+
+    pub fn new_binary_op(term: Term, binary_op: BinaryOp) -> Self {
+        Expression {
+            left_term: term,
+            binary_op: Some(binary_op),
+        }
+    }
 }
 impl Node for Expression {
     fn to_xml(&self) -> String {
         let binary_op_tag = match &self.binary_op {
-            Some(binary_op) => binary_op.to_xml(),
+            Some(binary_op) => format!("{}\n", binary_op.to_xml()),
             None => "".to_string(),
         };
         format!(
@@ -97,13 +104,24 @@ impl Node for Expression {
 
 #[derive(PartialEq, Debug)]
 pub struct BinaryOp {
-    op_token: TokenType,
+    op_token: BinaryOpToken,
     right_term: Term,
+}
+impl BinaryOp {
+    pub fn new(op: BinaryOpToken, term: Term) -> Self {
+        BinaryOp {
+            op_token: op,
+            right_term: term,
+        }
+    }
 }
 impl Node for BinaryOp {
     fn to_xml(&self) -> String {
-        // TODO: needs impl
-        "".to_string()
+        format!(
+            "{}\n{}",
+            self.op_token.token.get_xml_tag(),
+            self.right_term.to_xml()
+        )
     }
 }
 
@@ -121,11 +139,31 @@ impl UnaryOpToken {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct BinaryOpToken {
+    token: TokenType,
+}
+impl BinaryOpToken {
+    pub fn new(token: TokenType) -> Self {
+        match token {
+            TokenType::PLUS
+            | TokenType::MINUS
+            | TokenType::ASTERISK
+            | TokenType::SLASH
+            | TokenType::AND
+            | TokenType::OR
+            | TokenType::GT
+            | TokenType::LT
+            | TokenType::ASSIGN => BinaryOpToken { token },
+            _ => panic!("unexpected token type is used as binary op: {:?}", token),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Term {
     Identifier(IdentifierToken),
     IntegerConstant(i32),
     StringConstant(String),
-    //BynaryOp(TokenType, Expression), // TODO: make OpToken
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
@@ -156,6 +194,32 @@ impl Node for Term {
 mod tests {
     use crate::analyzer::ast::*;
     use crate::analyzer::token::*;
+
+    #[test]
+    fn expression_with_binary_op() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new_binary_op(
+                Term::Identifier(IdentifierToken::new("i".to_string())),
+                BinaryOp::new(
+                    BinaryOpToken::new(TokenType::PLUS),
+                    Term::IntegerConstant(2),
+                ),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> i </identifier>
+</term>
+<symbol> + </symbol>
+<term>
+<integerConstant> 2 </integerConstant>
+</term>
+</expression>"
+        )
+    }
 
     #[test]
     fn let_statement_to_xml() {

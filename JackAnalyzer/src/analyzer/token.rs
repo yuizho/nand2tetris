@@ -59,6 +59,11 @@ impl Token for Keyword {
 pub struct IdentifierToken {
     pub identifier: String,
 }
+impl IdentifierToken {
+    pub fn new(identifier: String) -> Self {
+        IdentifierToken { identifier }
+    }
+}
 impl Token for IdentifierToken {
     fn get_xml_tag(&self) -> String {
         format!("<identifier> {} </identifier>", self.identifier)
