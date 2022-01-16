@@ -491,17 +491,22 @@ mod tests {
     #[test]
     fn unary_op_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression {
-                left_term: Term::StringConstant("str value!!".to_string()),
-                binary_op: None,
-            })],
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::UnaryOp(
+                    UnaryOpToken::new(TokenType::MINUS),
+                    Box::new(Term::IntegerConstant(1)),
+                ),
+            ))],
         };
 
         assert_eq!(
             program.to_xml(),
             "<expression>
 <term>
-<stringConstant> str value!! </stringConstant>
+<symbol> - </symbol>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
 </term>
 </expression>"
         )
