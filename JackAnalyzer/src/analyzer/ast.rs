@@ -191,6 +191,7 @@ pub enum Term {
     StringConstant(String),
     KeywordConstant(KeywordConstantToken),
     VarName(IdentifierToken, Option<Box<Expression>>),
+    Expresssion(Box<Expression>),
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
@@ -218,6 +219,13 @@ impl Node for Term {
             Self::KeywordConstant(keyword) => {
                 format!("<term>\n{}\n</term>", keyword.keyword.get_xml_tag())
             }
+
+            Self::Expresssion(expression) => format!(
+                "<term>\n{}\n{}\n{}\n</term>",
+                TokenType::LPAREN.get_xml_tag(),
+                expression.to_xml(),
+                TokenType::RPAREN.get_xml_tag()
+            ),
 
             Self::UnaryOp(op, term) => format!(
                 "<term>\n{}\n{}\n</term>",
@@ -445,6 +453,36 @@ mod tests {
             "<expression>
 <term>
 <keyword> true </keyword>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn expression_term_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::Expresssion(Box::new(Expression::new(Term::UnaryOp(
+                    UnaryOpToken::new(TokenType::MINUS),
+                    Box::new(Term::VarName(IdentifierToken::new("i".to_string()), None)),
+                )))),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<symbol> ( </symbol>
+<expression>
+<term>
+<symbol> - </symbol>
+<term>
+<identifier> i </identifier>
+</term>
+</term>
+</expression>
+<symbol> ) </symbol>
 </term>
 </expression>"
         )
