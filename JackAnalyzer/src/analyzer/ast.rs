@@ -168,10 +168,30 @@ impl BinaryOpToken {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct KeywordConstantToken {
+    token: TokenType,
+}
+impl KeywordConstantToken {
+    pub fn new(token: TokenType) -> Self {
+        match token {
+            TokenType::KEYWORD(Keyword::TRUE)
+            | TokenType::KEYWORD(Keyword::FALSE)
+            | TokenType::KEYWORD(Keyword::NULL)
+            | TokenType::KEYWORD(Keyword::THIS) => KeywordConstantToken { token },
+            _ => panic!(
+                "unexpected token type is used as keyword ocnstant: {:?}",
+                token
+            ),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Term {
     Identifier(IdentifierToken),
     IntegerConstant(i32),
     StringConstant(String),
+    KeywordConstant(KeywordConstantToken),
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
@@ -187,6 +207,10 @@ impl Node for Term {
 
             Self::StringConstant(s) => {
                 format!("<term>\n{}\n</term>", s.get_xml_tag())
+            }
+
+            Self::KeywordConstant(keyword) => {
+                format!("<term>\n{}\n</term>", keyword.token.get_xml_tag())
             }
 
             Self::UnaryOp(op, term) => format!(
@@ -368,6 +392,24 @@ mod tests {
             "<expression>
 <term>
 <stringConstant> str value!! </stringConstant>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn keyword_constant_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::KeywordConstant(KeywordConstantToken::new(TokenType::KEYWORD(Keyword::TRUE))),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<keyword> true </keyword>
 </term>
 </expression>"
         )
