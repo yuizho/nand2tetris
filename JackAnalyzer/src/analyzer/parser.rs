@@ -113,35 +113,45 @@ impl<'a> Parser<'a> {
 
         // TODO: op precedence is not implemented
         match self.parse_binary_op() {
-            Some(binary_op) => {
-                self.advance();
-                Expression::new_binary_op(left_term, binary_op)
-            }
+            Some(binary_op) => Expression::new_binary_op(left_term, binary_op),
             None => Expression::new(left_term),
         }
     }
 
-    fn parse_var_name(&self, identifier_token: &IdentifierToken) -> Term {
-        Term::VarName(identifier_token.clone(), None)
+    fn parse_var_name(&mut self, identifier_token: IdentifierToken) -> Term {
+        let identifier_token = identifier_token;
 
-        // TODO: needs to impl varname with index
+        if self.peek_token_is(TokenType::LBRACKET) {
+            self.advance();
+            self.advance();
+
+            let expression = self.parse_expression();
+
+            if !self.peek_token_is(TokenType::RBRACKET) {
+                panic!("unexpected syntax of varName: {:?}", self.peek_token);
+            }
+
+            self.advance();
+
+            Term::VarName(identifier_token, Some(Box::new(expression)))
+        } else {
+            Term::VarName(identifier_token, None)
+        }
     }
 
-    fn parse_integer_constant(&self, num: &i32) -> Term {
-        Term::IntegerConstant(num.clone())
+    fn parse_integer_constant(&self, num: i32) -> Term {
+        Term::IntegerConstant(num)
     }
 
-    fn parse_string_constant(&self, str_value: &String) -> Term {
-        Term::StringConstant(str_value.clone())
+    fn parse_string_constant(&self, str_value: String) -> Term {
+        Term::StringConstant(str_value)
     }
 
     fn parse_keyword_constant(&self, keyword: KeywordConstantToken) -> Term {
         Term::KeywordConstant(keyword)
     }
 
-    fn parse_unary_op_constant(&mut self) -> Term {
-        let op = self.cur_token.clone();
-
+    fn parse_unary_op_constant(&mut self, op: TokenType) -> Term {
         self.advance();
 
         let term = self.parse_term();
@@ -150,15 +160,15 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_term(&mut self) -> Term {
-        let token = &self.cur_token;
+        let token = self.cur_token.clone();
         match token {
             TokenType::IDNETIFIER(identifier_token) => self.parse_var_name(identifier_token),
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
             TokenType::STRING(str_value) => self.parse_string_constant(str_value),
             TokenType::KEYWORD(keyword) => {
-                self.parse_keyword_constant(KeywordConstantToken::new(keyword.clone()))
+                self.parse_keyword_constant(KeywordConstantToken::new(keyword))
             }
-            TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(),
+            TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(token),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
@@ -179,6 +189,10 @@ impl<'a> Parser<'a> {
         } else {
             None
         }
+    }
+
+    fn peek_token_is(&self, token: TokenType) -> bool {
+        self.peek_token == token
     }
 
     fn current_token_is(&self, token: TokenType) -> bool {
@@ -299,6 +313,44 @@ mod tests {
             vec![Statement::ExpressionStatement(Expression::new(
                 Term::VarName(IdentifierToken::new("foobar".to_string()), None)
             ))]
+        );
+    }
+
+    #[test]
+    fn var_name_has_index_expression() {
+        let source = "
+        foobar[1];
+        foobar[  2 ];
+        foobar[i + 1];
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 3);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ExpressionStatement(Expression::new(Term::VarName(
+                    IdentifierToken::new("foobar".to_string()),
+                    Some(Box::new(Expression::new(Term::IntegerConstant(1))))
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::VarName(
+                    IdentifierToken::new("foobar".to_string()),
+                    Some(Box::new(Expression::new(Term::IntegerConstant(2))))
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::VarName(
+                    IdentifierToken::new("foobar".to_string()),
+                    Some(Box::new(Expression::new_binary_op(
+                        Term::VarName(IdentifierToken::new("i".to_string()), None),
+                        BinaryOp::new(
+                            BinaryOpToken::new(TokenType::PLUS),
+                            Term::IntegerConstant(1)
+                        )
+                    )))
+                )))
+            ]
         );
     }
 
