@@ -37,6 +37,7 @@ impl<'a> Parser<'a> {
         match &self.cur_token {
             TokenType::KEYWORD(Keyword::LET) => self.parse_let_statement(),
             TokenType::KEYWORD(Keyword::RETURN) => self.parse_return_statement(),
+            TokenType::KEYWORD(Keyword::WHILE) => self.parse_while_statement(),
             _ => self.parse_expression_statement(),
         }
     }
@@ -97,6 +98,44 @@ impl<'a> Parser<'a> {
         }
 
         Statement::ReturnStatement(expression)
+    }
+
+    fn parse_while_statement(&mut self) -> Statement {
+        self.advance();
+        if !self.current_token_is(TokenType::LPAREN) {
+            panic!(
+                "unexpected syntax of while: {}",
+                self.cur_token.get_xml_tag()
+            );
+        }
+
+        self.advance();
+        let expression = self.parse_expression();
+
+        self.advance();
+        if !self.current_token_is(TokenType::RPAREN) {
+            panic!(
+                "unexpected syntax of while: {}",
+                self.cur_token.get_xml_tag()
+            );
+        }
+
+        self.advance();
+        if !self.current_token_is(TokenType::LBRACE) {
+            panic!(
+                "unexpected syntax of while: {}",
+                self.cur_token.get_xml_tag()
+            );
+        }
+
+        self.advance();
+        let mut statements = vec![];
+        while !self.current_token_is_eof_or(TokenType::RBRACE) {
+            statements.push(self.parse_statement());
+            self.advance();
+        }
+
+        Statement::WhileStatement(expression, statements)
     }
 
     fn parse_expression_statement(&mut self) -> Statement {
@@ -314,6 +353,41 @@ mod tests {
                 )))),
                 Statement::ReturnStatement(None)
             ]
+        );
+    }
+
+    #[test]
+    fn while_statements() {
+        let source = "
+        while (true) {
+            let i = 1;
+            i;
+        }
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(
+            actual.statements,
+            vec![Statement::WhileStatement(
+                Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
+                    Keyword::TRUE
+                ))),
+                vec![
+                    Statement::LetStatement(
+                        IdentifierToken::new("i".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(1)),
+                    ),
+                    Statement::ExpressionStatement(Expression::new(Term::VarName(
+                        IdentifierToken::new("i".to_string()),
+                        None
+                    )))
+                ]
+            )]
         );
     }
 
