@@ -363,31 +363,49 @@ mod tests {
             let i = 1;
             i;
         }
+
+        while ((2 * 3)) {
+            i;
+        }
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(&mut tokenizer);
         let actual = parser.parse_program();
 
-        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(actual.statements.len(), 2);
         assert_eq!(
             actual.statements,
-            vec![Statement::WhileStatement(
-                Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                    Keyword::TRUE
-                ))),
-                vec![
-                    Statement::LetStatement(
-                        IdentifierToken::new("i".to_string()),
-                        None,
-                        Expression::new(Term::IntegerConstant(1)),
-                    ),
-                    Statement::ExpressionStatement(Expression::new(Term::VarName(
-                        IdentifierToken::new("i".to_string()),
-                        None
-                    )))
-                ]
-            )]
+            vec![
+                Statement::WhileStatement(
+                    Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
+                        Keyword::TRUE
+                    ))),
+                    vec![
+                        Statement::LetStatement(
+                            IdentifierToken::new("i".to_string()),
+                            None,
+                            Expression::new(Term::IntegerConstant(1)),
+                        ),
+                        Statement::ExpressionStatement(Expression::new(Term::VarName(
+                            IdentifierToken::new("i".to_string()),
+                            None
+                        )))
+                    ]
+                ),
+                Statement::WhileStatement(
+                    Expression::new(Term::Expresssion(Box::new(Expression::new_binary_op(
+                        Term::IntegerConstant(2),
+                        BinaryOp::new(
+                            BinaryOpToken::new(TokenType::ASTERISK),
+                            Term::IntegerConstant(3)
+                        )
+                    )))),
+                    vec![Statement::ExpressionStatement(Expression::new(
+                        Term::VarName(IdentifierToken::new("i".to_string()), None)
+                    ))]
+                )
+            ]
         );
     }
 
