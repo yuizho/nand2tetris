@@ -21,6 +21,7 @@ impl Node for Program {
 pub enum Statement {
     LetStatement(IdentifierToken, Option<Expression>, Expression),
     WhileStatement(Expression, Vec<Statement>),
+    IfStatement(Expression, Vec<Statement>, Option<Vec<Statement>>),
     ReturnStatement(Option<Expression>),
     ExpressionStatement(Expression),
 }
@@ -66,6 +67,43 @@ impl Node for Statement {
                             .join("\n")
                     ),
                     TokenType::RBRACE.get_xml_tag(),
+                )
+            }
+
+            Self::IfStatement(expression, if_statements, else_statements) => {
+                format!(
+                    "<ifStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}</ifStatement>",
+                    Keyword::IF.get_xml_tag(),
+                    TokenType::LPAREN.get_xml_tag(),
+                    expression.to_xml(),
+                    TokenType::RPAREN.get_xml_tag(),
+                    TokenType::LBRACE.get_xml_tag(),
+                    format!(
+                        "<statements>\n{}\n</statements>",
+                        if_statements
+                            .iter()
+                            .map(|s| s.to_xml())
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    ),
+                    TokenType::RBRACE.get_xml_tag(),
+                    match else_statements {
+                        Some(statements) => format!(
+                            "{}\n{}\n{}\n{}\n",
+                            Keyword::ELSE.get_xml_tag(),
+                            TokenType::LBRACE.get_xml_tag(),
+                            format!(
+                                "<statements>\n{}\n</statements>",
+                                statements
+                                    .iter()
+                                    .map(|s| s.to_xml())
+                                    .collect::<Vec<_>>()
+                                    .join("\n")
+                            ),
+                            TokenType::RBRACE.get_xml_tag(),
+                        ),
+                        None => "".to_string(),
+                    }
                 )
             }
 
@@ -416,6 +454,154 @@ mod tests {
 </statements>
 <symbol> } </symbol>
 </whileStatement>"
+        )
+    }
+
+    #[test]
+    fn if_statement_no_else_to_xml() {
+        let program = Program {
+            statements: vec![Statement::IfStatement(
+                Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
+                    Keyword::TRUE,
+                ))),
+                vec![
+                    Statement::LetStatement(
+                        IdentifierToken::new("i".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(1)),
+                    ),
+                    Statement::LetStatement(
+                        IdentifierToken::new("j".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(2)),
+                    ),
+                ],
+                None,
+            )],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<ifStatement>
+<keyword> if </keyword>
+<symbol> ( </symbol>
+<expression>
+<term>
+<keyword> true </keyword>
+</term>
+</expression>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> i </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<letStatement>
+<keyword> let </keyword>
+<identifier> j </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 2 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+</statements>
+<symbol> } </symbol>
+</ifStatement>"
+        )
+    }
+
+    #[test]
+    fn if_statement_has_else_to_xml() {
+        let program = Program {
+            statements: vec![Statement::IfStatement(
+                Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
+                    Keyword::TRUE,
+                ))),
+                vec![Statement::LetStatement(
+                    IdentifierToken::new("i".to_string()),
+                    None,
+                    Expression::new(Term::IntegerConstant(1)),
+                )],
+                Some(vec![
+                    Statement::LetStatement(
+                        IdentifierToken::new("ii".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(1)),
+                    ),
+                    Statement::LetStatement(
+                        IdentifierToken::new("jj".to_string()),
+                        None,
+                        Expression::new(Term::IntegerConstant(2)),
+                    ),
+                ]),
+            )],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<ifStatement>
+<keyword> if </keyword>
+<symbol> ( </symbol>
+<expression>
+<term>
+<keyword> true </keyword>
+</term>
+</expression>
+<symbol> ) </symbol>
+<symbol> { </symbol>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> i </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+</statements>
+<symbol> } </symbol>
+<keyword> else </keyword>
+<symbol> { </symbol>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> ii </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<letStatement>
+<keyword> let </keyword>
+<identifier> jj </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<integerConstant> 2 </integerConstant>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+</statements>
+<symbol> } </symbol>
+</ifStatement>"
         )
     }
 
