@@ -38,6 +38,7 @@ impl<'a> Parser<'a> {
             TokenType::KEYWORD(Keyword::LET) => self.parse_let_statement(),
             TokenType::KEYWORD(Keyword::RETURN) => self.parse_return_statement(),
             TokenType::KEYWORD(Keyword::WHILE) => self.parse_while_statement(),
+            TokenType::KEYWORD(Keyword::IF) => self.parse_if_statement(),
             _ => self.parse_expression_statement(),
         }
     }
@@ -136,6 +137,56 @@ impl<'a> Parser<'a> {
         }
 
         Statement::WhileStatement(expression, statements)
+    }
+
+    fn parse_if_statement(&mut self) -> Statement {
+        self.advance();
+        if !self.current_token_is(TokenType::LPAREN) {
+            panic!("unexpected syntax of if: {}", self.cur_token.get_xml_tag());
+        }
+
+        self.advance();
+        let expression = self.parse_expression();
+
+        self.advance();
+        if !self.current_token_is(TokenType::RPAREN) {
+            panic!("unexpected syntax of if: {}", self.cur_token.get_xml_tag());
+        }
+
+        self.advance();
+        if !self.current_token_is(TokenType::LBRACE) {
+            panic!("unexpected syntax of if: {}", self.cur_token.get_xml_tag());
+        }
+
+        self.advance();
+        let mut if_statements = vec![];
+        while !self.current_token_is_eof_or(TokenType::RBRACE) {
+            if_statements.push(self.parse_statement());
+            self.advance();
+        }
+
+        let else_statements = if self.peek_token_is(TokenType::KEYWORD(Keyword::ELSE)) {
+            self.advance();
+            self.advance();
+            if !self.current_token_is(TokenType::LBRACE) {
+                panic!(
+                    "unexpected syntax of else: {}",
+                    self.cur_token.get_xml_tag()
+                );
+            }
+
+            self.advance();
+            let mut statements = vec![];
+            while !self.current_token_is_eof_or(TokenType::RBRACE) {
+                statements.push(self.parse_statement());
+                self.advance();
+            }
+            Some(statements)
+        } else {
+            None
+        };
+
+        Statement::IfStatement(expression, if_statements, else_statements)
     }
 
     fn parse_expression_statement(&mut self) -> Statement {
@@ -404,6 +455,74 @@ mod tests {
                     vec![Statement::ExpressionStatement(Expression::new(
                         Term::VarName(IdentifierToken::new("i".to_string()), None)
                     ))]
+                )
+            ]
+        );
+    }
+
+    #[test]
+    fn if_statements() {
+        let source = "
+        if (true) {
+            let i = 1;
+            i;
+        }
+
+        if ((2 * 3)) {
+            i;
+        } else {
+            let j= 2;
+            j;
+        }
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::IfStatement(
+                    Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
+                        Keyword::TRUE
+                    ))),
+                    vec![
+                        Statement::LetStatement(
+                            IdentifierToken::new("i".to_string()),
+                            None,
+                            Expression::new(Term::IntegerConstant(1)),
+                        ),
+                        Statement::ExpressionStatement(Expression::new(Term::VarName(
+                            IdentifierToken::new("i".to_string()),
+                            None
+                        )))
+                    ],
+                    None
+                ),
+                Statement::IfStatement(
+                    Expression::new(Term::Expresssion(Box::new(Expression::new_binary_op(
+                        Term::IntegerConstant(2),
+                        BinaryOp::new(
+                            BinaryOpToken::new(TokenType::ASTERISK),
+                            Term::IntegerConstant(3)
+                        )
+                    )))),
+                    vec![Statement::ExpressionStatement(Expression::new(
+                        Term::VarName(IdentifierToken::new("i".to_string()), None)
+                    ))],
+                    Some(vec![
+                        Statement::LetStatement(
+                            IdentifierToken::new("j".to_string()),
+                            None,
+                            Expression::new(Term::IntegerConstant(2)),
+                        ),
+                        Statement::ExpressionStatement(Expression::new(Term::VarName(
+                            IdentifierToken::new("j".to_string()),
+                            None
+                        )))
+                    ])
                 )
             ]
         );
