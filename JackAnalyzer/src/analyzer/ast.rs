@@ -251,6 +251,7 @@ pub enum Term {
     KeywordConstant(KeywordConstantToken),
     VarName(IdentifierToken, Option<Box<Expression>>),
     Expresssion(Box<Expression>),
+    SubroutineCall(Option<IdentifierToken>, IdentifierToken, Vec<Expression>),
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
@@ -285,6 +286,31 @@ impl Node for Term {
                 expression.to_xml(),
                 TokenType::RPAREN.get_xml_tag()
             ),
+
+            Self::SubroutineCall(parent_name, subroutine_name, expressions) => {
+                format!(
+                    "<term>\n{}{}\n{}\n<expressionList>\n{}</expressionList>\n{}\n</term>",
+                    match parent_name {
+                        Some(name) => format!("{}\n<symbol> . </symbol>\n", name.get_xml_tag()),
+                        None => "".to_string(),
+                    },
+                    subroutine_name.get_xml_tag(),
+                    TokenType::LPAREN.get_xml_tag(),
+                    if expressions.is_empty() {
+                        "".to_string()
+                    } else {
+                        format!(
+                            "{}\n",
+                            expressions
+                                .iter()
+                                .map(|s| s.to_xml())
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                        )
+                    },
+                    TokenType::RPAREN.get_xml_tag()
+                )
+            }
 
             Self::UnaryOp(op, term) => format!(
                 "<term>\n{}\n{}\n</term>",
@@ -813,6 +839,156 @@ mod tests {
 <term>
 <integerConstant> 10 </integerConstant>
 </term>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn local_subroutine_call_no_param_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::SubroutineCall(None, IdentifierToken::new("new".to_string()), vec![]),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> new </identifier>
+<symbol> ( </symbol>
+<expressionList>
+</expressionList>
+<symbol> ) </symbol>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn local_subroutine_call_with_param_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::SubroutineCall(
+                    None,
+                    IdentifierToken::new("new".to_string()),
+                    vec![
+                        Expression::new(Term::IntegerConstant(1)),
+                        Expression::new_binary_op(
+                            Term::IntegerConstant(2),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::PLUS),
+                                Term::IntegerConstant(3),
+                            ),
+                        ),
+                    ],
+                ),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> new </identifier>
+<symbol> ( </symbol>
+<expressionList>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<expression>
+<term>
+<integerConstant> 2 </integerConstant>
+</term>
+<symbol> + </symbol>
+<term>
+<integerConstant> 3 </integerConstant>
+</term>
+</expression>
+</expressionList>
+<symbol> ) </symbol>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn subroutine_call_no_param_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::SubroutineCall(
+                    Some(IdentifierToken::new("SquareGame".to_string())),
+                    IdentifierToken::new("new".to_string()),
+                    vec![],
+                ),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> SquareGame </identifier>
+<symbol> . </symbol>
+<identifier> new </identifier>
+<symbol> ( </symbol>
+<expressionList>
+</expressionList>
+<symbol> ) </symbol>
+</term>
+</expression>"
+        )
+    }
+
+    #[test]
+    fn subroutine_call_with_param_expression_to_xml() {
+        let program = Program {
+            statements: vec![Statement::ExpressionStatement(Expression::new(
+                Term::SubroutineCall(
+                    Some(IdentifierToken::new("SquareGame".to_string())),
+                    IdentifierToken::new("new".to_string()),
+                    vec![
+                        Expression::new(Term::IntegerConstant(1)),
+                        Expression::new_binary_op(
+                            Term::IntegerConstant(2),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::PLUS),
+                                Term::IntegerConstant(3),
+                            ),
+                        ),
+                    ],
+                ),
+            ))],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<expression>
+<term>
+<identifier> SquareGame </identifier>
+<symbol> . </symbol>
+<identifier> new </identifier>
+<symbol> ( </symbol>
+<expressionList>
+<expression>
+<term>
+<integerConstant> 1 </integerConstant>
+</term>
+</expression>
+<expression>
+<term>
+<integerConstant> 2 </integerConstant>
+</term>
+<symbol> + </symbol>
+<term>
+<integerConstant> 3 </integerConstant>
+</term>
+</expression>
+</expressionList>
+<symbol> ) </symbol>
 </term>
 </expression>"
         )
