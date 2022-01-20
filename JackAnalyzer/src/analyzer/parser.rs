@@ -208,6 +208,54 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_subroutine_call(&mut self, identifier_token: IdentifierToken) -> Term {
+        let parent_name = if self.peek_token_is(TokenType::DOT) {
+            self.advance();
+            self.advance();
+            Some(identifier_token)
+        } else {
+            None
+        };
+
+        let subroutine_name =
+            if let TokenType::IDNETIFIER(identifier_token) = self.cur_token.clone() {
+                identifier_token
+            } else {
+                panic!(
+                    "unexpected syntax of subroutine call: {}",
+                    self.cur_token.get_xml_tag()
+                );
+            };
+
+        self.advance();
+        if !self.current_token_is(TokenType::LPAREN) {
+            panic!(
+                "unexpected syntax of subroutine call: {}",
+                self.cur_token.get_xml_tag()
+            );
+        }
+
+        self.advance();
+        let mut expressions = vec![];
+        while !self.current_token_is_eof_or(TokenType::RPAREN) {
+            expressions.push(self.parse_expression());
+
+            if self.peek_token_is(TokenType::COMMA) {
+                self.advance();
+                self.advance();
+            } else if self.peek_token_is(TokenType::RPAREN) {
+                self.advance();
+            } else {
+                panic!(
+                    "unexpected syntax of subroutine call: {}",
+                    self.cur_token.get_xml_tag()
+                );
+            }
+        }
+
+        Term::SubroutineCall(parent_name, subroutine_name, expressions)
+    }
+
     fn parse_var_name(&mut self, identifier_token: IdentifierToken) -> Term {
         let identifier_token = identifier_token;
 
@@ -271,7 +319,13 @@ impl<'a> Parser<'a> {
     fn parse_term(&mut self) -> Term {
         let token = self.cur_token.clone();
         match token {
-            TokenType::IDNETIFIER(identifier_token) => self.parse_var_name(identifier_token),
+            TokenType::IDNETIFIER(identifier_token) => {
+                if self.peek_token_is(TokenType::LPAREN) || self.peek_token_is(TokenType::DOT) {
+                    self.parse_subroutine_call(identifier_token)
+                } else {
+                    self.parse_var_name(identifier_token)
+                }
+            }
             TokenType::NUMBER(num) => self.parse_integer_constant(num),
             TokenType::STRING(str_value) => self.parse_string_constant(str_value),
             TokenType::KEYWORD(keyword) => {
@@ -377,6 +431,59 @@ mod tests {
                         )
                     )
                 ),
+            ]
+        );
+    }
+
+    #[test]
+    fn subroutine_call_statements() {
+        let source = "
+        hoge();
+        fuga(1, 2 + 3);
+        parent.hoge();
+        parent.hoge(1, 2);
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 4);
+        assert_eq!(
+            actual.statements,
+            vec![
+                Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
+                    None,
+                    IdentifierToken::new("hoge".to_string()),
+                    vec![]
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
+                    None,
+                    IdentifierToken::new("fuga".to_string()),
+                    vec![
+                        Expression::new(Term::IntegerConstant(1)),
+                        Expression::new_binary_op(
+                            Term::IntegerConstant(2),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::PLUS),
+                                Term::IntegerConstant(3)
+                            )
+                        )
+                    ]
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
+                    Some(IdentifierToken::new("parent".to_string())),
+                    IdentifierToken::new("hoge".to_string()),
+                    vec![]
+                ))),
+                Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
+                    Some(IdentifierToken::new("parent".to_string())),
+                    IdentifierToken::new("hoge".to_string()),
+                    vec![
+                        Expression::new(Term::IntegerConstant(1)),
+                        Expression::new(Term::IntegerConstant(2)),
+                    ]
+                )))
             ]
         );
     }
