@@ -19,17 +19,17 @@ impl Node for Program {
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
-    LetStatement(IdentifierToken, Option<Expression>, Expression),
-    WhileStatement(Expression, Vec<Statement>),
-    IfStatement(Expression, Vec<Statement>, Option<Vec<Statement>>),
-    DoStatement(SubroutineCall),
-    ReturnStatement(Option<Expression>),
-    ExpressionStatement(Expression),
+    Let(IdentifierToken, Option<Expression>, Expression),
+    While(Expression, Vec<Statement>),
+    If(Expression, Vec<Statement>, Option<Vec<Statement>>),
+    Do(SubroutineCall),
+    Return(Option<Expression>),
+    Expression(Expression),
 }
 impl Node for Statement {
     fn to_xml(&self) -> String {
         match self {
-            Self::LetStatement(var_name, index_expression, expression) => {
+            Self::Let(var_name, index_expression, expression) => {
                 format!(
                     "<letStatement>\n{}\n{}\n{}{}\n{}\n{}\n</letStatement>",
                     TokenType::Keyword(Keyword::Let).get_xml_tag(),
@@ -51,7 +51,7 @@ impl Node for Statement {
                 )
             }
 
-            Self::WhileStatement(expression, statements) => {
+            Self::While(expression, statements) => {
                 format!(
                     "<whileStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n</whileStatement>",
                     Keyword::While.get_xml_tag(),
@@ -71,7 +71,7 @@ impl Node for Statement {
                 )
             }
 
-            Self::IfStatement(expression, if_statements, else_statements) => {
+            Self::If(expression, if_statements, else_statements) => {
                 format!(
                     "<ifStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}</ifStatement>",
                     Keyword::If.get_xml_tag(),
@@ -108,21 +108,21 @@ impl Node for Statement {
                 )
             }
 
-            Self::ReturnStatement(Some(expression)) => format!(
+            Self::Return(Some(expression)) => format!(
                 "<returnStatement>\n{}\n{}\n{}\n</returnStatement>",
                 TokenType::Keyword(Keyword::Return).get_xml_tag(),
                 expression.to_xml(),
                 TokenType::Semicolon.get_xml_tag()
             ),
 
-            Self::DoStatement(subroutine_call) => format!(
+            Self::Do(subroutine_call) => format!(
                 "<doStatement>\n{}\n{}\n{}\n</doStatement>",
                 Keyword::Do.get_xml_tag(),
                 subroutine_call.to_xml(),
                 TokenType::Semicolon.get_xml_tag()
             ),
 
-            Self::ReturnStatement(None) => {
+            Self::Return(None) => {
                 format!(
                     "<returnStatement>\n{}\n{}\n</returnStatement>",
                     TokenType::Keyword(Keyword::Return).get_xml_tag(),
@@ -130,7 +130,7 @@ impl Node for Statement {
                 )
             }
 
-            Self::ExpressionStatement(expression) => expression.to_xml(),
+            Self::Expression(expression) => expression.to_xml(),
         }
     }
 }
@@ -358,7 +358,7 @@ mod tests {
     #[test]
     fn expression_with_binary_op() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new_binary_op(
+            statements: vec![Statement::Expression(Expression::new_binary_op(
                 Term::VarName(IdentifierToken::new("i"), None),
                 BinaryOp::new(
                     BinaryOpToken::new(TokenType::Plus),
@@ -384,7 +384,7 @@ mod tests {
     #[test]
     fn let_statement_to_xml() {
         let program = Program {
-            statements: vec![Statement::LetStatement(
+            statements: vec![Statement::Let(
                 IdentifierToken::new("myVar"),
                 None,
                 Expression {
@@ -413,7 +413,7 @@ mod tests {
     #[test]
     fn let_statement_for_array_to_xml() {
         let program = Program {
-            statements: vec![Statement::LetStatement(
+            statements: vec![Statement::Let(
                 IdentifierToken::new("myVar"),
                 Some(Expression {
                     left_term: Term::VarName(IdentifierToken::new("i"), None),
@@ -452,17 +452,17 @@ mod tests {
     #[test]
     fn while_statement_to_xml() {
         let program = Program {
-            statements: vec![Statement::WhileStatement(
+            statements: vec![Statement::While(
                 Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
                     Keyword::True,
                 ))),
                 vec![
-                    Statement::LetStatement(
+                    Statement::Let(
                         IdentifierToken::new("i"),
                         None,
                         Expression::new(Term::IntegerConstant(1)),
                     ),
-                    Statement::LetStatement(
+                    Statement::Let(
                         IdentifierToken::new("j"),
                         None,
                         Expression::new(Term::IntegerConstant(2)),
@@ -515,17 +515,17 @@ mod tests {
     #[test]
     fn if_statement_no_else_to_xml() {
         let program = Program {
-            statements: vec![Statement::IfStatement(
+            statements: vec![Statement::If(
                 Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
                     Keyword::True,
                 ))),
                 vec![
-                    Statement::LetStatement(
+                    Statement::Let(
                         IdentifierToken::new("i"),
                         None,
                         Expression::new(Term::IntegerConstant(1)),
                     ),
-                    Statement::LetStatement(
+                    Statement::Let(
                         IdentifierToken::new("j"),
                         None,
                         Expression::new(Term::IntegerConstant(2)),
@@ -579,22 +579,22 @@ mod tests {
     #[test]
     fn if_statement_has_else_to_xml() {
         let program = Program {
-            statements: vec![Statement::IfStatement(
+            statements: vec![Statement::If(
                 Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
                     Keyword::True,
                 ))),
-                vec![Statement::LetStatement(
+                vec![Statement::Let(
                     IdentifierToken::new("i"),
                     None,
                     Expression::new(Term::IntegerConstant(1)),
                 )],
                 Some(vec![
-                    Statement::LetStatement(
+                    Statement::Let(
                         IdentifierToken::new("ii"),
                         None,
                         Expression::new(Term::IntegerConstant(1)),
                     ),
-                    Statement::LetStatement(
+                    Statement::Let(
                         IdentifierToken::new("jj"),
                         None,
                         Expression::new(Term::IntegerConstant(2)),
@@ -663,13 +663,11 @@ mod tests {
     #[test]
     fn do_statement_to_xml() {
         let program = Program {
-            statements: vec![Statement::DoStatement(
-                SubroutineCall::new_parent_subroutine_call(
-                    IdentifierToken::new("game"),
-                    IdentifierToken::new("run"),
-                    vec![],
-                ),
-            )],
+            statements: vec![Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                IdentifierToken::new("game"),
+                IdentifierToken::new("run"),
+                vec![],
+            ))],
         };
 
         assert_eq!(
@@ -691,7 +689,7 @@ mod tests {
     #[test]
     fn return_statement_no_identifier_to_xml() {
         let program = Program {
-            statements: vec![Statement::ReturnStatement(None)],
+            statements: vec![Statement::Return(None)],
         };
 
         assert_eq!(
@@ -706,7 +704,7 @@ mod tests {
     #[test]
     fn return_statement_that_has_identifier_to_xml() {
         let program = Program {
-            statements: vec![Statement::ReturnStatement(Some(Expression {
+            statements: vec![Statement::Return(Some(Expression {
                 left_term: Term::VarName(IdentifierToken::new("square"), None),
                 binary_op: None,
             }))],
@@ -729,7 +727,7 @@ mod tests {
     #[test]
     fn var_name_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression {
+            statements: vec![Statement::Expression(Expression {
                 left_term: Term::VarName(IdentifierToken::new("foo"), None),
                 binary_op: None,
             })],
@@ -748,7 +746,7 @@ mod tests {
     #[test]
     fn var_name_has_indexexpression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression {
+            statements: vec![Statement::Expression(Expression {
                 left_term: Term::VarName(
                     IdentifierToken::new("foo"),
                     Some(Box::new(Expression::new(Term::IntegerConstant(1)))),
@@ -777,7 +775,7 @@ mod tests {
     #[test]
     fn string_constant_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression {
+            statements: vec![Statement::Expression(Expression {
                 left_term: Term::StringConstant("str value!!".to_string()),
                 binary_op: None,
             })],
@@ -796,7 +794,7 @@ mod tests {
     #[test]
     fn keyword_constant_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
+            statements: vec![Statement::Expression(Expression::new(
                 Term::KeywordConstant(KeywordConstantToken::new(Keyword::True)),
             ))],
         };
@@ -814,12 +812,12 @@ mod tests {
     #[test]
     fn expression_term_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::Expresssion(Box::new(Expression::new(Term::UnaryOp(
+            statements: vec![Statement::Expression(Expression::new(Term::Expresssion(
+                Box::new(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::Minus),
                     Box::new(Term::VarName(IdentifierToken::new("i"), None)),
-                )))),
-            ))],
+                ))),
+            )))],
         };
 
         assert_eq!(
@@ -844,12 +842,10 @@ mod tests {
     #[test]
     fn unary_op_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::Minus),
-                    Box::new(Term::IntegerConstant(1)),
-                ),
-            ))],
+            statements: vec![Statement::Expression(Expression::new(Term::UnaryOp(
+                UnaryOpToken::new(TokenType::Minus),
+                Box::new(Term::IntegerConstant(1)),
+            )))],
         };
 
         assert_eq!(
@@ -869,11 +865,11 @@ mod tests {
     fn integer_constant_expression_to_xml() {
         let program = Program {
             statements: vec![
-                Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
+                Statement::Expression(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::Minus),
                     Box::new(Term::IntegerConstant(1)),
                 ))),
-                Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
+                Statement::Expression(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::Tilde),
                     Box::new(Term::IntegerConstant(10)),
                 ))),
@@ -904,7 +900,7 @@ mod tests {
     #[test]
     fn local_subroutine_call_no_param_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
+            statements: vec![Statement::Expression(Expression::new(
                 Term::SubroutineCall(SubroutineCall::new(IdentifierToken::new("new"), vec![])),
             ))],
         };
@@ -926,7 +922,7 @@ mod tests {
     #[test]
     fn local_subroutine_call_with_param_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
+            statements: vec![Statement::Expression(Expression::new(
                 Term::SubroutineCall(SubroutineCall::new(
                     IdentifierToken::new("new"),
                     vec![
@@ -974,7 +970,7 @@ mod tests {
     #[test]
     fn subroutine_call_no_param_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
+            statements: vec![Statement::Expression(Expression::new(
                 Term::SubroutineCall(SubroutineCall::new_parent_subroutine_call(
                     IdentifierToken::new("SquareGame"),
                     IdentifierToken::new("new"),
@@ -1002,7 +998,7 @@ mod tests {
     #[test]
     fn subroutine_call_with_param_expression_to_xml() {
         let program = Program {
-            statements: vec![Statement::ExpressionStatement(Expression::new(
+            statements: vec![Statement::Expression(Expression::new(
                 Term::SubroutineCall(SubroutineCall::new_parent_subroutine_call(
                     IdentifierToken::new("SquareGame"),
                     IdentifierToken::new("new"),
