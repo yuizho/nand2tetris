@@ -317,47 +317,36 @@ pub enum Term {
 }
 impl Node for Term {
     fn to_xml(&self) -> String {
-        match self {
+        let xml_tag = match self {
             Self::VarName(token, expression_opt) => match expression_opt {
                 Some(expression) => format!(
-                    "<term>\n{}\n{}\n{}\n{}\n</term>",
+                    "{}\n{}\n{}\n{}",
                     token.get_xml_tag(),
                     TokenType::LBRACKET.get_xml_tag(),
                     expression.to_xml(),
                     TokenType::RBRACKET.get_xml_tag(),
                 ),
-                None => format!("<term>\n{}\n</term>", token.get_xml_tag()),
+                None => token.get_xml_tag(),
             },
 
-            Self::IntegerConstant(num) => {
-                format!("<term>\n{}\n</term>", num.get_xml_tag())
-            }
+            Self::IntegerConstant(num) => num.get_xml_tag(),
 
-            Self::StringConstant(s) => {
-                format!("<term>\n{}\n</term>", s.get_xml_tag())
-            }
+            Self::StringConstant(s) => s.get_xml_tag(),
 
-            Self::KeywordConstant(keyword) => {
-                format!("<term>\n{}\n</term>", keyword.keyword.get_xml_tag())
-            }
+            Self::KeywordConstant(keyword) => keyword.keyword.get_xml_tag(),
 
             Self::Expresssion(expression) => format!(
-                "<term>\n{}\n{}\n{}\n</term>",
+                "{}\n{}\n{}",
                 TokenType::LPAREN.get_xml_tag(),
                 expression.to_xml(),
                 TokenType::RPAREN.get_xml_tag()
             ),
 
-            Self::SubroutineCall(subroutine_call) => {
-                format!("<term>\n{}\n</term>", subroutine_call.to_xml())
-            }
+            Self::SubroutineCall(subroutine_call) => subroutine_call.to_xml(),
 
-            Self::UnaryOp(op, term) => format!(
-                "<term>\n{}\n{}\n</term>",
-                op.token.get_xml_tag(),
-                term.to_xml()
-            ),
-        }
+            Self::UnaryOp(op, term) => format!("{}\n{}", op.token.get_xml_tag(), term.to_xml()),
+        };
+        format!("<term>\n{}\n</term>", xml_tag)
     }
 }
 
