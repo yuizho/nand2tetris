@@ -30,7 +30,7 @@ fn main() {
     buf_writer.flush().expect("failed to flush");
 }
 
-fn get_source_file_paths(args: &Vec<String>) -> Vec<PathBuf> {
+fn get_source_file_paths(args: &[String]) -> Vec<PathBuf> {
     if args.len() < 2 {
         panic!("this command needs at least one argument")
     }
@@ -42,7 +42,13 @@ fn get_source_file_paths(args: &Vec<String>) -> Vec<PathBuf> {
         let filenames = dir
             .into_iter()
             .map(|f| f.expect("failed to read files in dir").path())
-            .filter(|path_buf| path_buf.as_path().extension().unwrap_or(OsStr::new("")) == "jack")
+            .filter(|path_buf| {
+                path_buf
+                    .as_path()
+                    .extension()
+                    .unwrap_or_else(|| OsStr::new(""))
+                    == "jack"
+            })
             .collect::<Vec<PathBuf>>();
         if filenames.is_empty() {
             panic!("there is no .jack file.");
@@ -60,7 +66,7 @@ fn get_source_file_paths(args: &Vec<String>) -> Vec<PathBuf> {
     }
 }
 
-fn create_output_file_path(args: &Vec<String>) -> PathBuf {
+fn create_output_file_path(args: &[String]) -> PathBuf {
     if args.len() < 2 {
         panic!("this command needs at least one argument")
     }

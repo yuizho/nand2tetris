@@ -14,7 +14,7 @@ impl<'a, T: Write> CompilationEngine<'a, T> {
     pub fn compile(&mut self, program_ast: Program) {
         let xml = program_ast.to_xml();
         self.buf_writer
-            .write(xml.as_bytes())
+            .write_all(xml.as_bytes())
             .expect("failed to write tags");
     }
 }
