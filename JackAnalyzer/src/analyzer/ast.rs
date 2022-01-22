@@ -22,6 +22,7 @@ pub enum Statement {
     LetStatement(IdentifierToken, Option<Expression>, Expression),
     WhileStatement(Expression, Vec<Statement>),
     IfStatement(Expression, Vec<Statement>, Option<Vec<Statement>>),
+    DoStatement(SubroutineCall),
     ReturnStatement(Option<Expression>),
     ExpressionStatement(Expression),
 }
@@ -111,6 +112,13 @@ impl Node for Statement {
                 "<returnStatement>\n{}\n{}\n{}\n</returnStatement>",
                 TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
                 format!("{}", expression.to_xml()),
+                TokenType::SEMICOLON.get_xml_tag()
+            ),
+
+            Self::DoStatement(subroutine_call) => format!(
+                "<doStatement>\n{}\n{}\n{}\n</doStatement>",
+                Keyword::DO.get_xml_tag(),
+                subroutine_call.to_xml(),
                 TokenType::SEMICOLON.get_xml_tag()
             ),
 
@@ -660,6 +668,34 @@ mod tests {
 </statements>
 <symbol> } </symbol>
 </ifStatement>"
+        )
+    }
+
+    #[test]
+    fn do_statement_to_xml() {
+        let program = Program {
+            statements: vec![Statement::DoStatement(
+                SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken::new("game"),
+                    IdentifierToken::new("run"),
+                    vec![],
+                ),
+            )],
+        };
+
+        assert_eq!(
+            program.to_xml(),
+            "<doStatement>
+<keyword> do </keyword>
+<identifier> game </identifier>
+<symbol> . </symbol>
+<identifier> run </identifier>
+<symbol> ( </symbol>
+<expressionList>
+</expressionList>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+</doStatement>"
         )
     }
 
