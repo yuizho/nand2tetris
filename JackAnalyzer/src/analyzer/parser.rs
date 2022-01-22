@@ -298,18 +298,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_integer_constant(&self, num: i32) -> Term {
-        Term::IntegerConstant(num)
-    }
-
-    fn parse_string_constant(&self, str_value: String) -> Term {
-        Term::StringConstant(str_value)
-    }
-
-    fn parse_keyword_constant(&self, keyword: KeywordConstantToken) -> Term {
-        Term::KeywordConstant(keyword)
-    }
-
     fn parse_expression_term(&mut self) -> Term {
         self.advance();
 
@@ -347,10 +335,10 @@ impl<'a> Parser<'a> {
                     self.parse_var_name(identifier_token)
                 }
             }
-            TokenType::NUMBER(num) => self.parse_integer_constant(num),
-            TokenType::STRING(str_value) => self.parse_string_constant(str_value),
+            TokenType::NUMBER(num) => Term::IntegerConstant(num),
+            TokenType::STRING(str_value) => Term::StringConstant(str_value),
             TokenType::KEYWORD(keyword) => {
-                self.parse_keyword_constant(KeywordConstantToken::new(keyword))
+                Term::KeywordConstant(KeywordConstantToken::new(keyword))
             }
             TokenType::LPAREN => self.parse_expression_term(),
             TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(token),
