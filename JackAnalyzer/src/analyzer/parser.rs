@@ -39,6 +39,7 @@ impl<'a> Parser<'a> {
             TokenType::KEYWORD(Keyword::RETURN) => self.parse_return_statement(),
             TokenType::KEYWORD(Keyword::WHILE) => self.parse_while_statement(),
             TokenType::KEYWORD(Keyword::IF) => self.parse_if_statement(),
+            TokenType::KEYWORD(Keyword::DO) => self.parse_do_statement(),
             _ => self.parse_expression_statement(),
         }
     }
@@ -189,6 +190,19 @@ impl<'a> Parser<'a> {
         Statement::IfStatement(expression, if_statements, else_statements)
     }
 
+    fn parse_do_statement(&mut self) -> Statement {
+        self.advance();
+
+        if let TokenType::IDNETIFIER(identifier) = self.cur_token.clone() {
+            Statement::DoStatement(self.parse_subroutine_call(identifier))
+        } else {
+            panic!(
+                "unexpected syntax of do statement: {}",
+                self.cur_token.get_xml_tag()
+            );
+        }
+    }
+
     fn parse_expression_statement(&mut self) -> Statement {
         let expression = self.parse_expression();
 
@@ -208,7 +222,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_subroutine_call(&mut self, identifier_token: IdentifierToken) -> Term {
+    fn parse_subroutine_call(&mut self, identifier_token: IdentifierToken) -> SubroutineCall {
         let parent_name = if self.peek_token_is(TokenType::DOT) {
             self.advance();
             self.advance();
@@ -253,15 +267,14 @@ impl<'a> Parser<'a> {
             }
         }
 
-        let subroutine_call = match parent_name {
+        match parent_name {
             Some(parent_name) => SubroutineCall::new_parent_subroutine_call(
                 parent_name,
                 subroutine_name,
                 expressions,
             ),
             None => SubroutineCall::new(subroutine_name, expressions),
-        };
-        Term::SubroutineCall(subroutine_call)
+        }
     }
 
     fn parse_var_name(&mut self, identifier_token: IdentifierToken) -> Term {
@@ -329,7 +342,7 @@ impl<'a> Parser<'a> {
         match token {
             TokenType::IDNETIFIER(identifier_token) => {
                 if self.peek_token_is(TokenType::LPAREN) || self.peek_token_is(TokenType::DOT) {
-                    self.parse_subroutine_call(identifier_token)
+                    Term::SubroutineCall(self.parse_subroutine_call(identifier_token))
                 } else {
                     self.parse_var_name(identifier_token)
                 }
@@ -522,6 +535,29 @@ mod tests {
                 )))),
                 Statement::ReturnStatement(None)
             ]
+        );
+    }
+
+    #[test]
+    fn do_statements() {
+        let source = "
+        do game.run();
+        "
+        .as_bytes();
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(
+            actual.statements,
+            vec![Statement::DoStatement(
+                SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken::new("game"),
+                    IdentifierToken::new("run"),
+                    vec![],
+                ),
+            )]
         );
     }
 
