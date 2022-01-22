@@ -46,7 +46,7 @@ impl Node for Statement {
                         None => "".to_string(),
                     },
                     TokenType::ASSIGN.get_xml_tag(),
-                    format!("{}", expression.to_xml()),
+                    expression.to_xml(),
                     TokenType::SEMICOLON.get_xml_tag()
                 )
             }
@@ -111,7 +111,7 @@ impl Node for Statement {
             Self::ReturnStatement(Some(expression)) => format!(
                 "<returnStatement>\n{}\n{}\n{}\n</returnStatement>",
                 TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
-                format!("{}", expression.to_xml()),
+                expression.to_xml(),
                 TokenType::SEMICOLON.get_xml_tag()
             ),
 
@@ -219,18 +219,18 @@ impl BinaryOpToken {
     }
 
     pub fn is_binary_op_token_type(token: &TokenType) -> bool {
-        match token {
+        matches!(
+            token,
             TokenType::PLUS
-            | TokenType::MINUS
-            | TokenType::ASTERISK
-            | TokenType::SLASH
-            | TokenType::AND
-            | TokenType::OR
-            | TokenType::GT
-            | TokenType::LT
-            | TokenType::ASSIGN => true,
-            _ => false,
-        }
+                | TokenType::MINUS
+                | TokenType::ASTERISK
+                | TokenType::SLASH
+                | TokenType::AND
+                | TokenType::OR
+                | TokenType::GT
+                | TokenType::LT
+                | TokenType::ASSIGN
+        )
     }
 }
 
