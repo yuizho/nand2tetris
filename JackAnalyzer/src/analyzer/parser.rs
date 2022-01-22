@@ -10,7 +10,7 @@ pub struct Parser<'a> {
 impl<'a> Parser<'a> {
     pub fn new(tokenizer: &'a mut JackTokenizer) -> Self {
         let cur_token = tokenizer.advance();
-        let peek_token = tokenizer.advance();
+        let peek_token = tokenizer.peek();
         Parser {
             tokenizer,
             cur_token,
@@ -19,9 +19,8 @@ impl<'a> Parser<'a> {
     }
 
     pub fn advance(&mut self) {
-        // TODO: should use reference
-        self.cur_token = self.peek_token.clone();
-        self.peek_token = self.tokenizer.advance();
+        self.cur_token = self.tokenizer.advance();
+        self.peek_token = self.tokenizer.peek();
     }
 
     pub fn parse_program(&mut self) -> Program {
@@ -193,14 +192,20 @@ impl<'a> Parser<'a> {
     fn parse_do_statement(&mut self) -> Statement {
         self.advance();
 
-        if let TokenType::Identifier(identifier) = self.cur_token.clone() {
-            Statement::Do(self.parse_subroutine_call(identifier))
+        let subroutine_call = if let TokenType::Identifier(identifier) = self.cur_token.clone() {
+            self.parse_subroutine_call(identifier)
         } else {
             panic!(
                 "unexpected syntax of do statement: {}",
                 self.cur_token.get_xml_tag()
             );
+        };
+
+        while !self.current_token_is_eof_or(TokenType::Semicolon) {
+            self.advance();
         }
+
+        Statement::Do(subroutine_call)
     }
 
     fn parse_expression_statement(&mut self) -> Statement {

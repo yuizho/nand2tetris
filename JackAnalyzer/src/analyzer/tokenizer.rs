@@ -33,6 +33,20 @@ impl JackTokenizer {
         self.input.len() > self.read_position
     }
 
+    pub fn peek(&mut self) -> token::TokenType {
+        let start_position = self.position;
+        let start_read_posision = self.read_position;
+        let start_current_char = self.current_char;
+
+        let token = self.advance();
+
+        self.position = start_position;
+        self.read_position = start_read_posision;
+        self.current_char = start_current_char;
+
+        token
+    }
+
     pub fn advance(&mut self) -> token::TokenType {
         self.skip_whitespace();
 
