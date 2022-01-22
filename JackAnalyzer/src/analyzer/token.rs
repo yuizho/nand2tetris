@@ -61,8 +61,10 @@ pub struct IdentifierToken {
     identifier: String,
 }
 impl IdentifierToken {
-    pub fn new(identifier: String) -> Self {
-        IdentifierToken { identifier }
+    pub fn new<S: Into<String>>(identifier: S) -> Self {
+        IdentifierToken {
+            identifier: identifier.into(),
+        }
     }
 }
 impl Token for IdentifierToken {

@@ -330,7 +330,7 @@ mod tests {
     fn expression_with_binary_op() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new_binary_op(
-                Term::VarName(IdentifierToken::new("i".to_string()), None),
+                Term::VarName(IdentifierToken::new("i"), None),
                 BinaryOp::new(
                     BinaryOpToken::new(TokenType::PLUS),
                     Term::IntegerConstant(2),
@@ -356,10 +356,10 @@ mod tests {
     fn let_statement_to_xml() {
         let program = Program {
             statements: vec![Statement::LetStatement(
-                IdentifierToken::new("myVar".to_string()),
+                IdentifierToken::new("myVar"),
                 None,
                 Expression {
-                    left_term: Term::VarName(IdentifierToken::new("anotherVar".to_string()), None),
+                    left_term: Term::VarName(IdentifierToken::new("anotherVar"), None),
                     binary_op: None,
                 },
             )],
@@ -385,13 +385,13 @@ mod tests {
     fn let_statement_for_array_to_xml() {
         let program = Program {
             statements: vec![Statement::LetStatement(
-                IdentifierToken::new("myVar".to_string()),
+                IdentifierToken::new("myVar"),
                 Some(Expression {
-                    left_term: Term::VarName(IdentifierToken::new("i".to_string()), None),
+                    left_term: Term::VarName(IdentifierToken::new("i"), None),
                     binary_op: None,
                 }),
                 Expression {
-                    left_term: Term::VarName(IdentifierToken::new("anotherVar".to_string()), None),
+                    left_term: Term::VarName(IdentifierToken::new("anotherVar"), None),
                     binary_op: None,
                 },
             )],
@@ -429,12 +429,12 @@ mod tests {
                 ))),
                 vec![
                     Statement::LetStatement(
-                        IdentifierToken::new("i".to_string()),
+                        IdentifierToken::new("i"),
                         None,
                         Expression::new(Term::IntegerConstant(1)),
                     ),
                     Statement::LetStatement(
-                        IdentifierToken::new("j".to_string()),
+                        IdentifierToken::new("j"),
                         None,
                         Expression::new(Term::IntegerConstant(2)),
                     ),
@@ -492,12 +492,12 @@ mod tests {
                 ))),
                 vec![
                     Statement::LetStatement(
-                        IdentifierToken::new("i".to_string()),
+                        IdentifierToken::new("i"),
                         None,
                         Expression::new(Term::IntegerConstant(1)),
                     ),
                     Statement::LetStatement(
-                        IdentifierToken::new("j".to_string()),
+                        IdentifierToken::new("j"),
                         None,
                         Expression::new(Term::IntegerConstant(2)),
                     ),
@@ -555,18 +555,18 @@ mod tests {
                     Keyword::TRUE,
                 ))),
                 vec![Statement::LetStatement(
-                    IdentifierToken::new("i".to_string()),
+                    IdentifierToken::new("i"),
                     None,
                     Expression::new(Term::IntegerConstant(1)),
                 )],
                 Some(vec![
                     Statement::LetStatement(
-                        IdentifierToken::new("ii".to_string()),
+                        IdentifierToken::new("ii"),
                         None,
                         Expression::new(Term::IntegerConstant(1)),
                     ),
                     Statement::LetStatement(
-                        IdentifierToken::new("jj".to_string()),
+                        IdentifierToken::new("jj"),
                         None,
                         Expression::new(Term::IntegerConstant(2)),
                     ),
@@ -650,7 +650,7 @@ mod tests {
     fn return_statement_that_has_identifier_to_xml() {
         let program = Program {
             statements: vec![Statement::ReturnStatement(Some(Expression {
-                left_term: Term::VarName(IdentifierToken::new("square".to_string()), None),
+                left_term: Term::VarName(IdentifierToken::new("square"), None),
                 binary_op: None,
             }))],
         };
@@ -673,7 +673,7 @@ mod tests {
     fn var_name_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression {
-                left_term: Term::VarName(IdentifierToken::new("foo".to_string()), None),
+                left_term: Term::VarName(IdentifierToken::new("foo"), None),
                 binary_op: None,
             })],
         };
@@ -693,7 +693,7 @@ mod tests {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression {
                 left_term: Term::VarName(
-                    IdentifierToken::new("foo".to_string()),
+                    IdentifierToken::new("foo"),
                     Some(Box::new(Expression::new(Term::IntegerConstant(1)))),
                 ),
                 binary_op: None,
@@ -760,7 +760,7 @@ mod tests {
             statements: vec![Statement::ExpressionStatement(Expression::new(
                 Term::Expresssion(Box::new(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::MINUS),
-                    Box::new(Term::VarName(IdentifierToken::new("i".to_string()), None)),
+                    Box::new(Term::VarName(IdentifierToken::new("i"), None)),
                 )))),
             ))],
         };
@@ -848,7 +848,7 @@ mod tests {
     fn local_subroutine_call_no_param_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::SubroutineCall(None, IdentifierToken::new("new".to_string()), vec![]),
+                Term::SubroutineCall(None, IdentifierToken::new("new"), vec![]),
             ))],
         };
 
@@ -872,7 +872,7 @@ mod tests {
             statements: vec![Statement::ExpressionStatement(Expression::new(
                 Term::SubroutineCall(
                     None,
-                    IdentifierToken::new("new".to_string()),
+                    IdentifierToken::new("new"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
                         Expression::new_binary_op(
@@ -920,8 +920,8 @@ mod tests {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
                 Term::SubroutineCall(
-                    Some(IdentifierToken::new("SquareGame".to_string())),
-                    IdentifierToken::new("new".to_string()),
+                    Some(IdentifierToken::new("SquareGame")),
+                    IdentifierToken::new("new"),
                     vec![],
                 ),
             ))],
@@ -948,8 +948,8 @@ mod tests {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
                 Term::SubroutineCall(
-                    Some(IdentifierToken::new("SquareGame".to_string())),
-                    IdentifierToken::new("new".to_string()),
+                    Some(IdentifierToken::new("SquareGame")),
+                    IdentifierToken::new("new"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
                         Expression::new_binary_op(

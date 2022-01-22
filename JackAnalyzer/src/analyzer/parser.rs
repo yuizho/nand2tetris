@@ -393,35 +393,35 @@ mod tests {
             actual.statements,
             vec![
                 Statement::LetStatement(
-                    IdentifierToken::new("x".to_string()),
+                    IdentifierToken::new("x"),
                     None,
                     Expression::new(Term::IntegerConstant(5))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken::new("y".to_string()),
+                    IdentifierToken::new("y"),
                     None,
-                    Expression::new(Term::VarName(IdentifierToken::new("x".to_string()), None))
+                    Expression::new(Term::VarName(IdentifierToken::new("x"), None))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken::new("z".to_string()),
+                    IdentifierToken::new("z"),
                     Some(Expression::new(Term::VarName(
-                        IdentifierToken::new("i".to_string()),
+                        IdentifierToken::new("i"),
                         None
                     ))),
-                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string()), None)),
+                    Expression::new(Term::VarName(IdentifierToken::new("y"), None)),
                 ),
                 Statement::LetStatement(
-                    IdentifierToken::new("z".to_string()),
+                    IdentifierToken::new("z"),
                     Some(Expression::new(Term::IntegerConstant(0))),
-                    Expression::new(Term::VarName(IdentifierToken::new("y".to_string()), None))
+                    Expression::new(Term::VarName(IdentifierToken::new("y"), None))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken::new("z".to_string()),
+                    IdentifierToken::new("z"),
                     None,
                     Expression::new(Term::StringConstant("foo".to_string()))
                 ),
                 Statement::LetStatement(
-                    IdentifierToken::new("z".to_string()),
+                    IdentifierToken::new("z"),
                     None,
                     Expression::new_binary_op(
                         Term::IntegerConstant(1),
@@ -454,12 +454,12 @@ mod tests {
             vec![
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
                     None,
-                    IdentifierToken::new("hoge".to_string()),
+                    IdentifierToken::new("hoge"),
                     vec![]
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
                     None,
-                    IdentifierToken::new("fuga".to_string()),
+                    IdentifierToken::new("fuga"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
                         Expression::new_binary_op(
@@ -472,13 +472,13 @@ mod tests {
                     ]
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
-                    Some(IdentifierToken::new("parent".to_string())),
-                    IdentifierToken::new("hoge".to_string()),
+                    Some(IdentifierToken::new("parent")),
+                    IdentifierToken::new("hoge"),
                     vec![]
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
-                    Some(IdentifierToken::new("parent".to_string())),
-                    IdentifierToken::new("hoge".to_string()),
+                    Some(IdentifierToken::new("parent")),
+                    IdentifierToken::new("hoge"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
                         Expression::new(Term::IntegerConstant(2)),
@@ -506,7 +506,7 @@ mod tests {
             vec![
                 Statement::ReturnStatement(Some(Expression::new(Term::IntegerConstant(5)))),
                 Statement::ReturnStatement(Some(Expression::new(Term::VarName(
-                    IdentifierToken::new("x".to_string()),
+                    IdentifierToken::new("x"),
                     None
                 )))),
                 Statement::ReturnStatement(None)
@@ -541,12 +541,12 @@ mod tests {
                     ))),
                     vec![
                         Statement::LetStatement(
-                            IdentifierToken::new("i".to_string()),
+                            IdentifierToken::new("i"),
                             None,
                             Expression::new(Term::IntegerConstant(1)),
                         ),
                         Statement::ExpressionStatement(Expression::new(Term::VarName(
-                            IdentifierToken::new("i".to_string()),
+                            IdentifierToken::new("i"),
                             None
                         )))
                     ]
@@ -560,7 +560,7 @@ mod tests {
                         )
                     )))),
                     vec![Statement::ExpressionStatement(Expression::new(
-                        Term::VarName(IdentifierToken::new("i".to_string()), None)
+                        Term::VarName(IdentifierToken::new("i"), None)
                     ))]
                 )
             ]
@@ -597,12 +597,12 @@ mod tests {
                     ))),
                     vec![
                         Statement::LetStatement(
-                            IdentifierToken::new("i".to_string()),
+                            IdentifierToken::new("i"),
                             None,
                             Expression::new(Term::IntegerConstant(1)),
                         ),
                         Statement::ExpressionStatement(Expression::new(Term::VarName(
-                            IdentifierToken::new("i".to_string()),
+                            IdentifierToken::new("i"),
                             None
                         )))
                     ],
@@ -617,16 +617,16 @@ mod tests {
                         )
                     )))),
                     vec![Statement::ExpressionStatement(Expression::new(
-                        Term::VarName(IdentifierToken::new("i".to_string()), None)
+                        Term::VarName(IdentifierToken::new("i"), None)
                     ))],
                     Some(vec![
                         Statement::LetStatement(
-                            IdentifierToken::new("j".to_string()),
+                            IdentifierToken::new("j"),
                             None,
                             Expression::new(Term::IntegerConstant(2)),
                         ),
                         Statement::ExpressionStatement(Expression::new(Term::VarName(
-                            IdentifierToken::new("j".to_string()),
+                            IdentifierToken::new("j"),
                             None
                         )))
                     ])
@@ -649,7 +649,7 @@ mod tests {
         assert_eq!(
             actual.statements,
             vec![Statement::ExpressionStatement(Expression::new(
-                Term::VarName(IdentifierToken::new("foobar".to_string()), None)
+                Term::VarName(IdentifierToken::new("foobar"), None)
             ))]
         );
     }
@@ -671,17 +671,17 @@ mod tests {
             actual.statements,
             vec![
                 Statement::ExpressionStatement(Expression::new(Term::VarName(
-                    IdentifierToken::new("foobar".to_string()),
+                    IdentifierToken::new("foobar"),
                     Some(Box::new(Expression::new(Term::IntegerConstant(1))))
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::VarName(
-                    IdentifierToken::new("foobar".to_string()),
+                    IdentifierToken::new("foobar"),
                     Some(Box::new(Expression::new(Term::IntegerConstant(2))))
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::VarName(
-                    IdentifierToken::new("foobar".to_string()),
+                    IdentifierToken::new("foobar"),
                     Some(Box::new(Expression::new_binary_op(
-                        Term::VarName(IdentifierToken::new("i".to_string()), None),
+                        Term::VarName(IdentifierToken::new("i"), None),
                         BinaryOp::new(
                             BinaryOpToken::new(TokenType::PLUS),
                             Term::IntegerConstant(1)
@@ -875,7 +875,7 @@ mod tests {
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::TILDE),
-                    Box::new(Term::VarName(IdentifierToken::new("i".to_string(),), None))
+                    Box::new(Term::VarName(IdentifierToken::new("i",), None))
                 ))),
             ]
         );
@@ -900,7 +900,7 @@ mod tests {
                     Term::IntegerConstant(1),
                     BinaryOp::new(
                         BinaryOpToken::new(TokenType::PLUS),
-                        Term::VarName(IdentifierToken::new("i".to_string()), None)
+                        Term::VarName(IdentifierToken::new("i"), None)
                     )
                 )),
                 Statement::ExpressionStatement(Expression::new_binary_op(
