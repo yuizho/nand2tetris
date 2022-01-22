@@ -35,11 +35,11 @@ impl<'a> Parser<'a> {
 
     fn parse_statement(&mut self) -> Statement {
         match &self.cur_token {
-            TokenType::KEYWORD(Keyword::LET) => self.parse_let_statement(),
-            TokenType::KEYWORD(Keyword::RETURN) => self.parse_return_statement(),
-            TokenType::KEYWORD(Keyword::WHILE) => self.parse_while_statement(),
-            TokenType::KEYWORD(Keyword::IF) => self.parse_if_statement(),
-            TokenType::KEYWORD(Keyword::DO) => self.parse_do_statement(),
+            TokenType::Keyword(Keyword::Let) => self.parse_let_statement(),
+            TokenType::Keyword(Keyword::Return) => self.parse_return_statement(),
+            TokenType::Keyword(Keyword::While) => self.parse_while_statement(),
+            TokenType::Keyword(Keyword::If) => self.parse_if_statement(),
+            TokenType::Keyword(Keyword::Do) => self.parse_do_statement(),
             _ => self.parse_expression_statement(),
         }
     }
@@ -47,7 +47,7 @@ impl<'a> Parser<'a> {
     fn parse_let_statement(&mut self) -> Statement {
         self.advance();
 
-        let identifier_token = if let TokenType::IDNETIFIER(identifier_token) = &self.cur_token {
+        let identifier_token = if let TokenType::Identifier(identifier_token) = &self.cur_token {
             identifier_token.clone()
         } else {
             panic!(
@@ -58,11 +58,11 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
-        let index_expression = if self.current_token_is(TokenType::LBRACKET) {
+        let index_expression = if self.current_token_is(TokenType::Lbracket) {
             self.advance();
             let expression = self.parse_expression();
             self.advance();
-            if !self.current_token_is(TokenType::RBRACKET) {
+            if !self.current_token_is(TokenType::Rbracket) {
                 panic!("unexpected syntax of let: {}", self.cur_token.get_xml_tag());
             }
             self.advance();
@@ -71,7 +71,7 @@ impl<'a> Parser<'a> {
             None
         };
 
-        if !self.current_token_is(TokenType::ASSIGN) {
+        if !self.current_token_is(TokenType::Assign) {
             panic!("unexpected syntax of let: {}", self.cur_token.get_xml_tag());
         }
 
@@ -79,7 +79,7 @@ impl<'a> Parser<'a> {
 
         let expression = self.parse_expression();
 
-        while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
+        while !self.current_token_is_eof_or(TokenType::Semicolon) {
             self.advance();
         }
 
@@ -89,13 +89,13 @@ impl<'a> Parser<'a> {
     fn parse_return_statement(&mut self) -> Statement {
         self.advance();
 
-        let expression = if self.current_token_is(TokenType::SEMICOLON) {
+        let expression = if self.current_token_is(TokenType::Semicolon) {
             None
         } else {
             Some(self.parse_expression())
         };
 
-        while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
+        while !self.current_token_is_eof_or(TokenType::Semicolon) {
             self.advance();
         }
 
@@ -104,7 +104,7 @@ impl<'a> Parser<'a> {
 
     fn parse_while_statement(&mut self) -> Statement {
         self.advance();
-        if !self.current_token_is(TokenType::LPAREN) {
+        if !self.current_token_is(TokenType::Lparen) {
             panic!(
                 "unexpected syntax of while: {}",
                 self.cur_token.get_xml_tag()
@@ -115,7 +115,7 @@ impl<'a> Parser<'a> {
         let expression = self.parse_expression();
 
         self.advance();
-        if !self.current_token_is(TokenType::RPAREN) {
+        if !self.current_token_is(TokenType::Rparen) {
             panic!(
                 "unexpected syntax of while: {}",
                 self.cur_token.get_xml_tag()
@@ -123,7 +123,7 @@ impl<'a> Parser<'a> {
         }
 
         self.advance();
-        if !self.current_token_is(TokenType::LBRACE) {
+        if !self.current_token_is(TokenType::Lbrace) {
             panic!(
                 "unexpected syntax of while: {}",
                 self.cur_token.get_xml_tag()
@@ -132,7 +132,7 @@ impl<'a> Parser<'a> {
 
         self.advance();
         let mut statements = vec![];
-        while !self.current_token_is_eof_or(TokenType::RBRACE) {
+        while !self.current_token_is_eof_or(TokenType::Rbrace) {
             statements.push(self.parse_statement());
             self.advance();
         }
@@ -142,7 +142,7 @@ impl<'a> Parser<'a> {
 
     fn parse_if_statement(&mut self) -> Statement {
         self.advance();
-        if !self.current_token_is(TokenType::LPAREN) {
+        if !self.current_token_is(TokenType::Lparen) {
             panic!("unexpected syntax of if: {}", self.cur_token.get_xml_tag());
         }
 
@@ -150,26 +150,26 @@ impl<'a> Parser<'a> {
         let expression = self.parse_expression();
 
         self.advance();
-        if !self.current_token_is(TokenType::RPAREN) {
+        if !self.current_token_is(TokenType::Rparen) {
             panic!("unexpected syntax of if: {}", self.cur_token.get_xml_tag());
         }
 
         self.advance();
-        if !self.current_token_is(TokenType::LBRACE) {
+        if !self.current_token_is(TokenType::Lbrace) {
             panic!("unexpected syntax of if: {}", self.cur_token.get_xml_tag());
         }
 
         self.advance();
         let mut if_statements = vec![];
-        while !self.current_token_is_eof_or(TokenType::RBRACE) {
+        while !self.current_token_is_eof_or(TokenType::Rbrace) {
             if_statements.push(self.parse_statement());
             self.advance();
         }
 
-        let else_statements = if self.peek_token_is(TokenType::KEYWORD(Keyword::ELSE)) {
+        let else_statements = if self.peek_token_is(TokenType::Keyword(Keyword::Else)) {
             self.advance();
             self.advance();
-            if !self.current_token_is(TokenType::LBRACE) {
+            if !self.current_token_is(TokenType::Lbrace) {
                 panic!(
                     "unexpected syntax of else: {}",
                     self.cur_token.get_xml_tag()
@@ -178,7 +178,7 @@ impl<'a> Parser<'a> {
 
             self.advance();
             let mut statements = vec![];
-            while !self.current_token_is_eof_or(TokenType::RBRACE) {
+            while !self.current_token_is_eof_or(TokenType::Rbrace) {
                 statements.push(self.parse_statement());
                 self.advance();
             }
@@ -193,7 +193,7 @@ impl<'a> Parser<'a> {
     fn parse_do_statement(&mut self) -> Statement {
         self.advance();
 
-        if let TokenType::IDNETIFIER(identifier) = self.cur_token.clone() {
+        if let TokenType::Identifier(identifier) = self.cur_token.clone() {
             Statement::DoStatement(self.parse_subroutine_call(identifier))
         } else {
             panic!(
@@ -206,7 +206,7 @@ impl<'a> Parser<'a> {
     fn parse_expression_statement(&mut self) -> Statement {
         let expression = self.parse_expression();
 
-        while !self.current_token_is_eof_or(TokenType::SEMICOLON) {
+        while !self.current_token_is_eof_or(TokenType::Semicolon) {
             self.advance();
         }
         Statement::ExpressionStatement(expression)
@@ -223,7 +223,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_subroutine_call(&mut self, identifier_token: IdentifierToken) -> SubroutineCall {
-        let parent_name = if self.peek_token_is(TokenType::DOT) {
+        let parent_name = if self.peek_token_is(TokenType::Dot) {
             self.advance();
             self.advance();
             Some(identifier_token)
@@ -232,7 +232,7 @@ impl<'a> Parser<'a> {
         };
 
         let subroutine_name =
-            if let TokenType::IDNETIFIER(identifier_token) = self.cur_token.clone() {
+            if let TokenType::Identifier(identifier_token) = self.cur_token.clone() {
                 identifier_token
             } else {
                 panic!(
@@ -242,7 +242,7 @@ impl<'a> Parser<'a> {
             };
 
         self.advance();
-        if !self.current_token_is(TokenType::LPAREN) {
+        if !self.current_token_is(TokenType::Lparen) {
             panic!(
                 "unexpected syntax of subroutine call: {}",
                 self.cur_token.get_xml_tag()
@@ -251,13 +251,13 @@ impl<'a> Parser<'a> {
 
         self.advance();
         let mut expressions = vec![];
-        while !self.current_token_is_eof_or(TokenType::RPAREN) {
+        while !self.current_token_is_eof_or(TokenType::Rparen) {
             expressions.push(self.parse_expression());
 
-            if self.peek_token_is(TokenType::COMMA) {
+            if self.peek_token_is(TokenType::Comma) {
                 self.advance();
                 self.advance();
-            } else if self.peek_token_is(TokenType::RPAREN) {
+            } else if self.peek_token_is(TokenType::Rparen) {
                 self.advance();
             } else {
                 panic!(
@@ -280,13 +280,13 @@ impl<'a> Parser<'a> {
     fn parse_var_name(&mut self, identifier_token: IdentifierToken) -> Term {
         let identifier_token = identifier_token;
 
-        if self.peek_token_is(TokenType::LBRACKET) {
+        if self.peek_token_is(TokenType::Lbracket) {
             self.advance();
             self.advance();
 
             let expression = self.parse_expression();
 
-            if !self.peek_token_is(TokenType::RBRACKET) {
+            if !self.peek_token_is(TokenType::Rbracket) {
                 panic!("unexpected syntax of varName: {:?}", self.peek_token);
             }
 
@@ -303,7 +303,7 @@ impl<'a> Parser<'a> {
 
         let mut expression = self.parse_expression();
 
-        if !self.peek_token_is(TokenType::RPAREN) {
+        if !self.peek_token_is(TokenType::Rparen) {
             expression = match self.parse_binary_op() {
                 Some(binary_op) => {
                     Expression::new_binary_op(Term::Expresssion(Box::new(expression)), binary_op)
@@ -328,20 +328,20 @@ impl<'a> Parser<'a> {
     fn parse_term(&mut self) -> Term {
         let token = self.cur_token.clone();
         match token {
-            TokenType::IDNETIFIER(identifier_token) => {
-                if self.peek_token_is(TokenType::LPAREN) || self.peek_token_is(TokenType::DOT) {
+            TokenType::Identifier(identifier_token) => {
+                if self.peek_token_is(TokenType::Lparen) || self.peek_token_is(TokenType::Dot) {
                     Term::SubroutineCall(self.parse_subroutine_call(identifier_token))
                 } else {
                     self.parse_var_name(identifier_token)
                 }
             }
-            TokenType::NUMBER(num) => Term::IntegerConstant(num),
-            TokenType::STRING(str_value) => Term::StringConstant(str_value),
-            TokenType::KEYWORD(keyword) => {
+            TokenType::Number(num) => Term::IntegerConstant(num),
+            TokenType::String(str_value) => Term::StringConstant(str_value),
+            TokenType::Keyword(keyword) => {
                 Term::KeywordConstant(KeywordConstantToken::new(keyword))
             }
-            TokenType::LPAREN => self.parse_expression_term(),
-            TokenType::MINUS | TokenType::TILDE => self.parse_unary_op_constant(token),
+            TokenType::Lparen => self.parse_expression_term(),
+            TokenType::Minus | TokenType::Tilde => self.parse_unary_op_constant(token),
             _ => panic!(
                 "unexpected token is passed to get_prefix_parse_function: {:?}",
                 token
@@ -373,7 +373,7 @@ impl<'a> Parser<'a> {
     }
 
     fn current_token_is_eof_or(&self, token: TokenType) -> bool {
-        self.current_token_is(token) || self.cur_token == TokenType::EOF
+        self.current_token_is(token) || self.cur_token == TokenType::Eof
     }
 }
 
@@ -435,7 +435,7 @@ mod tests {
                     Expression::new_binary_op(
                         Term::IntegerConstant(1),
                         BinaryOp::new(
-                            BinaryOpToken::new(TokenType::ASTERISK),
+                            BinaryOpToken::new(TokenType::Asterisk),
                             Term::IntegerConstant(2)
                         )
                     )
@@ -472,7 +472,7 @@ mod tests {
                             Expression::new_binary_op(
                                 Term::IntegerConstant(2),
                                 BinaryOp::new(
-                                    BinaryOpToken::new(TokenType::PLUS),
+                                    BinaryOpToken::new(TokenType::Plus),
                                     Term::IntegerConstant(3)
                                 )
                             )
@@ -572,7 +572,7 @@ mod tests {
             vec![
                 Statement::WhileStatement(
                     Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                        Keyword::TRUE
+                        Keyword::True
                     ))),
                     vec![
                         Statement::LetStatement(
@@ -590,7 +590,7 @@ mod tests {
                     Expression::new(Term::Expresssion(Box::new(Expression::new_binary_op(
                         Term::IntegerConstant(2),
                         BinaryOp::new(
-                            BinaryOpToken::new(TokenType::ASTERISK),
+                            BinaryOpToken::new(TokenType::Asterisk),
                             Term::IntegerConstant(3)
                         )
                     )))),
@@ -628,7 +628,7 @@ mod tests {
             vec![
                 Statement::IfStatement(
                     Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                        Keyword::TRUE
+                        Keyword::True
                     ))),
                     vec![
                         Statement::LetStatement(
@@ -647,7 +647,7 @@ mod tests {
                     Expression::new(Term::Expresssion(Box::new(Expression::new_binary_op(
                         Term::IntegerConstant(2),
                         BinaryOp::new(
-                            BinaryOpToken::new(TokenType::ASTERISK),
+                            BinaryOpToken::new(TokenType::Asterisk),
                             Term::IntegerConstant(3)
                         )
                     )))),
@@ -718,7 +718,7 @@ mod tests {
                     Some(Box::new(Expression::new_binary_op(
                         Term::VarName(IdentifierToken::new("i"), None),
                         BinaryOp::new(
-                            BinaryOpToken::new(TokenType::PLUS),
+                            BinaryOpToken::new(TokenType::Plus),
                             Term::IntegerConstant(1)
                         )
                     )))
@@ -782,13 +782,13 @@ mod tests {
             actual.statements,
             vec![
                 Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
-                    KeywordConstantToken::new(Keyword::THIS)
+                    KeywordConstantToken::new(Keyword::This)
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
-                    KeywordConstantToken::new(Keyword::NULL)
+                    KeywordConstantToken::new(Keyword::Null)
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::KeywordConstant(
-                    KeywordConstantToken::new(Keyword::FALSE)
+                    KeywordConstantToken::new(Keyword::False)
                 )))
             ]
         );
@@ -813,21 +813,21 @@ mod tests {
             vec![
                 Statement::ExpressionStatement(Expression::new(Term::Expresssion(Box::new(
                     Expression::new(Term::UnaryOp(
-                        UnaryOpToken::new(TokenType::MINUS),
+                        UnaryOpToken::new(TokenType::Minus),
                         Box::new(Term::IntegerConstant(1))
                     ))
                 )))),
                 Statement::ExpressionStatement(Expression::new_binary_op(
                     Term::UnaryOp(
-                        UnaryOpToken::new(TokenType::MINUS),
+                        UnaryOpToken::new(TokenType::Minus),
                         Box::new(Term::IntegerConstant(1))
                     ),
                     BinaryOp::new(
-                        BinaryOpToken::new(TokenType::PLUS),
+                        BinaryOpToken::new(TokenType::Plus),
                         Term::Expresssion(Box::new(Expression::new_binary_op(
                             Term::IntegerConstant(2),
                             BinaryOp::new(
-                                BinaryOpToken::new(TokenType::ASTERISK),
+                                BinaryOpToken::new(TokenType::Asterisk),
                                 Term::IntegerConstant(3)
                             )
                         )))
@@ -836,21 +836,21 @@ mod tests {
                 // -4 + ((5 - 6) / 7);
                 Statement::ExpressionStatement(Expression::new_binary_op(
                     Term::UnaryOp(
-                        UnaryOpToken::new(TokenType::MINUS),
+                        UnaryOpToken::new(TokenType::Minus),
                         Box::new(Term::IntegerConstant(4))
                     ),
                     BinaryOp::new(
-                        BinaryOpToken::new(TokenType::PLUS),
+                        BinaryOpToken::new(TokenType::Plus),
                         Term::Expresssion(Box::new(Expression::new_binary_op(
                             Term::Expresssion(Box::new(Expression::new_binary_op(
                                 Term::IntegerConstant(5),
                                 BinaryOp::new(
-                                    BinaryOpToken::new(TokenType::MINUS),
+                                    BinaryOpToken::new(TokenType::Minus),
                                     Term::IntegerConstant(6)
                                 )
                             ))),
                             BinaryOp::new(
-                                BinaryOpToken::new(TokenType::SLASH),
+                                BinaryOpToken::new(TokenType::Slash),
                                 Term::IntegerConstant(7)
                             )
                         )))
@@ -859,27 +859,27 @@ mod tests {
                 // -8 + (((9 - 10) / 11) * 12);
                 Statement::ExpressionStatement(Expression::new_binary_op(
                     Term::UnaryOp(
-                        UnaryOpToken::new(TokenType::MINUS),
+                        UnaryOpToken::new(TokenType::Minus),
                         Box::new(Term::IntegerConstant(8))
                     ),
                     BinaryOp::new(
-                        BinaryOpToken::new(TokenType::PLUS),
+                        BinaryOpToken::new(TokenType::Plus),
                         Term::Expresssion(Box::new(Expression::new_binary_op(
                             Term::Expresssion(Box::new(Expression::new_binary_op(
                                 Term::Expresssion(Box::new(Expression::new_binary_op(
                                     Term::IntegerConstant(9),
                                     BinaryOp::new(
-                                        BinaryOpToken::new(TokenType::MINUS),
+                                        BinaryOpToken::new(TokenType::Minus),
                                         Term::IntegerConstant(10)
                                     )
                                 ))),
                                 BinaryOp::new(
-                                    BinaryOpToken::new(TokenType::SLASH),
+                                    BinaryOpToken::new(TokenType::Slash),
                                     Term::IntegerConstant(11)
                                 )
                             ))),
                             BinaryOp::new(
-                                BinaryOpToken::new(TokenType::ASTERISK),
+                                BinaryOpToken::new(TokenType::Asterisk),
                                 Term::IntegerConstant(12)
                             )
                         )))
@@ -905,11 +905,11 @@ mod tests {
             actual.statements,
             vec![
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::MINUS),
+                    UnaryOpToken::new(TokenType::Minus),
                     Box::new(Term::IntegerConstant(1))
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::TILDE),
+                    UnaryOpToken::new(TokenType::Tilde),
                     Box::new(Term::VarName(IdentifierToken::new("i",), None))
                 ))),
             ]
@@ -934,13 +934,13 @@ mod tests {
                 Statement::ExpressionStatement(Expression::new_binary_op(
                     Term::IntegerConstant(1),
                     BinaryOp::new(
-                        BinaryOpToken::new(TokenType::PLUS),
+                        BinaryOpToken::new(TokenType::Plus),
                         Term::VarName(IdentifierToken::new("i"), None)
                     )
                 )),
                 Statement::ExpressionStatement(Expression::new_binary_op(
                     Term::IntegerConstant(2),
-                    BinaryOp::new(BinaryOpToken::new(TokenType::GT), Term::IntegerConstant(3),)
+                    BinaryOp::new(BinaryOpToken::new(TokenType::Gt), Term::IntegerConstant(3),)
                 ))
             ]
         );

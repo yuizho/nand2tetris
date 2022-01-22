@@ -32,33 +32,33 @@ impl Node for Statement {
             Self::LetStatement(var_name, index_expression, expression) => {
                 format!(
                     "<letStatement>\n{}\n{}\n{}{}\n{}\n{}\n</letStatement>",
-                    TokenType::KEYWORD(Keyword::LET).get_xml_tag(),
+                    TokenType::Keyword(Keyword::Let).get_xml_tag(),
                     var_name.get_xml_tag(),
                     match index_expression {
                         Some(exp) => {
                             format!(
                                 "{}\n{}\n{}\n",
-                                TokenType::LBRACKET.get_xml_tag(),
+                                TokenType::Lbracket.get_xml_tag(),
                                 exp.to_xml(),
-                                TokenType::RBRACKET.get_xml_tag()
+                                TokenType::Rbracket.get_xml_tag()
                             )
                         }
                         None => "".to_string(),
                     },
-                    TokenType::ASSIGN.get_xml_tag(),
+                    TokenType::Assign.get_xml_tag(),
                     expression.to_xml(),
-                    TokenType::SEMICOLON.get_xml_tag()
+                    TokenType::Semicolon.get_xml_tag()
                 )
             }
 
             Self::WhileStatement(expression, statements) => {
                 format!(
                     "<whileStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n</whileStatement>",
-                    Keyword::WHILE.get_xml_tag(),
-                    TokenType::LPAREN.get_xml_tag(),
+                    Keyword::While.get_xml_tag(),
+                    TokenType::Lparen.get_xml_tag(),
                     expression.to_xml(),
-                    TokenType::RPAREN.get_xml_tag(),
-                    TokenType::LBRACE.get_xml_tag(),
+                    TokenType::Rparen.get_xml_tag(),
+                    TokenType::Lbrace.get_xml_tag(),
                     format!(
                         "<statements>\n{}\n</statements>",
                         statements
@@ -67,18 +67,18 @@ impl Node for Statement {
                             .collect::<Vec<_>>()
                             .join("\n")
                     ),
-                    TokenType::RBRACE.get_xml_tag(),
+                    TokenType::Rbrace.get_xml_tag(),
                 )
             }
 
             Self::IfStatement(expression, if_statements, else_statements) => {
                 format!(
                     "<ifStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}</ifStatement>",
-                    Keyword::IF.get_xml_tag(),
-                    TokenType::LPAREN.get_xml_tag(),
+                    Keyword::If.get_xml_tag(),
+                    TokenType::Lparen.get_xml_tag(),
                     expression.to_xml(),
-                    TokenType::RPAREN.get_xml_tag(),
-                    TokenType::LBRACE.get_xml_tag(),
+                    TokenType::Rparen.get_xml_tag(),
+                    TokenType::Lbrace.get_xml_tag(),
                     format!(
                         "<statements>\n{}\n</statements>",
                         if_statements
@@ -87,12 +87,12 @@ impl Node for Statement {
                             .collect::<Vec<_>>()
                             .join("\n")
                     ),
-                    TokenType::RBRACE.get_xml_tag(),
+                    TokenType::Rbrace.get_xml_tag(),
                     match else_statements {
                         Some(statements) => format!(
                             "{}\n{}\n{}\n{}\n",
-                            Keyword::ELSE.get_xml_tag(),
-                            TokenType::LBRACE.get_xml_tag(),
+                            Keyword::Else.get_xml_tag(),
+                            TokenType::Lbrace.get_xml_tag(),
                             format!(
                                 "<statements>\n{}\n</statements>",
                                 statements
@@ -101,7 +101,7 @@ impl Node for Statement {
                                     .collect::<Vec<_>>()
                                     .join("\n")
                             ),
-                            TokenType::RBRACE.get_xml_tag(),
+                            TokenType::Rbrace.get_xml_tag(),
                         ),
                         None => "".to_string(),
                     }
@@ -110,23 +110,23 @@ impl Node for Statement {
 
             Self::ReturnStatement(Some(expression)) => format!(
                 "<returnStatement>\n{}\n{}\n{}\n</returnStatement>",
-                TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
+                TokenType::Keyword(Keyword::Return).get_xml_tag(),
                 expression.to_xml(),
-                TokenType::SEMICOLON.get_xml_tag()
+                TokenType::Semicolon.get_xml_tag()
             ),
 
             Self::DoStatement(subroutine_call) => format!(
                 "<doStatement>\n{}\n{}\n{}\n</doStatement>",
-                Keyword::DO.get_xml_tag(),
+                Keyword::Do.get_xml_tag(),
                 subroutine_call.to_xml(),
-                TokenType::SEMICOLON.get_xml_tag()
+                TokenType::Semicolon.get_xml_tag()
             ),
 
             Self::ReturnStatement(None) => {
                 format!(
                     "<returnStatement>\n{}\n{}\n</returnStatement>",
-                    TokenType::KEYWORD(Keyword::RETURN).get_xml_tag(),
-                    TokenType::SEMICOLON.get_xml_tag()
+                    TokenType::Keyword(Keyword::Return).get_xml_tag(),
+                    TokenType::Semicolon.get_xml_tag()
                 )
             }
 
@@ -199,7 +199,7 @@ pub struct UnaryOpToken {
 impl UnaryOpToken {
     pub fn new(token: TokenType) -> Self {
         match token {
-            TokenType::TILDE | TokenType::MINUS => UnaryOpToken { token },
+            TokenType::Tilde | TokenType::Minus => UnaryOpToken { token },
             _ => panic!("unexpected token type is used as unary op: {:?}", token),
         }
     }
@@ -221,15 +221,15 @@ impl BinaryOpToken {
     pub fn is_binary_op_token_type(token: &TokenType) -> bool {
         matches!(
             token,
-            TokenType::PLUS
-                | TokenType::MINUS
-                | TokenType::ASTERISK
-                | TokenType::SLASH
-                | TokenType::AND
-                | TokenType::OR
-                | TokenType::GT
-                | TokenType::LT
-                | TokenType::ASSIGN
+            TokenType::Plus
+                | TokenType::Minus
+                | TokenType::Asterisk
+                | TokenType::Slash
+                | TokenType::And
+                | TokenType::Or
+                | TokenType::Gt
+                | TokenType::Lt
+                | TokenType::Assign
         )
     }
 }
@@ -241,7 +241,7 @@ pub struct KeywordConstantToken {
 impl KeywordConstantToken {
     pub fn new(keyword: Keyword) -> Self {
         match keyword {
-            Keyword::TRUE | Keyword::FALSE | Keyword::NULL | Keyword::THIS => {
+            Keyword::True | Keyword::False | Keyword::Null | Keyword::This => {
                 KeywordConstantToken { keyword }
             }
             _ => panic!(
@@ -287,7 +287,7 @@ impl SubroutineCall {
                 None => "".to_string(),
             },
             self.subroutine_name.get_xml_tag(),
-            TokenType::LPAREN.get_xml_tag(),
+            TokenType::Lparen.get_xml_tag(),
             if self.expressions.is_empty() {
                 "".to_string()
             } else {
@@ -300,7 +300,7 @@ impl SubroutineCall {
                         .join("\n")
                 )
             },
-            TokenType::RPAREN.get_xml_tag()
+            TokenType::Rparen.get_xml_tag()
         )
     }
 }
@@ -322,9 +322,9 @@ impl Node for Term {
                 Some(expression) => format!(
                     "{}\n{}\n{}\n{}",
                     token.get_xml_tag(),
-                    TokenType::LBRACKET.get_xml_tag(),
+                    TokenType::Lbracket.get_xml_tag(),
                     expression.to_xml(),
-                    TokenType::RBRACKET.get_xml_tag(),
+                    TokenType::Rbracket.get_xml_tag(),
                 ),
                 None => token.get_xml_tag(),
             },
@@ -337,9 +337,9 @@ impl Node for Term {
 
             Self::Expresssion(expression) => format!(
                 "{}\n{}\n{}",
-                TokenType::LPAREN.get_xml_tag(),
+                TokenType::Lparen.get_xml_tag(),
                 expression.to_xml(),
-                TokenType::RPAREN.get_xml_tag()
+                TokenType::Rparen.get_xml_tag()
             ),
 
             Self::SubroutineCall(subroutine_call) => subroutine_call.to_xml(),
@@ -361,7 +361,7 @@ mod tests {
             statements: vec![Statement::ExpressionStatement(Expression::new_binary_op(
                 Term::VarName(IdentifierToken::new("i"), None),
                 BinaryOp::new(
-                    BinaryOpToken::new(TokenType::PLUS),
+                    BinaryOpToken::new(TokenType::Plus),
                     Term::IntegerConstant(2),
                 ),
             ))],
@@ -454,7 +454,7 @@ mod tests {
         let program = Program {
             statements: vec![Statement::WhileStatement(
                 Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                    Keyword::TRUE,
+                    Keyword::True,
                 ))),
                 vec![
                     Statement::LetStatement(
@@ -517,7 +517,7 @@ mod tests {
         let program = Program {
             statements: vec![Statement::IfStatement(
                 Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                    Keyword::TRUE,
+                    Keyword::True,
                 ))),
                 vec![
                     Statement::LetStatement(
@@ -581,7 +581,7 @@ mod tests {
         let program = Program {
             statements: vec![Statement::IfStatement(
                 Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                    Keyword::TRUE,
+                    Keyword::True,
                 ))),
                 vec![Statement::LetStatement(
                     IdentifierToken::new("i"),
@@ -797,7 +797,7 @@ mod tests {
     fn keyword_constant_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::KeywordConstant(KeywordConstantToken::new(Keyword::TRUE)),
+                Term::KeywordConstant(KeywordConstantToken::new(Keyword::True)),
             ))],
         };
 
@@ -816,7 +816,7 @@ mod tests {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
                 Term::Expresssion(Box::new(Expression::new(Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::MINUS),
+                    UnaryOpToken::new(TokenType::Minus),
                     Box::new(Term::VarName(IdentifierToken::new("i"), None)),
                 )))),
             ))],
@@ -846,7 +846,7 @@ mod tests {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
                 Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::MINUS),
+                    UnaryOpToken::new(TokenType::Minus),
                     Box::new(Term::IntegerConstant(1)),
                 ),
             ))],
@@ -870,11 +870,11 @@ mod tests {
         let program = Program {
             statements: vec![
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::MINUS),
+                    UnaryOpToken::new(TokenType::Minus),
                     Box::new(Term::IntegerConstant(1)),
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::UnaryOp(
-                    UnaryOpToken::new(TokenType::TILDE),
+                    UnaryOpToken::new(TokenType::Tilde),
                     Box::new(Term::IntegerConstant(10)),
                 ))),
             ],
@@ -934,7 +934,7 @@ mod tests {
                         Expression::new_binary_op(
                             Term::IntegerConstant(2),
                             BinaryOp::new(
-                                BinaryOpToken::new(TokenType::PLUS),
+                                BinaryOpToken::new(TokenType::Plus),
                                 Term::IntegerConstant(3),
                             ),
                         ),
@@ -1011,7 +1011,7 @@ mod tests {
                         Expression::new_binary_op(
                             Term::IntegerConstant(2),
                             BinaryOp::new(
-                                BinaryOpToken::new(TokenType::PLUS),
+                                BinaryOpToken::new(TokenType::Plus),
                                 Term::IntegerConstant(3),
                             ),
                         ),

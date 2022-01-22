@@ -37,41 +37,41 @@ impl JackTokenizer {
         self.skip_whitespace();
 
         let token = match self.current_char {
-            '"' => token::TokenType::STRING(self.read_string()),
-            '{' => token::TokenType::LBRACE,
-            '}' => token::TokenType::RBRACE,
-            '(' => token::TokenType::LPAREN,
-            ')' => token::TokenType::RPAREN,
-            '[' => token::TokenType::LBRACKET,
-            ']' => token::TokenType::RBRACKET,
-            '.' => token::TokenType::DOT,
-            ',' => token::TokenType::COMMA,
-            ';' => token::TokenType::SEMICOLON,
-            '+' => token::TokenType::PLUS,
-            '-' => token::TokenType::MINUS,
-            '*' => token::TokenType::ASTERISK,
+            '"' => token::TokenType::String(self.read_string()),
+            '{' => token::TokenType::Lbrace,
+            '}' => token::TokenType::Rbrace,
+            '(' => token::TokenType::Lparen,
+            ')' => token::TokenType::Rparen,
+            '[' => token::TokenType::Lbracket,
+            ']' => token::TokenType::Rbracket,
+            '.' => token::TokenType::Dot,
+            ',' => token::TokenType::Comma,
+            ';' => token::TokenType::Semicolon,
+            '+' => token::TokenType::Plus,
+            '-' => token::TokenType::Minus,
+            '*' => token::TokenType::Asterisk,
             '/' => {
                 if self.peek_char() == '/' {
                     self.skip_line_comments();
-                    token::TokenType::COMMENTS
+                    token::TokenType::Comments
                 } else if self.peek_char() == '*' {
                     self.skip_multi_line_comments();
-                    token::TokenType::COMMENTS
+                    token::TokenType::Comments
                 } else {
-                    token::TokenType::SLASH
+                    token::TokenType::Slash
                 }
             }
-            '&' => token::TokenType::AND,
-            '|' => token::TokenType::OR,
-            '<' => token::TokenType::LT,
-            '>' => token::TokenType::GT,
-            '=' => token::TokenType::ASSIGN,
-            '~' => token::TokenType::TILDE,
+            '&' => token::TokenType::And,
+            '|' => token::TokenType::Or,
+            '<' => token::TokenType::Lt,
+            '>' => token::TokenType::Gt,
+            '=' => token::TokenType::Assign,
+            '~' => token::TokenType::Tilde,
             _ if self.is_letter() => {
                 return token::TokenType::lookup_identify(&self.read_identifier())
             }
-            _ if self.is_digit() => return token::TokenType::NUMBER(self.read_number()),
-            c if c == EMPTY_CHAR => token::TokenType::EOF,
+            _ if self.is_digit() => return token::TokenType::Number(self.read_number()),
+            c if c == EMPTY_CHAR => token::TokenType::Eof,
             c => panic!("unexpected token: {}", c),
         };
 
@@ -183,14 +183,14 @@ mod tests {
         assert_eq!(
             actual,
             vec![
-                TokenType::KEYWORD(Keyword::CLASS),
-                TokenType::IDNETIFIER(IdentifierToken::new("Main",)),
-                TokenType::LBRACE,
-                TokenType::KEYWORD(Keyword::STATIC),
-                TokenType::KEYWORD(Keyword::BOOLEAN),
-                TokenType::IDNETIFIER(IdentifierToken::new("test",)),
-                TokenType::SEMICOLON,
-                TokenType::RBRACE,
+                TokenType::Keyword(Keyword::Class),
+                TokenType::Identifier(IdentifierToken::new("Main",)),
+                TokenType::Lbrace,
+                TokenType::Keyword(Keyword::Static),
+                TokenType::Keyword(Keyword::Boolean),
+                TokenType::Identifier(IdentifierToken::new("test",)),
+                TokenType::Semicolon,
+                TokenType::Rbrace,
             ]
         );
     }
@@ -209,17 +209,17 @@ mod tests {
         assert_eq!(
             actual,
             vec![
-                TokenType::KEYWORD(Keyword::CLASS),
-                TokenType::IDNETIFIER(IdentifierToken::new("Main",)),
-                TokenType::LBRACE,
-                TokenType::COMMENTS,
-                TokenType::KEYWORD(Keyword::STATIC),
-                TokenType::KEYWORD(Keyword::BOOLEAN),
-                TokenType::IDNETIFIER(IdentifierToken::new("test",)),
-                TokenType::SEMICOLON,
-                TokenType::COMMENTS,
-                TokenType::COMMENTS,
-                TokenType::RBRACE,
+                TokenType::Keyword(Keyword::Class),
+                TokenType::Identifier(IdentifierToken::new("Main",)),
+                TokenType::Lbrace,
+                TokenType::Comments,
+                TokenType::Keyword(Keyword::Static),
+                TokenType::Keyword(Keyword::Boolean),
+                TokenType::Identifier(IdentifierToken::new("test",)),
+                TokenType::Semicolon,
+                TokenType::Comments,
+                TokenType::Comments,
+                TokenType::Rbrace,
             ]
         );
     }
