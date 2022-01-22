@@ -245,13 +245,66 @@ impl KeywordConstantToken {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct SubroutineCall {
+    parent_name: Option<IdentifierToken>,
+    subroutine_name: IdentifierToken,
+    expressions: Vec<Expression>,
+}
+impl SubroutineCall {
+    pub fn new(subroutine_name: IdentifierToken, expressions: Vec<Expression>) -> Self {
+        SubroutineCall {
+            parent_name: None,
+            subroutine_name,
+            expressions,
+        }
+    }
+
+    pub fn new_parent_subroutine_call(
+        parent_name: IdentifierToken,
+        subroutine_name: IdentifierToken,
+        expressions: Vec<Expression>,
+    ) -> Self {
+        SubroutineCall {
+            parent_name: Some(parent_name),
+            subroutine_name,
+            expressions,
+        }
+    }
+
+    pub fn to_xml(&self) -> String {
+        format!(
+            "{}{}\n{}\n<expressionList>\n{}</expressionList>\n{}",
+            match &self.parent_name {
+                Some(name) => format!("{}\n<symbol> . </symbol>\n", name.get_xml_tag()),
+                None => "".to_string(),
+            },
+            self.subroutine_name.get_xml_tag(),
+            TokenType::LPAREN.get_xml_tag(),
+            if self.expressions.is_empty() {
+                "".to_string()
+            } else {
+                format!(
+                    "{}\n",
+                    self.expressions
+                        .iter()
+                        .map(|s| s.to_xml())
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                )
+            },
+            TokenType::RPAREN.get_xml_tag()
+        )
+    }
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Term {
     IntegerConstant(i32),
     StringConstant(String),
     KeywordConstant(KeywordConstantToken),
     VarName(IdentifierToken, Option<Box<Expression>>),
     Expresssion(Box<Expression>),
-    SubroutineCall(Option<IdentifierToken>, IdentifierToken, Vec<Expression>),
+    SubroutineCall(SubroutineCall),
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
@@ -287,29 +340,8 @@ impl Node for Term {
                 TokenType::RPAREN.get_xml_tag()
             ),
 
-            Self::SubroutineCall(parent_name, subroutine_name, expressions) => {
-                format!(
-                    "<term>\n{}{}\n{}\n<expressionList>\n{}</expressionList>\n{}\n</term>",
-                    match parent_name {
-                        Some(name) => format!("{}\n<symbol> . </symbol>\n", name.get_xml_tag()),
-                        None => "".to_string(),
-                    },
-                    subroutine_name.get_xml_tag(),
-                    TokenType::LPAREN.get_xml_tag(),
-                    if expressions.is_empty() {
-                        "".to_string()
-                    } else {
-                        format!(
-                            "{}\n",
-                            expressions
-                                .iter()
-                                .map(|s| s.to_xml())
-                                .collect::<Vec<_>>()
-                                .join("\n")
-                        )
-                    },
-                    TokenType::RPAREN.get_xml_tag()
-                )
+            Self::SubroutineCall(subroutine_call) => {
+                format!("<term>\n{}\n</term>", subroutine_call.to_xml())
             }
 
             Self::UnaryOp(op, term) => format!(
@@ -848,7 +880,7 @@ mod tests {
     fn local_subroutine_call_no_param_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::SubroutineCall(None, IdentifierToken::new("new"), vec![]),
+                Term::SubroutineCall(SubroutineCall::new(IdentifierToken::new("new"), vec![])),
             ))],
         };
 
@@ -870,8 +902,7 @@ mod tests {
     fn local_subroutine_call_with_param_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::SubroutineCall(
-                    None,
+                Term::SubroutineCall(SubroutineCall::new(
                     IdentifierToken::new("new"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
@@ -883,7 +914,7 @@ mod tests {
                             ),
                         ),
                     ],
-                ),
+                )),
             ))],
         };
 
@@ -919,11 +950,11 @@ mod tests {
     fn subroutine_call_no_param_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::SubroutineCall(
-                    Some(IdentifierToken::new("SquareGame")),
+                Term::SubroutineCall(SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken::new("SquareGame"),
                     IdentifierToken::new("new"),
                     vec![],
-                ),
+                )),
             ))],
         };
 
@@ -947,8 +978,8 @@ mod tests {
     fn subroutine_call_with_param_expression_to_xml() {
         let program = Program {
             statements: vec![Statement::ExpressionStatement(Expression::new(
-                Term::SubroutineCall(
-                    Some(IdentifierToken::new("SquareGame")),
+                Term::SubroutineCall(SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken::new("SquareGame"),
                     IdentifierToken::new("new"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
@@ -960,7 +991,7 @@ mod tests {
                             ),
                         ),
                     ],
-                ),
+                )),
             ))],
         };
 

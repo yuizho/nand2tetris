@@ -253,7 +253,15 @@ impl<'a> Parser<'a> {
             }
         }
 
-        Term::SubroutineCall(parent_name, subroutine_name, expressions)
+        let subroutine_call = match parent_name {
+            Some(parent_name) => SubroutineCall::new_parent_subroutine_call(
+                parent_name,
+                subroutine_name,
+                expressions,
+            ),
+            None => SubroutineCall::new(subroutine_name, expressions),
+        };
+        Term::SubroutineCall(subroutine_call)
     }
 
     fn parse_var_name(&mut self, identifier_token: IdentifierToken) -> Term {
@@ -453,36 +461,39 @@ mod tests {
             actual.statements,
             vec![
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
-                    None,
-                    IdentifierToken::new("hoge"),
-                    vec![]
+                    SubroutineCall::new(IdentifierToken::new("hoge"), vec![])
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
-                    None,
-                    IdentifierToken::new("fuga"),
-                    vec![
-                        Expression::new(Term::IntegerConstant(1)),
-                        Expression::new_binary_op(
-                            Term::IntegerConstant(2),
-                            BinaryOp::new(
-                                BinaryOpToken::new(TokenType::PLUS),
-                                Term::IntegerConstant(3)
+                    SubroutineCall::new(
+                        IdentifierToken::new("fuga"),
+                        vec![
+                            Expression::new(Term::IntegerConstant(1)),
+                            Expression::new_binary_op(
+                                Term::IntegerConstant(2),
+                                BinaryOp::new(
+                                    BinaryOpToken::new(TokenType::PLUS),
+                                    Term::IntegerConstant(3)
+                                )
                             )
-                        )
-                    ]
+                        ]
+                    )
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
-                    Some(IdentifierToken::new("parent")),
-                    IdentifierToken::new("hoge"),
-                    vec![]
+                    SubroutineCall::new_parent_subroutine_call(
+                        IdentifierToken::new("parent"),
+                        IdentifierToken::new("hoge"),
+                        vec![]
+                    )
                 ))),
                 Statement::ExpressionStatement(Expression::new(Term::SubroutineCall(
-                    Some(IdentifierToken::new("parent")),
-                    IdentifierToken::new("hoge"),
-                    vec![
-                        Expression::new(Term::IntegerConstant(1)),
-                        Expression::new(Term::IntegerConstant(2)),
-                    ]
+                    SubroutineCall::new_parent_subroutine_call(
+                        IdentifierToken::new("parent"),
+                        IdentifierToken::new("hoge"),
+                        vec![
+                            Expression::new(Term::IntegerConstant(1)),
+                            Expression::new(Term::IntegerConstant(2)),
+                        ]
+                    )
                 )))
             ]
         );
