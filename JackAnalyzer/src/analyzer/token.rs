@@ -172,4 +172,12 @@ impl TokenType {
             _ => "".to_string(),
         }
     }
+
+    pub fn is(&self, token: TokenType) -> bool {
+        self == &token
+    }
+
+    pub fn is_eof_or(&self, token: TokenType) -> bool {
+        self == &token || self == &TokenType::Eof
+    }
 }
