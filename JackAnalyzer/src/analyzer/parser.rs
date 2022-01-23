@@ -5,22 +5,22 @@ use super::tokenizer::*;
 pub struct Parser<'a> {
     tokenizer: &'a mut JackTokenizer,
     cur_token: TokenType,
-    peek_token: TokenType,
 }
 impl<'a> Parser<'a> {
     pub fn new(tokenizer: &'a mut JackTokenizer) -> Self {
         let cur_token = tokenizer.advance();
-        let peek_token = tokenizer.peek();
         Parser {
             tokenizer,
             cur_token,
-            peek_token,
         }
     }
 
     pub fn advance(&mut self) {
         self.cur_token = self.tokenizer.advance();
-        self.peek_token = self.tokenizer.peek();
+    }
+
+    pub fn peek_token(&mut self) -> TokenType {
+        self.tokenizer.peek()
     }
 
     pub fn parse_program(&mut self) -> Program {
@@ -292,7 +292,7 @@ impl<'a> Parser<'a> {
             let expression = self.parse_expression();
 
             if !self.peek_token_is(TokenType::Rbracket) {
-                panic!("unexpected syntax of varName: {:?}", self.peek_token);
+                panic!("unexpected syntax of varName: {:?}", self.peek_token());
             }
 
             self.advance();
@@ -355,7 +355,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_binary_op(&mut self) -> Option<BinaryOp> {
-        if BinaryOpToken::is_binary_op_token_type(&self.peek_token) {
+        if BinaryOpToken::is_binary_op_token_type(&self.peek_token()) {
             self.advance();
             let op = BinaryOpToken::new(self.cur_token.clone());
 
@@ -369,8 +369,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn peek_token_is(&self, token: TokenType) -> bool {
-        self.peek_token == token
+    fn peek_token_is(&mut self, token: TokenType) -> bool {
+        self.peek_token() == token
     }
 
     fn current_token_is(&self, token: TokenType) -> bool {
