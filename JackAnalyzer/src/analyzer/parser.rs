@@ -51,11 +51,13 @@ impl<'a> Parser<'a> {
         let token = self.next_token();
         let (index_expression, token) = if token.is(TokenType::Lbracket) {
             let token = self.next_token();
-            let expression = self.parse_expression(&token);
+            let expression = self.parse_expression(token);
+
             let token = self.next_token();
             if !token.is(TokenType::Rbracket) {
                 panic!("unexpected syntax of let: {}", token.get_xml_tag());
             }
+
             (Some(expression), self.next_token())
         } else {
             (None, token)
@@ -66,8 +68,7 @@ impl<'a> Parser<'a> {
         }
 
         let token = self.next_token();
-
-        let expression = self.parse_expression(&token);
+        let expression = self.parse_expression(token);
 
         let mut token = self.next_token();
         while !token.is_eof_or(TokenType::Semicolon) {
@@ -79,11 +80,10 @@ impl<'a> Parser<'a> {
 
     fn parse_return_statement(&mut self) -> Statement {
         let token = self.next_token();
-
         let expression = if token.is(TokenType::Semicolon) {
             None
         } else {
-            Some(self.parse_expression(&token))
+            Some(self.parse_expression(token))
         };
 
         let mut token = self.next_token();
@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
         }
 
         let token = self.next_token();
-        let expression = self.parse_expression(&token);
+        let expression = self.parse_expression(token);
 
         let token = self.next_token();
         if !token.is(TokenType::Rparen) {
@@ -130,7 +130,7 @@ impl<'a> Parser<'a> {
         }
 
         let token = self.next_token();
-        let expression = self.parse_expression(&token);
+        let expression = self.parse_expression(token);
 
         let token = self.next_token();
         if !token.is(TokenType::Rparen) {
@@ -187,7 +187,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression_statement(&mut self, token: TokenType) -> Statement {
-        let expression = self.parse_expression(&token);
+        let expression = self.parse_expression(token);
 
         let mut token = self.next_token();
         while !token.is_eof_or(TokenType::Semicolon) {
@@ -196,7 +196,7 @@ impl<'a> Parser<'a> {
         Statement::Expression(expression)
     }
 
-    fn parse_expression(&mut self, token: &TokenType) -> Expression {
+    fn parse_expression(&mut self, token: TokenType) -> Expression {
         let left_term = self.parse_term(token);
 
         // TODO: op precedence is not implemented
@@ -234,7 +234,7 @@ impl<'a> Parser<'a> {
         let mut token = self.next_token();
         let mut expressions = vec![];
         while !token.is_eof_or(TokenType::Rparen) {
-            expressions.push(self.parse_expression(&token));
+            expressions.push(self.parse_expression(token));
 
             if self.peek_token_is(TokenType::Comma) {
                 self.next_token();
@@ -244,7 +244,7 @@ impl<'a> Parser<'a> {
             } else {
                 panic!(
                     "unexpected syntax of subroutine call: {}",
-                    token.get_xml_tag()
+                    self.peek_token().get_xml_tag()
                 );
             }
         }
@@ -265,8 +265,7 @@ impl<'a> Parser<'a> {
         if self.peek_token_is(TokenType::Lbracket) {
             self.next_token();
             let token = self.next_token();
-
-            let expression = self.parse_expression(&token);
+            let expression = self.parse_expression(token);
 
             if !self.peek_token_is(TokenType::Rbracket) {
                 panic!("unexpected syntax of varName: {:?}", self.peek_token());
@@ -282,15 +281,17 @@ impl<'a> Parser<'a> {
 
     fn parse_expression_term(&mut self) -> Term {
         let token = self.next_token();
-
-        let mut expression = self.parse_expression(&token);
+        let mut expression = self.parse_expression(token);
 
         if !self.peek_token_is(TokenType::Rparen) {
             expression = match self.parse_binary_op() {
                 Some(binary_op) => {
                     Expression::new_binary_op(Term::Expresssion(Box::new(expression)), binary_op)
                 }
-                None => panic!("unexpected syntax of expression term: {:?}", token),
+                None => panic!(
+                    "unexpected syntax of expression term: {:?}",
+                    self.peek_token()
+                ),
             };
         }
 
@@ -301,14 +302,12 @@ impl<'a> Parser<'a> {
 
     fn parse_unary_op_constant(&mut self, op: TokenType) -> Term {
         let token = self.next_token();
-
-        let term = self.parse_term(&token);
+        let term = self.parse_term(token);
 
         Term::UnaryOp(UnaryOpToken::new(op), Box::new(term))
     }
 
-    fn parse_term(&mut self, token: &TokenType) -> Term {
-        let token = token.clone();
+    fn parse_term(&mut self, token: TokenType) -> Term {
         match token {
             TokenType::Identifier(identifier_token) => {
                 if self.peek_token_is(TokenType::Lparen) || self.peek_token_is(TokenType::Dot) {
@@ -337,8 +336,7 @@ impl<'a> Parser<'a> {
             let op = BinaryOpToken::new(token);
 
             let token = self.next_token();
-
-            let right_term = self.parse_term(&token);
+            let right_term = self.parse_term(token);
 
             Some(BinaryOp::new(op, right_term))
         } else {
