@@ -533,8 +533,12 @@ mod tests {
     fn program() {
         let source = "
         class Main {
-            static boolean test;
+            static boolean test; // line comment
+            /*
+            multi line comment
+              */
             function void main() {
+                // line comment2
                 var SquareGame game;
                 let game = game;
                 do game.run();

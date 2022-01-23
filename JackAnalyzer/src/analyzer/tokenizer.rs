@@ -67,10 +67,12 @@ impl JackTokenizer {
             '/' => {
                 if self.peek_char() == '/' {
                     self.skip_line_comments();
-                    token::TokenType::Comments
+                    self.read_char();
+                    return self.advance();
                 } else if self.peek_char() == '*' {
                     self.skip_multi_line_comments();
-                    token::TokenType::Comments
+                    self.read_char();
+                    return self.advance();
                 } else {
                     token::TokenType::Slash
                 }
@@ -226,13 +228,10 @@ mod tests {
                 TokenType::Keyword(Keyword::Class),
                 TokenType::Identifier(IdentifierToken::new("Main",)),
                 TokenType::Lbrace,
-                TokenType::Comments,
                 TokenType::Keyword(Keyword::Static),
                 TokenType::Keyword(Keyword::Boolean),
                 TokenType::Identifier(IdentifierToken::new("test",)),
                 TokenType::Semicolon,
-                TokenType::Comments,
-                TokenType::Comments,
                 TokenType::Rbrace,
             ]
         );

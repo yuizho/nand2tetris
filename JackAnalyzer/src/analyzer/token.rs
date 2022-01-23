@@ -110,7 +110,6 @@ pub enum TokenType {
     Number(i32),
     String(String),
     Keyword(Keyword),
-    Comments,
     Eof,
 }
 
