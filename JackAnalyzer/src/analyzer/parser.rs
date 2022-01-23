@@ -19,14 +19,176 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_program(&mut self) -> Program {
-        let mut statements = vec![];
+        let token = self.next_token();
+        if !token.is(TokenType::Keyword(Keyword::Class)) {
+            panic!(
+                "the code doesn't start class keyword: {}",
+                token.get_xml_tag()
+            );
+        }
+
+        let token = self.next_token();
+        let class_name = if let TokenType::Identifier(identifier) = token {
+            identifier
+        } else {
+            panic!("unexpected syntax of class: {}", token.get_xml_tag());
+        };
+
+        let token = self.next_token();
+        if !token.is(TokenType::Lbrace) {
+            panic!("unexpected syntax of class: {}", token.get_xml_tag());
+        }
+
         let mut token = self.next_token();
-        while self.tokenizer.has_more_tokens() {
-            statements.push(self.parse_statement(token));
+        let mut var_dec = vec![];
+        let mut subroutine_dec = vec![];
+        while !token.is_eof_or(TokenType::Rbrace) {
+            match &token {
+                TokenType::Keyword(Keyword::Static) | TokenType::Keyword(Keyword::Field) => {
+                    var_dec.push(self.parse_class_var(token));
+                }
+                TokenType::Keyword(Keyword::Constructor)
+                | TokenType::Keyword(Keyword::Function)
+                | TokenType::Keyword(Keyword::Method) => {
+                    subroutine_dec.push(self.parse_subroutine(token))
+                }
+                _ => panic!("unexpected syntax of class: {}", token.get_xml_tag()),
+            }
             token = self.next_token();
         }
-        // TODO: dummy
-        Program::new(IdentifierToken::new("dummy"), vec![], vec![])
+
+        Program::new(class_name, var_dec, subroutine_dec)
+    }
+
+    fn parse_class_var(&mut self, var_identifier: TokenType) -> ClassVarDec {
+        let token = self.next_token();
+        let class_type_token = ClassTypeToken::new(token);
+
+        let token = self.next_token();
+        let var_name = if let TokenType::Identifier(identifier) = token {
+            identifier
+        } else {
+            panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+        };
+
+        let mut token = self.next_token();
+        let mut alt_var_names = vec![];
+        while !token.is_eof_or(TokenType::Semicolon) {
+            if !token.is(TokenType::Comma) {
+                panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+            }
+
+            let alt_var_name = self.next_token();
+            if let TokenType::Identifier(identifier) = alt_var_name {
+                alt_var_names.push(identifier);
+            } else {
+                panic!(
+                    "unexpected syntax of class var: {}",
+                    alt_var_name.get_xml_tag()
+                );
+            };
+
+            token = self.next_token();
+        }
+
+        ClassVarDec::new(var_identifier, class_type_token, var_name, alt_var_names)
+    }
+
+    fn parse_subroutine(&mut self, subroutine_identifier: TokenType) -> SubroutineDec {
+        let token = self.next_token();
+        let return_type = if let TokenType::Keyword(Keyword::Void) = token {
+            None
+        } else {
+            Some(ClassTypeToken::new(token))
+        };
+
+        let token = self.next_token();
+        let subroutine_name = if let TokenType::Identifier(identifier) = token {
+            identifier
+        } else {
+            panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+        };
+
+        let token = self.next_token();
+        if !token.is(TokenType::Lparen) {
+            panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+        }
+
+        let mut token = self.next_token();
+        let mut parameters = vec![];
+        while !token.is_eof_or(TokenType::Rparen) {
+            if token.is(TokenType::Comma) {
+                self.next_token();
+            }
+            let var_type = ClassTypeToken::new(self.next_token());
+            let param_name = if let TokenType::Identifier(identifier) = token {
+                identifier
+            } else {
+                panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+            };
+            parameters.push((var_type, param_name));
+
+            token = self.next_token();
+        }
+
+        let token = self.next_token();
+        if !token.is(TokenType::Lbrace) {
+            panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+        }
+
+        let mut token = self.next_token();
+        let mut var_dec = vec![];
+        let mut statements = vec![];
+        while !token.is_eof_or(TokenType::Rbrace) {
+            match &token {
+                TokenType::Keyword(Keyword::Var) => var_dec.push(self.parse_local_var()),
+                _ => statements.push(self.parse_statement(token)),
+            }
+            token = self.next_token();
+        }
+
+        SubroutineDec::new(
+            subroutine_identifier,
+            return_type,
+            subroutine_name,
+            parameters,
+            var_dec,
+            statements,
+        )
+    }
+
+    fn parse_local_var(&mut self) -> VarDec {
+        let token = self.next_token();
+        let var_type = ClassTypeToken::new(token);
+
+        let token = self.next_token();
+        let var_name = if let TokenType::Identifier(identifier) = token {
+            identifier
+        } else {
+            panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+        };
+
+        let mut token = self.next_token();
+        let mut alt_var_names = vec![];
+        while !token.is_eof_or(TokenType::Semicolon) {
+            if !token.is(TokenType::Comma) {
+                panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+            }
+
+            let alt_var_name = self.next_token();
+            if let TokenType::Identifier(identifier) = alt_var_name {
+                alt_var_names.push(identifier);
+            } else {
+                panic!(
+                    "unexpected syntax of class var: {}",
+                    alt_var_name.get_xml_tag()
+                );
+            };
+
+            token = self.next_token();
+        }
+
+        VarDec::new(var_type, var_name, alt_var_names)
     }
 
     fn parse_statement(&mut self, token: TokenType) -> Statement {
@@ -365,6 +527,65 @@ mod tests {
             token = parser.next_token();
         }
         statements
+    }
+
+    #[test]
+    fn program() {
+        let source = "
+        class Main {
+            static boolean test;
+            function void main() {
+                var SquareGame game;
+                let game = game;
+                do game.run();
+                return;
+            }
+        }
+        "
+        .as_bytes();
+
+        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let mut parser = Parser::new(&mut tokenizer);
+        let actual = parser.parse_program();
+
+        assert_eq!(
+            actual,
+            Program::new(
+                IdentifierToken::new("Main"),
+                vec![ClassVarDec::new(
+                    TokenType::Keyword(Keyword::Static),
+                    ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean)),
+                    IdentifierToken::new("test"),
+                    vec![],
+                )],
+                vec![SubroutineDec::new(
+                    TokenType::Keyword(Keyword::Function),
+                    None,
+                    IdentifierToken::new("main"),
+                    vec![],
+                    vec![VarDec::new(
+                        ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new(
+                            "SquareGame"
+                        ))),
+                        IdentifierToken::new("game"),
+                        vec![],
+                    )],
+                    vec![
+                        Statement::Let(
+                            IdentifierToken::new("game"),
+                            None,
+                            Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
+                        ),
+                        Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                            IdentifierToken::new("game"),
+                            IdentifierToken::new("run"),
+                            vec![],
+                        )),
+                        Statement::Return(None),
+                    ],
+                )],
+            )
+        )
     }
 
     #[test]
