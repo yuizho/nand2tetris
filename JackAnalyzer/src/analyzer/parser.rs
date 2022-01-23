@@ -25,7 +25,8 @@ impl<'a> Parser<'a> {
             statements.push(self.parse_statement(token));
             token = self.next_token();
         }
-        Program { statements }
+        // TODO: dummy
+        Program::new(IdentifierToken::new("dummy"), vec![], vec![])
     }
 
     fn parse_statement(&mut self, token: TokenType) -> Statement {
@@ -354,6 +355,18 @@ mod tests {
     use crate::analyzer::parser::*;
     use std::io::Cursor;
 
+    fn parse_ast_elements(tokenizer: &mut JackTokenizer) -> Vec<Statement> {
+        let mut parser = Parser::new(tokenizer);
+
+        let mut statements = vec![];
+        let mut token = parser.next_token();
+        while parser.tokenizer.has_more_tokens() {
+            statements.push(parser.parse_statement(token));
+            token = parser.next_token();
+        }
+        statements
+    }
+
     #[test]
     fn let_statements() {
         let source = "
@@ -366,12 +379,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 6);
+        assert_eq!(actual.len(), 6);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Let(
                     IdentifierToken::new("x"),
@@ -426,12 +438,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 4);
+        assert_eq!(actual.len(), 4);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
                     IdentifierToken::new("hoge"),
@@ -480,12 +491,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 3);
+        assert_eq!(actual.len(), 3);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Return(Some(Expression::new(Term::IntegerConstant(5)))),
                 Statement::Return(Some(Expression::new(Term::VarName(
@@ -504,12 +514,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(actual.len(), 1);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![Statement::Do(SubroutineCall::new_parent_subroutine_call(
                 IdentifierToken::new("game"),
                 IdentifierToken::new("run"),
@@ -532,12 +541,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(actual.len(), 2);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::While(
                     Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
@@ -589,12 +597,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(actual.len(), 2);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::If(
                     Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
@@ -648,12 +655,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(actual.len(), 1);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![Statement::Expression(Expression::new(Term::VarName(
                 IdentifierToken::new("foobar"),
                 None
@@ -670,12 +676,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 3);
+        assert_eq!(actual.len(), 3);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Expression(Expression::new(Term::VarName(
                     IdentifierToken::new("foobar"),
@@ -706,12 +711,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(actual.len(), 1);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![Statement::Expression(Expression::new(
                 Term::IntegerConstant(5)
             ))]
@@ -725,12 +729,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 1);
+        assert_eq!(actual.len(), 1);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![Statement::Expression(Expression::new(
                 Term::StringConstant("str value!!".to_string())
             ))]
@@ -746,12 +749,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 3);
+        assert_eq!(actual.len(), 3);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Expression(Expression::new(Term::KeywordConstant(
                     KeywordConstantToken::new(Keyword::This)
@@ -776,12 +778,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 4);
+        assert_eq!(actual.len(), 4);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Expression(Expression::new(Term::Expresssion(Box::new(
                     Expression::new(Term::UnaryOp(
@@ -869,12 +870,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(actual.len(), 2);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Expression(Expression::new(Term::UnaryOp(
                     UnaryOpToken::new(TokenType::Minus),
@@ -896,12 +896,11 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
-        let actual = parser.parse_program();
+        let actual = parse_ast_elements(&mut tokenizer);
 
-        assert_eq!(actual.statements.len(), 2);
+        assert_eq!(actual.len(), 2);
         assert_eq!(
-            actual.statements,
+            actual,
             vec![
                 Statement::Expression(Expression::new_binary_op(
                     Term::IntegerConstant(1),
