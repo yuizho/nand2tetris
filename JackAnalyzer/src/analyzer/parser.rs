@@ -246,13 +246,13 @@ impl<'a> Parser<'a> {
         let expression = if token.is(TokenType::Semicolon) {
             None
         } else {
-            Some(self.parse_expression(token))
+            let expression = Some(self.parse_expression(token));
+            let token = self.next_token();
+            if !token.is(TokenType::Semicolon) {
+                panic!("unexpected syntax of return: {}", token.get_xml_tag());
+            }
+            expression
         };
-
-        let mut token = self.next_token();
-        while !token.is_eof_or(TokenType::Semicolon) {
-            token = self.next_token();
-        }
 
         Statement::Return(expression)
     }
@@ -540,8 +540,13 @@ mod tests {
             function void main() {
                 // line comment2
                 var SquareGame game;
+                var int num;
                 let game = game;
                 do game.run();
+                return;
+            }
+
+            method void hoge() {
                 return;
             }
         }
@@ -562,32 +567,49 @@ mod tests {
                     IdentifierToken::new("test"),
                     vec![],
                 )],
-                vec![SubroutineDec::new(
-                    TokenType::Keyword(Keyword::Function),
-                    None,
-                    IdentifierToken::new("main"),
-                    vec![],
-                    vec![VarDec::new(
-                        ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new(
-                            "SquareGame"
-                        ))),
-                        IdentifierToken::new("game"),
+                vec![
+                    SubroutineDec::new(
+                        TokenType::Keyword(Keyword::Function),
+                        None,
+                        IdentifierToken::new("main"),
                         vec![],
-                    )],
-                    vec![
-                        Statement::Let(
-                            IdentifierToken::new("game"),
-                            None,
-                            Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
-                        ),
-                        Statement::Do(SubroutineCall::new_parent_subroutine_call(
-                            IdentifierToken::new("game"),
-                            IdentifierToken::new("run"),
-                            vec![],
-                        )),
-                        Statement::Return(None),
-                    ],
-                )],
+                        vec![
+                            VarDec::new(
+                                ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new(
+                                    "SquareGame"
+                                ))),
+                                IdentifierToken::new("game"),
+                                vec![],
+                            ),
+                            VarDec::new(
+                                ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
+                                IdentifierToken::new("num"),
+                                vec![],
+                            )
+                        ],
+                        vec![
+                            Statement::Let(
+                                IdentifierToken::new("game"),
+                                None,
+                                Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
+                            ),
+                            Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                                IdentifierToken::new("game"),
+                                IdentifierToken::new("run"),
+                                vec![],
+                            )),
+                            Statement::Return(None),
+                        ],
+                    ),
+                    SubroutineDec::new(
+                        TokenType::Keyword(Keyword::Method),
+                        None,
+                        IdentifierToken::new("hoge"),
+                        vec![],
+                        vec![],
+                        vec![Statement::Return(None),],
+                    )
+                ],
             )
         )
     }
