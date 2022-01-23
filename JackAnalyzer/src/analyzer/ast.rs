@@ -5,6 +5,7 @@ pub trait Node {
 }
 
 pub struct Program {
+    // TODO: needs to have class
     pub statements: Vec<Statement>,
 }
 impl Node for Program {
@@ -14,6 +15,229 @@ impl Node for Program {
             .map(|s| s.to_xml())
             .collect::<Vec<_>>()
             .join("\n")
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct ClassTypeToken {
+    type_token: TokenType,
+}
+impl ClassTypeToken {
+    pub fn new(type_token: TokenType) -> Self {
+        let is_class_type = matches!(
+            type_token,
+            TokenType::Keyword(Keyword::Int)
+                | TokenType::Keyword(Keyword::Char)
+                | TokenType::Keyword(Keyword::Boolean)
+                | TokenType::Identifier(_)
+        );
+        if is_class_type {
+            ClassTypeToken { type_token }
+        } else {
+            panic!(
+                "unexpected token type is used as class type: {:?}",
+                type_token
+            )
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct ClassVarDec {
+    var_identifier: Keyword,
+    var_type: ClassTypeToken,
+    var_name: IdentifierToken,
+    var_names: Vec<IdentifierToken>,
+}
+impl ClassVarDec {
+    pub fn new(
+        var_identifier: TokenType,
+        var_type: ClassTypeToken,
+        var_name: IdentifierToken,
+        var_names: Vec<IdentifierToken>,
+    ) -> Self {
+        let var_identifier = match var_identifier {
+            TokenType::Keyword(keyword) => match keyword {
+                Keyword::Static | Keyword::Field => keyword,
+                _ => panic!("unexpected keyword: {:?}", keyword),
+            },
+            _ => panic!("unexpected var_identifier: {:?}", var_identifier),
+        };
+
+        ClassVarDec {
+            var_identifier,
+            var_type,
+            var_name,
+            var_names,
+        }
+    }
+
+    fn to_xml(&self) -> String {
+        let class_var_names = if self.var_names.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "\n{}",
+                self.var_names
+                    .iter()
+                    .map(|i| format!("{}\n{}", TokenType::Comma.get_xml_tag(), i.get_xml_tag()))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+        };
+
+        format!(
+            "<classVarDec>\n{}\n{}\n{}{}\n{}\n</classVarDec>",
+            self.var_identifier.get_xml_tag(),
+            self.var_type.type_token.get_xml_tag(),
+            self.var_name.get_xml_tag(),
+            class_var_names,
+            TokenType::Semicolon.get_xml_tag(),
+        )
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct SubroutineDec {
+    subroutine_identifier: Keyword,
+    return_type: Option<ClassTypeToken>,
+    subroutine_name: IdentifierToken,
+    parameters: Vec<(ClassTypeToken, IdentifierToken)>,
+    var_dec: Vec<VarDec>,
+    statements: Vec<Statement>,
+}
+impl SubroutineDec {
+    pub fn new(
+        subroutine_identifier: TokenType,
+        return_type: Option<ClassTypeToken>,
+        subroutine_name: IdentifierToken,
+        parameters: Vec<(ClassTypeToken, IdentifierToken)>,
+        var_dec: Vec<VarDec>,
+        statements: Vec<Statement>,
+    ) -> Self {
+        let subroutine_identifier = match subroutine_identifier {
+            TokenType::Keyword(keyword) => match keyword {
+                Keyword::Constructor | Keyword::Function | Keyword::Method => keyword,
+                _ => panic!("unexpected keyword: {:?}", keyword),
+            },
+            _ => panic!("unexpected var_identifier: {:?}", subroutine_identifier),
+        };
+        SubroutineDec {
+            subroutine_identifier,
+            return_type,
+            subroutine_name,
+            parameters,
+            var_dec,
+            statements,
+        }
+    }
+
+    fn to_xml(&self) -> String {
+        let parameters = if self.parameters.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "\n{}",
+                self.parameters
+                    .iter()
+                    .map(|(t, i)| format!("{}\n{}", t.type_token.get_xml_tag(), i.get_xml_tag()))
+                    .collect::<Vec<_>>()
+                    .join(&format!("\n{}\n", TokenType::Comma.get_xml_tag()))
+            )
+        };
+
+        format!(
+            "<subroutineDec>\n{}\n{}\n{}\n{}\n<subroutineBody>\n{}\n</subroutineBody>\n</subroutineDec>",
+            self.subroutine_identifier.get_xml_tag(),
+            match &self.return_type {
+                Some(class_type) => class_type.type_token.get_xml_tag(),
+                None => Keyword::Void.get_xml_tag(),
+            },
+            self.subroutine_name.get_xml_tag(),
+            format!(
+                "{}\n<parameterList>{}\n</parameterList>\n{}",
+                TokenType::Lparen.get_xml_tag(),
+                parameters,
+                TokenType::Rparen.get_xml_tag()
+            ),
+            format!("{}\n{}\n<statements>\n{}\n</statements>\n{}",
+            TokenType::Lbrace.get_xml_tag(),
+            self
+                .var_dec
+                .iter()
+                .map(|s| s.to_xml())
+                .collect::<Vec<_>>()
+                .join("\n"),
+            self
+                .statements
+                .iter()
+                .map(|s| s.to_xml())
+                .collect::<Vec<_>>()
+                .join("\n"),
+            TokenType::Rbrace.get_xml_tag()),
+        )
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct VarDec {
+    var_type: ClassTypeToken,
+    var_name: IdentifierToken,
+    var_names: Vec<IdentifierToken>,
+}
+impl VarDec {
+    pub fn new(
+        var_type: ClassTypeToken,
+        var_name: IdentifierToken,
+        var_names: Vec<IdentifierToken>,
+    ) -> Self {
+        VarDec {
+            var_type,
+            var_name,
+            var_names,
+        }
+    }
+
+    fn to_xml(&self) -> String {
+        let var_names = if self.var_names.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "\n{}",
+                self.var_names
+                    .iter()
+                    .map(|i| format!("{}\n{}", TokenType::Comma.get_xml_tag(), i.get_xml_tag()))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+        };
+
+        format!(
+            "<varDec>\n{}\n{}\n{}{}\n{}\n</varDec>",
+            Keyword::Var.get_xml_tag(),
+            self.var_type.type_token.get_xml_tag(),
+            self.var_name.get_xml_tag(),
+            var_names,
+            TokenType::Semicolon.get_xml_tag(),
+        )
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum Class {
+    ClassVarDec(ClassVarDec),
+    SubroutineDec(SubroutineDec),
+    VarDec(VarDec),
+}
+impl Node for Class {
+    fn to_xml(&self) -> String {
+        match self {
+            Self::ClassVarDec(class_var_dec) => class_var_dec.to_xml(),
+
+            Self::SubroutineDec(subroutine_dec) => subroutine_dec.to_xml(),
+
+            Self::VarDec(var_dec) => var_dec.to_xml(),
+        }
     }
 }
 
@@ -354,6 +578,262 @@ impl Node for Term {
 mod tests {
     use crate::analyzer::ast::*;
     use crate::analyzer::token::*;
+
+    #[test]
+    fn class_var_dec_to_xml() {
+        let class_var_dec = Class::ClassVarDec(ClassVarDec::new(
+            TokenType::Keyword(Keyword::Static),
+            ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean)),
+            IdentifierToken::new("test"),
+            vec![],
+        ));
+
+        assert_eq!(
+            class_var_dec.to_xml(),
+            "<classVarDec>
+<keyword> static </keyword>
+<keyword> boolean </keyword>
+<identifier> test </identifier>
+<symbol> ; </symbol>
+</classVarDec>"
+        );
+    }
+
+    #[test]
+    fn class_var_multiple_dec_to_xml() {
+        let class_var_dec = Class::ClassVarDec(ClassVarDec::new(
+            TokenType::Keyword(Keyword::Field),
+            ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
+            IdentifierToken::new("i"),
+            vec![IdentifierToken::new("j1"), IdentifierToken::new("j2")],
+        ));
+
+        assert_eq!(
+            class_var_dec.to_xml(),
+            "<classVarDec>
+<keyword> field </keyword>
+<keyword> int </keyword>
+<identifier> i </identifier>
+<symbol> , </symbol>
+<identifier> j1 </identifier>
+<symbol> , </symbol>
+<identifier> j2 </identifier>
+<symbol> ; </symbol>
+</classVarDec>"
+        );
+    }
+
+    #[test]
+    fn var_dec_to_xml() {
+        let var_dec = Class::VarDec(VarDec::new(
+            ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new("String"))),
+            IdentifierToken::new("s"),
+            vec![],
+        ));
+
+        assert_eq!(
+            var_dec.to_xml(),
+            "<varDec>
+<keyword> var </keyword>
+<identifier> String </identifier>
+<identifier> s </identifier>
+<symbol> ; </symbol>
+</varDec>"
+        );
+    }
+
+    #[test]
+    fn no_parameter_subroutine_dec_to_xml() {
+        let subroutine_dec = Class::SubroutineDec(SubroutineDec::new(
+            TokenType::Keyword(Keyword::Method),
+            None,
+            IdentifierToken::new("main"),
+            vec![],
+            vec![VarDec::new(
+                ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new("SquareGame"))),
+                IdentifierToken::new("game"),
+                vec![],
+            )],
+            vec![
+                Statement::Let(
+                    IdentifierToken::new("game"),
+                    None,
+                    Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
+                ),
+                Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken::new("game"),
+                    IdentifierToken::new("run"),
+                    vec![],
+                )),
+                Statement::Return(None),
+            ],
+        ));
+
+        assert_eq!(
+            subroutine_dec.to_xml(),
+            "<subroutineDec>
+<keyword> method </keyword>
+<keyword> void </keyword>
+<identifier> main </identifier>
+<symbol> ( </symbol>
+<parameterList>
+</parameterList>
+<symbol> ) </symbol>
+<subroutineBody>
+<symbol> { </symbol>
+<varDec>
+<keyword> var </keyword>
+<identifier> SquareGame </identifier>
+<identifier> game </identifier>
+<symbol> ; </symbol>
+</varDec>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> game </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<identifier> game </identifier>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<doStatement>
+<keyword> do </keyword>
+<identifier> game </identifier>
+<symbol> . </symbol>
+<identifier> run </identifier>
+<symbol> ( </symbol>
+<expressionList>
+</expressionList>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+</doStatement>
+<returnStatement>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+</returnStatement>
+</statements>
+<symbol> } </symbol>
+</subroutineBody>
+</subroutineDec>"
+        );
+    }
+
+    #[test]
+    fn parameter_subroutine_dec_to_xml() {
+        let subroutine_dec = Class::SubroutineDec(SubroutineDec::new(
+            TokenType::Keyword(Keyword::Method),
+            Some(ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean))),
+            IdentifierToken::new("main"),
+            vec![
+                (
+                    ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean)),
+                    IdentifierToken::new("b"),
+                ),
+                (
+                    ClassTypeToken::new(TokenType::Keyword(Keyword::Char)),
+                    IdentifierToken::new("c"),
+                ),
+            ],
+            vec![VarDec::new(
+                ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new("SquareGame"))),
+                IdentifierToken::new("game"),
+                vec![],
+            )],
+            vec![
+                Statement::Let(
+                    IdentifierToken::new("game"),
+                    None,
+                    Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
+                ),
+                Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken::new("game"),
+                    IdentifierToken::new("run"),
+                    vec![],
+                )),
+                Statement::Return(None),
+            ],
+        ));
+
+        assert_eq!(
+            subroutine_dec.to_xml(),
+            "<subroutineDec>
+<keyword> method </keyword>
+<keyword> boolean </keyword>
+<identifier> main </identifier>
+<symbol> ( </symbol>
+<parameterList>
+<keyword> boolean </keyword>
+<identifier> b </identifier>
+<symbol> , </symbol>
+<keyword> char </keyword>
+<identifier> c </identifier>
+</parameterList>
+<symbol> ) </symbol>
+<subroutineBody>
+<symbol> { </symbol>
+<varDec>
+<keyword> var </keyword>
+<identifier> SquareGame </identifier>
+<identifier> game </identifier>
+<symbol> ; </symbol>
+</varDec>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> game </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<identifier> game </identifier>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<doStatement>
+<keyword> do </keyword>
+<identifier> game </identifier>
+<symbol> . </symbol>
+<identifier> run </identifier>
+<symbol> ( </symbol>
+<expressionList>
+</expressionList>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+</doStatement>
+<returnStatement>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+</returnStatement>
+</statements>
+<symbol> } </symbol>
+</subroutineBody>
+</subroutineDec>"
+        );
+    }
+
+    #[test]
+    fn var_multiple_dec_to_xml() {
+        let var_dec = Class::VarDec(VarDec::new(
+            ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
+            IdentifierToken::new("i"),
+            vec![IdentifierToken::new("j")],
+        ));
+
+        assert_eq!(
+            var_dec.to_xml(),
+            "<varDec>
+<keyword> var </keyword>
+<keyword> int </keyword>
+<identifier> i </identifier>
+<symbol> , </symbol>
+<identifier> j </identifier>
+<symbol> ; </symbol>
+</varDec>"
+        );
+    }
 
     #[test]
     fn expression_with_binary_op() {
