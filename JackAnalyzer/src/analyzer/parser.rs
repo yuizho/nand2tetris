@@ -172,8 +172,7 @@ impl<'a> Parser<'a> {
 
     fn parse_do_statement(&mut self) -> Statement {
         let token = self.next_token();
-
-        let subroutine_call = if let TokenType::Identifier(identifier) = token.clone() {
+        let subroutine_call = if let TokenType::Identifier(identifier) = token {
             self.parse_subroutine_call(identifier)
         } else {
             panic!("unexpected syntax of do statement: {}", token.get_xml_tag());
