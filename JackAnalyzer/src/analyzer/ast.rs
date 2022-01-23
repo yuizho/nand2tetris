@@ -24,7 +24,29 @@ impl Program {
 }
 impl Node for Program {
     fn to_xml(&self) -> String {
-        "".to_string()
+        fn vec_to_xml<T: Node>(vec: &[T]) -> String {
+            if vec.is_empty() {
+                "".to_string()
+            } else {
+                format!(
+                    "\n{}",
+                    vec.iter()
+                        .map(|v| v.to_xml())
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                )
+            }
+        }
+
+        format!(
+            "<class>\n{}\n{}\n{}{}{}\n{}\n</class>",
+            Keyword::Class.get_xml_tag(),
+            self.class_name.get_xml_tag(),
+            TokenType::Lbrace.get_xml_tag(),
+            vec_to_xml(&self.class_var_dec),
+            vec_to_xml(&self.subroutine_dec),
+            TokenType::Rbrace.get_xml_tag()
+        )
     }
 }
 
@@ -81,7 +103,8 @@ impl ClassVarDec {
             var_names,
         }
     }
-
+}
+impl Node for ClassVarDec {
     fn to_xml(&self) -> String {
         let class_var_names = if self.var_names.is_empty() {
             "".to_string()
@@ -141,7 +164,8 @@ impl SubroutineDec {
             statements,
         }
     }
-
+}
+impl Node for SubroutineDec {
     fn to_xml(&self) -> String {
         let parameters = if self.parameters.is_empty() {
             "".to_string()
@@ -207,7 +231,8 @@ impl VarDec {
             var_names,
         }
     }
-
+}
+impl Node for VarDec {
     fn to_xml(&self) -> String {
         let var_names = if self.var_names.is_empty() {
             "".to_string()
@@ -588,6 +613,106 @@ impl Node for Term {
 mod tests {
     use crate::analyzer::ast::*;
     use crate::analyzer::token::*;
+
+    #[test]
+    fn program_to_xml() {
+        let program = Program::new(
+            IdentifierToken::new("Square"),
+            vec![ClassVarDec::new(
+                TokenType::Keyword(Keyword::Field),
+                ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
+                IdentifierToken::new("size"),
+                vec![],
+            )],
+            vec![SubroutineDec::new(
+                TokenType::Keyword(Keyword::Method),
+                None,
+                IdentifierToken::new("main"),
+                vec![],
+                vec![VarDec::new(
+                    ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new("SquareGame"))),
+                    IdentifierToken::new("game"),
+                    vec![],
+                )],
+                vec![
+                    Statement::Let(
+                        IdentifierToken::new("game"),
+                        None,
+                        Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
+                    ),
+                    Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                        IdentifierToken::new("game"),
+                        IdentifierToken::new("run"),
+                        vec![],
+                    )),
+                    Statement::Return(None),
+                ],
+            )],
+        );
+
+        assert_eq!(
+            program.to_xml(),
+            "<class>
+<keyword> class </keyword>
+<identifier> Square </identifier>
+<symbol> { </symbol>
+<classVarDec>
+<keyword> field </keyword>
+<keyword> int </keyword>
+<identifier> size </identifier>
+<symbol> ; </symbol>
+</classVarDec>
+<subroutineDec>
+<keyword> method </keyword>
+<keyword> void </keyword>
+<identifier> main </identifier>
+<symbol> ( </symbol>
+<parameterList>
+</parameterList>
+<symbol> ) </symbol>
+<subroutineBody>
+<symbol> { </symbol>
+<varDec>
+<keyword> var </keyword>
+<identifier> SquareGame </identifier>
+<identifier> game </identifier>
+<symbol> ; </symbol>
+</varDec>
+<statements>
+<letStatement>
+<keyword> let </keyword>
+<identifier> game </identifier>
+<symbol> = </symbol>
+<expression>
+<term>
+<identifier> game </identifier>
+</term>
+</expression>
+<symbol> ; </symbol>
+</letStatement>
+<doStatement>
+<keyword> do </keyword>
+<identifier> game </identifier>
+<symbol> . </symbol>
+<identifier> run </identifier>
+<symbol> ( </symbol>
+<expressionList>
+</expressionList>
+<symbol> ) </symbol>
+<symbol> ; </symbol>
+</doStatement>
+<returnStatement>
+<keyword> return </keyword>
+<symbol> ; </symbol>
+</returnStatement>
+</statements>
+<symbol> } </symbol>
+</subroutineBody>
+</subroutineDec>
+<symbol> } </symbol>
+</class>"
+        );
+    }
 
     #[test]
     fn class_var_dec_to_xml() {
