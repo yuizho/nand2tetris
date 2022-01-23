@@ -4,6 +4,7 @@ pub trait Node {
     fn to_xml(&self) -> String;
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Program {
     class_name: IdentifierToken,
     class_var_dec: Vec<ClassVarDec>,
@@ -79,14 +80,14 @@ pub struct ClassVarDec {
     var_identifier: Keyword,
     var_type: ClassTypeToken,
     var_name: IdentifierToken,
-    var_names: Vec<IdentifierToken>,
+    alt_var_names: Vec<IdentifierToken>,
 }
 impl ClassVarDec {
     pub fn new(
         var_identifier: TokenType,
         var_type: ClassTypeToken,
         var_name: IdentifierToken,
-        var_names: Vec<IdentifierToken>,
+        alt_var_names: Vec<IdentifierToken>,
     ) -> Self {
         let var_identifier = match var_identifier {
             TokenType::Keyword(keyword) => match keyword {
@@ -100,18 +101,18 @@ impl ClassVarDec {
             var_identifier,
             var_type,
             var_name,
-            var_names,
+            alt_var_names,
         }
     }
 }
 impl Node for ClassVarDec {
     fn to_xml(&self) -> String {
-        let class_var_names = if self.var_names.is_empty() {
+        let class_var_names = if self.alt_var_names.is_empty() {
             "".to_string()
         } else {
             format!(
                 "\n{}",
-                self.var_names
+                self.alt_var_names
                     .iter()
                     .map(|i| format!("{}\n{}", TokenType::Comma.get_xml_tag(), i.get_xml_tag()))
                     .collect::<Vec<_>>()
@@ -217,29 +218,29 @@ impl Node for SubroutineDec {
 pub struct VarDec {
     var_type: ClassTypeToken,
     var_name: IdentifierToken,
-    var_names: Vec<IdentifierToken>,
+    alt_var_names: Vec<IdentifierToken>,
 }
 impl VarDec {
     pub fn new(
         var_type: ClassTypeToken,
         var_name: IdentifierToken,
-        var_names: Vec<IdentifierToken>,
+        alt_var_names: Vec<IdentifierToken>,
     ) -> Self {
         VarDec {
             var_type,
             var_name,
-            var_names,
+            alt_var_names,
         }
     }
 }
 impl Node for VarDec {
     fn to_xml(&self) -> String {
-        let var_names = if self.var_names.is_empty() {
+        let var_names = if self.alt_var_names.is_empty() {
             "".to_string()
         } else {
             format!(
                 "\n{}",
-                self.var_names
+                self.alt_var_names
                     .iter()
                     .map(|i| format!("{}\n{}", TokenType::Comma.get_xml_tag(), i.get_xml_tag()))
                     .collect::<Vec<_>>()
@@ -255,24 +256,6 @@ impl Node for VarDec {
             var_names,
             TokenType::Semicolon.get_xml_tag(),
         )
-    }
-}
-
-#[derive(PartialEq, Debug)]
-pub enum Class {
-    ClassVarDec(ClassVarDec),
-    SubroutineDec(SubroutineDec),
-    VarDec(VarDec),
-}
-impl Node for Class {
-    fn to_xml(&self) -> String {
-        match self {
-            Self::ClassVarDec(class_var_dec) => class_var_dec.to_xml(),
-
-            Self::SubroutineDec(subroutine_dec) => subroutine_dec.to_xml(),
-
-            Self::VarDec(var_dec) => var_dec.to_xml(),
-        }
     }
 }
 
@@ -716,12 +699,12 @@ mod tests {
 
     #[test]
     fn class_var_dec_to_xml() {
-        let class_var_dec = Class::ClassVarDec(ClassVarDec::new(
+        let class_var_dec = ClassVarDec::new(
             TokenType::Keyword(Keyword::Static),
             ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean)),
             IdentifierToken::new("test"),
             vec![],
-        ));
+        );
 
         assert_eq!(
             class_var_dec.to_xml(),
@@ -736,12 +719,12 @@ mod tests {
 
     #[test]
     fn class_var_multiple_dec_to_xml() {
-        let class_var_dec = Class::ClassVarDec(ClassVarDec::new(
+        let class_var_dec = ClassVarDec::new(
             TokenType::Keyword(Keyword::Field),
             ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
             IdentifierToken::new("i"),
             vec![IdentifierToken::new("j1"), IdentifierToken::new("j2")],
-        ));
+        );
 
         assert_eq!(
             class_var_dec.to_xml(),
@@ -760,11 +743,11 @@ mod tests {
 
     #[test]
     fn var_dec_to_xml() {
-        let var_dec = Class::VarDec(VarDec::new(
+        let var_dec = VarDec::new(
             ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new("String"))),
             IdentifierToken::new("s"),
             vec![],
-        ));
+        );
 
         assert_eq!(
             var_dec.to_xml(),
@@ -779,7 +762,7 @@ mod tests {
 
     #[test]
     fn no_parameter_subroutine_dec_to_xml() {
-        let subroutine_dec = Class::SubroutineDec(SubroutineDec::new(
+        let subroutine_dec = SubroutineDec::new(
             TokenType::Keyword(Keyword::Method),
             None,
             IdentifierToken::new("main"),
@@ -802,7 +785,7 @@ mod tests {
                 )),
                 Statement::Return(None),
             ],
-        ));
+        );
 
         assert_eq!(
             subroutine_dec.to_xml(),
@@ -858,7 +841,7 @@ mod tests {
 
     #[test]
     fn parameter_subroutine_dec_to_xml() {
-        let subroutine_dec = Class::SubroutineDec(SubroutineDec::new(
+        let subroutine_dec = SubroutineDec::new(
             TokenType::Keyword(Keyword::Method),
             Some(ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean))),
             IdentifierToken::new("main"),
@@ -890,7 +873,7 @@ mod tests {
                 )),
                 Statement::Return(None),
             ],
-        ));
+        );
 
         assert_eq!(
             subroutine_dec.to_xml(),
@@ -951,11 +934,11 @@ mod tests {
 
     #[test]
     fn var_multiple_dec_to_xml() {
-        let var_dec = Class::VarDec(VarDec::new(
+        let var_dec = VarDec::new(
             ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
             IdentifierToken::new("i"),
             vec![IdentifierToken::new("j")],
-        ));
+        );
 
         assert_eq!(
             var_dec.to_xml(),
