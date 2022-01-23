@@ -612,11 +612,20 @@ mod tests {
                 None,
                 IdentifierToken::new("main"),
                 vec![],
-                vec![VarDec::new(
-                    ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new("SquareGame"))),
-                    IdentifierToken::new("game"),
-                    vec![],
-                )],
+                vec![
+                    VarDec::new(
+                        ClassTypeToken::new(TokenType::Identifier(IdentifierToken::new(
+                            "SquareGame",
+                        ))),
+                        IdentifierToken::new("game"),
+                        vec![],
+                    ),
+                    VarDec::new(
+                        ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
+                        IdentifierToken::new("num"),
+                        vec![],
+                    ),
+                ],
                 vec![
                     Statement::Let(
                         IdentifierToken::new("game"),
@@ -659,6 +668,12 @@ mod tests {
 <keyword> var </keyword>
 <identifier> SquareGame </identifier>
 <identifier> game </identifier>
+<symbol> ; </symbol>
+</varDec>
+<varDec>
+<keyword> var </keyword>
+<keyword> int </keyword>
+<identifier> num </identifier>
 <symbol> ; </symbol>
 </varDec>
 <statements>
