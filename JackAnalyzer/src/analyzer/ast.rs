@@ -180,6 +180,30 @@ impl Node for SubroutineDec {
                     .join(&format!("\n{}\n", TokenType::Comma.get_xml_tag()))
             )
         };
+        let vars = if self.var_dec.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "\n{}",
+                self.var_dec
+                    .iter()
+                    .map(|s| s.to_xml())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+        };
+        let statements = if self.statements.is_empty() {
+            "".to_string()
+        } else {
+            format!(
+                "\n{}",
+                self.statements
+                    .iter()
+                    .map(|s| s.to_xml())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            )
+        };
 
         format!(
             "<subroutineDec>\n{}\n{}\n{}\n{}\n<subroutineBody>\n{}\n</subroutineBody>\n</subroutineDec>",
@@ -195,20 +219,10 @@ impl Node for SubroutineDec {
                 parameters,
                 TokenType::Rparen.get_xml_tag()
             ),
-            format!("{}\n{}\n<statements>\n{}\n</statements>\n{}",
+            format!("{}{}\n<statements>{}\n</statements>\n{}",
             TokenType::Lbrace.get_xml_tag(),
-            self
-                .var_dec
-                .iter()
-                .map(|s| s.to_xml())
-                .collect::<Vec<_>>()
-                .join("\n"),
-            self
-                .statements
-                .iter()
-                .map(|s| s.to_xml())
-                .collect::<Vec<_>>()
-                .join("\n"),
+            vars,
+            statements,
             TokenType::Rbrace.get_xml_tag()),
         )
     }
