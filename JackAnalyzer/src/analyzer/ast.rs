@@ -330,7 +330,7 @@ impl Node for Statement {
             Self::If(expression, if_statements, else_statements) => {
                 fn statements_to_xml(v: &[Statement]) -> String {
                     if v.is_empty() {
-                        "".to_string()
+                        "<statements>\n</statements>".to_string()
                     } else {
                         format!(
                             "<statements>{}\n</statements>",
@@ -349,17 +349,14 @@ impl Node for Statement {
                     expression.to_xml(),
                     TokenType::Rparen.get_xml_tag(),
                     TokenType::Lbrace.get_xml_tag(),
-                    format!(
-                        "<statements>{}\n</statements>",
-                        statements_to_xml(if_statements)
-                    ),
+                    statements_to_xml(if_statements),
                     TokenType::Rbrace.get_xml_tag(),
                     match else_statements {
                         Some(statements) => format!(
                             "{}\n{}\n{}\n{}\n",
                             Keyword::Else.get_xml_tag(),
                             TokenType::Lbrace.get_xml_tag(),
-                            format!("<statements>{}\n</statements>", statements_to_xml(statements)),
+                            statements_to_xml(statements),
                             TokenType::Rbrace.get_xml_tag(),
                         ),
                         None => "".to_string(),
