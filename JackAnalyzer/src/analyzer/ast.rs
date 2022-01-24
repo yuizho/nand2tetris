@@ -328,6 +328,20 @@ impl Node for Statement {
             }
 
             Self::If(expression, if_statements, else_statements) => {
+                fn statements_to_xml(v: &[Statement]) -> String {
+                    if v.is_empty() {
+                        "".to_string()
+                    } else {
+                        format!(
+                            "<statements>{}\n</statements>",
+                            format!(
+                                "\n{}",
+                                v.iter().map(|s| s.to_xml()).collect::<Vec<_>>().join("\n")
+                            )
+                        )
+                    }
+                }
+
                 format!(
                     "<ifStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}</ifStatement>",
                     Keyword::If.get_xml_tag(),
@@ -336,12 +350,8 @@ impl Node for Statement {
                     TokenType::Rparen.get_xml_tag(),
                     TokenType::Lbrace.get_xml_tag(),
                     format!(
-                        "<statements>\n{}\n</statements>",
-                        if_statements
-                            .iter()
-                            .map(|s| s.to_xml())
-                            .collect::<Vec<_>>()
-                            .join("\n")
+                        "<statements>{}\n</statements>",
+                        statements_to_xml(if_statements)
                     ),
                     TokenType::Rbrace.get_xml_tag(),
                     match else_statements {
@@ -349,14 +359,7 @@ impl Node for Statement {
                             "{}\n{}\n{}\n{}\n",
                             Keyword::Else.get_xml_tag(),
                             TokenType::Lbrace.get_xml_tag(),
-                            format!(
-                                "<statements>\n{}\n</statements>",
-                                statements
-                                    .iter()
-                                    .map(|s| s.to_xml())
-                                    .collect::<Vec<_>>()
-                                    .join("\n")
-                            ),
+                            format!("<statements>{}\n</statements>", statements_to_xml(statements)),
                             TokenType::Rbrace.get_xml_tag(),
                         ),
                         None => "".to_string(),
