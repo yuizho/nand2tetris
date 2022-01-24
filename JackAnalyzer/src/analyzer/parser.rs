@@ -95,6 +95,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_subroutine(&mut self, subroutine_identifier: TokenType) -> SubroutineDec {
+        // parse return type
         let token = self.next_token();
         let return_type = if let TokenType::Keyword(Keyword::Void) = token {
             None
@@ -102,6 +103,7 @@ impl<'a> Parser<'a> {
             Some(ClassTypeToken::new(token))
         };
 
+        // parse subroutine name
         let token = self.next_token();
         let subroutine_name = if let TokenType::Identifier(identifier) = token {
             identifier
@@ -109,6 +111,7 @@ impl<'a> Parser<'a> {
             panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
         };
 
+        // parse parameters
         let token = self.next_token();
         if !token.is(TokenType::Lparen) {
             panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
@@ -118,13 +121,17 @@ impl<'a> Parser<'a> {
         let mut parameters = vec![];
         while !token.is_eof_or(TokenType::Rparen) {
             if token.is(TokenType::Comma) {
-                self.next_token();
+                token = self.next_token();
             }
-            let var_type = ClassTypeToken::new(self.next_token());
-            let param_name = if let TokenType::Identifier(identifier) = token {
+            let var_type = ClassTypeToken::new(token);
+            let var_name = self.next_token();
+            let param_name = if let TokenType::Identifier(identifier) = var_name {
                 identifier
             } else {
-                panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+                panic!(
+                    "unexpected syntax of subroutine: {}",
+                    var_name.get_xml_tag()
+                );
             };
             parameters.push((var_type, param_name));
 
@@ -136,6 +143,7 @@ impl<'a> Parser<'a> {
             panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
         }
 
+        // parse subroutine body
         let mut token = self.next_token();
         let mut var_dec = vec![];
         let mut statements = vec![];
@@ -546,7 +554,7 @@ mod tests {
                 return;
             }
 
-            method void hoge() {
+            method void hoge(int a, boolean b) {
                 return;
             }
         }
@@ -605,7 +613,16 @@ mod tests {
                         TokenType::Keyword(Keyword::Method),
                         None,
                         IdentifierToken::new("hoge"),
-                        vec![],
+                        vec![
+                            (
+                                ClassTypeToken::new(TokenType::Keyword(Keyword::Int)),
+                                IdentifierToken::new("a"),
+                            ),
+                            (
+                                ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean)),
+                                IdentifierToken::new("b"),
+                            )
+                        ],
                         vec![],
                         vec![Statement::Return(None),],
                     )
