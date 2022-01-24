@@ -553,7 +553,7 @@ impl SubroutineCall {
                         .iter()
                         .map(|s| s.to_xml())
                         .collect::<Vec<_>>()
-                        .join("\n")
+                        .join(format!("\n{}\n", TokenType::Comma.get_xml_tag()).as_str())
                 )
             },
             TokenType::Rparen.get_xml_tag()
@@ -1545,6 +1545,7 @@ mod tests {
 <integerConstant> 1 </integerConstant>
 </term>
 </expression>
+<symbol> , </symbol>
 <expression>
 <term>
 <integerConstant> 2 </integerConstant>
@@ -1620,6 +1621,7 @@ mod tests {
 <integerConstant> 1 </integerConstant>
 </term>
 </expression>
+<symbol> , </symbol>
 <expression>
 <term>
 <integerConstant> 2 </integerConstant>
