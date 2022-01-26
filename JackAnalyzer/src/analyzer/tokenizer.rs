@@ -1,6 +1,6 @@
 use std::io::{BufReader, Read};
 
-use super::token;
+use super::token::TokenType;
 
 const EMPTY_CHAR: char = 0 as char;
 
@@ -33,7 +33,7 @@ impl JackTokenizer {
         self.input.len() > self.read_position
     }
 
-    pub fn peek(&mut self) -> token::TokenType {
+    pub fn peek(&mut self) -> TokenType {
         let start_position = self.position;
         let start_read_posision = self.read_position;
         let start_current_char = self.current_char;
@@ -47,23 +47,23 @@ impl JackTokenizer {
         token
     }
 
-    pub fn advance(&mut self) -> token::TokenType {
+    pub fn advance(&mut self) -> TokenType {
         self.skip_whitespace();
 
         let token = match self.current_char {
-            '"' => token::TokenType::String(self.read_string()),
-            '{' => token::TokenType::Lbrace,
-            '}' => token::TokenType::Rbrace,
-            '(' => token::TokenType::Lparen,
-            ')' => token::TokenType::Rparen,
-            '[' => token::TokenType::Lbracket,
-            ']' => token::TokenType::Rbracket,
-            '.' => token::TokenType::Dot,
-            ',' => token::TokenType::Comma,
-            ';' => token::TokenType::Semicolon,
-            '+' => token::TokenType::Plus,
-            '-' => token::TokenType::Minus,
-            '*' => token::TokenType::Asterisk,
+            '"' => TokenType::String(self.read_string()),
+            '{' => TokenType::Lbrace,
+            '}' => TokenType::Rbrace,
+            '(' => TokenType::Lparen,
+            ')' => TokenType::Rparen,
+            '[' => TokenType::Lbracket,
+            ']' => TokenType::Rbracket,
+            '.' => TokenType::Dot,
+            ',' => TokenType::Comma,
+            ';' => TokenType::Semicolon,
+            '+' => TokenType::Plus,
+            '-' => TokenType::Minus,
+            '*' => TokenType::Asterisk,
             '/' => {
                 if self.peek_char() == '/' {
                     self.skip_line_comments();
@@ -74,20 +74,18 @@ impl JackTokenizer {
                     self.read_char();
                     return self.advance();
                 } else {
-                    token::TokenType::Slash
+                    TokenType::Slash
                 }
             }
-            '&' => token::TokenType::And,
-            '|' => token::TokenType::Or,
-            '<' => token::TokenType::Lt,
-            '>' => token::TokenType::Gt,
-            '=' => token::TokenType::Assign,
-            '~' => token::TokenType::Tilde,
-            _ if self.is_letter() => {
-                return token::TokenType::lookup_identify(&self.read_identifier())
-            }
-            _ if self.is_digit() => return token::TokenType::Number(self.read_number()),
-            c if c == EMPTY_CHAR => token::TokenType::Eof,
+            '&' => TokenType::And,
+            '|' => TokenType::Or,
+            '<' => TokenType::Lt,
+            '>' => TokenType::Gt,
+            '=' => TokenType::Assign,
+            '~' => TokenType::Tilde,
+            _ if self.is_letter() => return TokenType::lookup_identify(&self.read_identifier()),
+            _ if self.is_digit() => return TokenType::Number(self.read_number()),
+            c if c == EMPTY_CHAR => TokenType::Eof,
             c => panic!("unexpected token: {}", c),
         };
 
