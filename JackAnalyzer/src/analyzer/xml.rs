@@ -11,10 +11,24 @@ pub enum Content {
 }
 
 impl Element {
-    pub fn new<S: Into<String>>(name: S, content: Content) -> Self {
+    pub fn new_element<S: Into<String>>(name: S, child: Element) -> Self {
         Element {
             name: name.into(),
-            content,
+            content: Content::Elements(vec![child]),
+        }
+    }
+
+    pub fn new_elements<S: Into<String>>(name: S, children: Vec<Element>) -> Self {
+        Element {
+            name: name.into(),
+            content: Content::Elements(children),
+        }
+    }
+
+    pub fn new_text<S: Into<String>>(name: S, text: S) -> Self {
+        Element {
+            name: name.into(),
+            content: Content::Text(text.into()),
         }
     }
 
@@ -43,15 +57,9 @@ mod tests {
 
     #[test]
     fn write() {
-        let mut elm = Element::new(
+        let elm = Element::new_element(
             "expression",
-            Content::Elements(vec![Element::new(
-                "term",
-                Content::Elements(vec![Element::new(
-                    "keyword",
-                    Content::Text("true".to_string()),
-                )]),
-            )]),
+            Element::new_element("term", Element::new_text("keyword", "true")),
         );
 
         let mut cursor = Cursor::new(Vec::new());
