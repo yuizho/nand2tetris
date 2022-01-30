@@ -67,25 +67,25 @@ impl Element {
         self.write_with_indent(writer, 0)
     }
 
-    fn write_with_indent<W: Write>(&self, writer: &mut W, level: usize) -> io::Result<()> {
+    fn write_with_indent<W: Write>(&self, writer: &mut W, indent_level: usize) -> io::Result<()> {
         use Content::*;
-        let prefix = " ".repeat(level);
+        let indent = " ".repeat(indent_level);
         match &self.content {
             Empty => (),
             Elements(elements) => {
-                writeln!(writer, "{}<{}>", prefix, self.name)?;
+                writeln!(writer, "{}<{}>", indent, self.name)?;
                 for elm in elements {
-                    elm.write_with_indent(writer, level + INDENT_SPACE_COUNT)?;
+                    elm.write_with_indent(writer, indent_level + INDENT_SPACE_COUNT)?;
                 }
-                writeln!(writer, "{}</{}>", prefix, self.name)?;
+                writeln!(writer, "{}</{}>", indent, self.name)?;
             }
             Fragment(elements) => {
                 for elm in elements {
-                    elm.write_with_indent(writer, level)?;
+                    elm.write_with_indent(writer, indent_level)?;
                 }
             }
             Text(text) => {
-                writeln!(writer, "{}<{}> {} </{1}>", prefix, self.name, text)?;
+                writeln!(writer, "{}<{}> {} </{1}>", indent, self.name, text)?;
             }
         }
         Ok(())
