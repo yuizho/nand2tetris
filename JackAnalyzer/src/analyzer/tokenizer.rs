@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use std::io::{BufReader, Read};
 
 use super::token::TokenType;
@@ -33,21 +34,21 @@ impl JackTokenizer {
         self.input.len() > self.read_position
     }
 
-    pub fn peek(&mut self) -> TokenType {
+    pub fn peek(&mut self) -> Result<TokenType> {
         let start_position = self.position;
         let start_read_posision = self.read_position;
         let start_current_char = self.current_char;
 
-        let token = self.advance();
+        let token = self.advance()?;
 
         self.position = start_position;
         self.read_position = start_read_posision;
         self.current_char = start_current_char;
 
-        token
+        Ok(token)
     }
 
-    pub fn advance(&mut self) -> TokenType {
+    pub fn advance(&mut self) -> Result<TokenType> {
         self.skip_whitespace();
 
         let token = match self.current_char {
@@ -83,14 +84,16 @@ impl JackTokenizer {
             '>' => TokenType::Gt,
             '=' => TokenType::Assign,
             '~' => TokenType::Tilde,
-            _ if self.is_letter() => return TokenType::lookup_identify(&self.read_identifier()),
-            _ if self.is_digit() => return TokenType::Number(self.read_number()),
+            _ if self.is_letter() => {
+                return Ok(TokenType::lookup_identify(&self.read_identifier()))
+            }
+            _ if self.is_digit() => return Ok(TokenType::Number(self.read_number())),
             c if c == EMPTY_CHAR => TokenType::Eof,
-            c => panic!("unexpected token: {}", c),
+            c => return Err(anyhow!("unexpected token: {}", c)),
         };
 
         self.read_char();
-        token
+        Ok(token)
     }
 
     fn skip_line_comments(&mut self) {
@@ -191,7 +194,7 @@ mod tests {
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut actual: Vec<TokenType> = Vec::new();
         while tokenizer.has_more_tokens() {
-            actual.push(tokenizer.advance());
+            actual.push(tokenizer.advance().unwrap());
         }
 
         assert_eq!(
@@ -217,7 +220,7 @@ mod tests {
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut actual: Vec<TokenType> = Vec::new();
         while tokenizer.has_more_tokens() {
-            actual.push(tokenizer.advance());
+            actual.push(tokenizer.advance().unwrap());
         }
 
         assert_eq!(
