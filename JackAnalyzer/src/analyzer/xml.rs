@@ -1,11 +1,15 @@
 use std::io::{self, Write};
 
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Element {
     name: String,
     content: Content,
 }
 
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Content {
+    Empty,
+    Fragment(Vec<Element>),
     Elements(Vec<Element>),
     Text(String),
 }
@@ -25,6 +29,24 @@ impl Element {
         }
     }
 
+    pub fn new_fragment(children: Vec<Element>) -> Self {
+        Element {
+            name: "".to_string(),
+            content: Content::Fragment(children),
+        }
+    }
+
+    pub fn new_joinned_fragment(children: Vec<Element>, separator: Element) -> Self {
+        let mut joinned = vec![];
+        for (i, child) in children.iter().enumerate() {
+            if i > 0 && i < children.len() {
+                joinned.push(separator.clone());
+            }
+            joinned.push(child.clone());
+        }
+        Self::new_fragment(joinned)
+    }
+
     pub fn new_text<S: Into<String>>(name: S, text: S) -> Self {
         Element {
             name: name.into(),
@@ -32,15 +54,28 @@ impl Element {
         }
     }
 
+    pub fn empty() -> Self {
+        Element {
+            name: "".to_string(),
+            content: Content::Empty,
+        }
+    }
+
     pub fn write<W: Write>(&self, writer: &mut W) -> io::Result<()> {
         use Content::*;
         match &self.content {
+            Empty => (),
             Elements(elements) => {
                 writeln!(writer, "<{}>", self.name)?;
                 for elm in elements {
                     elm.write(writer)?;
                 }
                 writeln!(writer, "</{}>", self.name)?;
+            }
+            Fragment(elements) => {
+                for elm in elements {
+                    elm.write(writer)?;
+                }
             }
             Text(text) => {
                 writeln!(writer, "<{}> {} </{0}>", self.name, text)?;
@@ -52,7 +87,7 @@ impl Element {
 
 #[cfg(test)]
 mod tests {
-    use crate::analyzer::xml::{Content, Element};
+    use crate::analyzer::xml::Element;
     use std::io::Cursor;
 
     #[test]
@@ -63,7 +98,7 @@ mod tests {
         );
 
         let mut cursor = Cursor::new(Vec::new());
-        elm.write(&mut cursor);
+        elm.write(&mut cursor).unwrap();
 
         let actual = cursor
             .into_inner()
