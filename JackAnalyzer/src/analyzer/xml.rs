@@ -95,21 +95,70 @@ mod tests {
     use crate::analyzer::xml::Element;
     use std::io::Cursor;
 
+    fn get_xml_string(elm: Element) -> String {
+        let mut cursor = Cursor::new(Vec::new());
+        elm.write(&mut cursor).unwrap();
+
+        cursor
+            .into_inner()
+            .iter()
+            .map(|&s| s as char)
+            .collect::<String>()
+    }
+
+    #[test]
+    fn create_joinned_fragmen() {
+        let elm = Element::new_elements(
+            "parent",
+            vec![
+                Element::new_joinned_fragment(
+                    vec![Element::new_text("a", "text1")],
+                    Element::new_text("symbol", ","),
+                ),
+                Element::new_joinned_fragment(
+                    vec![
+                        Element::new_text("aa", "text1"),
+                        Element::new_text("bb", "text2"),
+                    ],
+                    Element::new_text("symbol", ","),
+                ),
+                Element::new_joinned_fragment(
+                    vec![
+                        Element::new_text("aaa", "text1"),
+                        Element::new_text("bbb", "text2"),
+                        Element::new_text("ccc", "text3"),
+                    ],
+                    Element::new_text("symbol", ","),
+                ),
+            ],
+        );
+        let actual = get_xml_string(elm);
+
+        assert_eq!(
+            actual,
+            "<parent>
+  <a> text1 </a>
+  <aa> text1 </aa>
+  <symbol> , </symbol>
+  <bb> text2 </bb>
+  <aaa> text1 </aaa>
+  <symbol> , </symbol>
+  <bbb> text2 </bbb>
+  <symbol> , </symbol>
+  <ccc> text3 </ccc>
+</parent>
+"
+        );
+    }
+
     #[test]
     fn write() {
         let elm = Element::new_element(
             "expression",
             Element::new_element("term", Element::new_text("keyword", "true")),
         );
+        let actual = get_xml_string(elm);
 
-        let mut cursor = Cursor::new(Vec::new());
-        elm.write(&mut cursor).unwrap();
-
-        let actual = cursor
-            .into_inner()
-            .iter()
-            .map(|&s| s as char)
-            .collect::<String>();
         assert_eq!(
             actual,
             "<expression>
