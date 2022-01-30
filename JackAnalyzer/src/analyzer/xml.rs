@@ -1,7 +1,5 @@
 use std::io::{self, Write};
 
-const INDENT_SPACE_COUNT: usize = 2;
-
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Element {
     name: String,
@@ -69,13 +67,13 @@ impl Element {
 
     fn write_with_indent<W: Write>(&self, writer: &mut W, indent_level: usize) -> io::Result<()> {
         use Content::*;
-        let indent = " ".repeat(indent_level);
+        let indent = "  ".repeat(indent_level);
         match &self.content {
             Empty => (),
             Elements(elements) => {
                 writeln!(writer, "{}<{}>", indent, self.name)?;
                 for elm in elements {
-                    elm.write_with_indent(writer, indent_level + INDENT_SPACE_COUNT)?;
+                    elm.write_with_indent(writer, indent_level + 1)?;
                 }
                 writeln!(writer, "{}</{}>", indent, self.name)?;
             }
