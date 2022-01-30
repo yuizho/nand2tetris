@@ -1,47 +1,43 @@
+use anyhow::{anyhow, Result};
 use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
-
 mod analyzer;
 use analyzer::ast::Node;
 use analyzer::parser::Parser;
 use analyzer::tokenizer::JackTokenizer;
 
-fn main() {
+fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    let file_names = get_source_file_paths(&args);
+    let file_names = get_source_file_paths(&args)?;
 
-    let new_file_name = create_output_file_path(&args);
-    let mut buf_writer =
-        BufWriter::new(File::create(new_file_name).expect("failed to create xml file."));
+    let new_file_name = create_output_file_path(&args)?;
+    let mut buf_writer = BufWriter::new(File::create(new_file_name)?);
 
     for file_name in file_names {
-        let f = File::open(&file_name).expect("file not found");
+        let f = File::open(&file_name)?;
         let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(&mut tokenizer);
         // parse and write xml file
-        parser
-            .parse_program()
-            .to_xml()
-            .write(&mut buf_writer)
-            .expect("failed to write xml");
+        parser.parse_program()?.to_xml().write(&mut buf_writer)?;
     }
 
-    buf_writer.flush().expect("failed to flush");
+    buf_writer.flush()?;
+    Ok(())
 }
 
-fn get_source_file_paths(args: &[String]) -> Vec<PathBuf> {
+fn get_source_file_paths(args: &[String]) -> Result<Vec<PathBuf>> {
     if args.len() < 2 {
-        panic!("this command needs at least one argument")
+        return Err(anyhow!("this command needs at least one argument"));
     }
 
     let path = Path::new(&args[1]);
     if path.is_dir() {
         // treats as directory
-        let dir = std::fs::read_dir(&args[1]).expect("failed to read dir");
+        let dir = std::fs::read_dir(&args[1])?;
         let filenames = dir
             .into_iter()
             .map(|f| f.expect("failed to read files in dir").path())
@@ -54,33 +50,38 @@ fn get_source_file_paths(args: &[String]) -> Vec<PathBuf> {
             })
             .collect::<Vec<PathBuf>>();
         if filenames.is_empty() {
-            panic!("there is no .jack file.");
+            return Err(anyhow!("there is no .jack file."));
         }
-        return filenames;
+        return Ok(filenames);
     }
 
     // treats as file
     match path.extension() {
         Some(extension) => match extension.to_str().unwrap_or("") {
-            "jack" => vec![path.to_path_buf()],
-            unexpected_extension => panic!("unexpected file extension: {}.", unexpected_extension),
+            "jack" => Ok(vec![path.to_path_buf()]),
+            unexpected_extension => {
+                return Err(anyhow!(
+                    "unexpected file extension: {}.",
+                    unexpected_extension
+                ))
+            }
         },
-        None => panic!("the specified file doesn't have extension."),
+        None => return Err(anyhow!("the specified file doesn't have extension.")),
     }
 }
 
-fn create_output_file_path(args: &[String]) -> PathBuf {
+fn create_output_file_path(args: &[String]) -> Result<PathBuf> {
     if args.len() < 2 {
-        panic!("this command needs at least one argument")
+        return Err(anyhow!("this command needs at least one argument"));
     }
 
-    let absolute_path = fs::canonicalize(&args[1]).expect("illegal source file path.");
+    let absolute_path = fs::canonicalize(&args[1])?;
     if absolute_path.is_dir() {
-        absolute_path.join(format!(
+        Ok(absolute_path.join(format!(
             "{}.parsed.xml",
             absolute_path.file_stem().unwrap().to_str().unwrap()
-        ))
+        )))
     } else {
-        absolute_path.with_extension(OsStr::new("parsed.xml"))
+        Ok(absolute_path.with_extension(OsStr::new("parsed.xml")))
     }
 }
