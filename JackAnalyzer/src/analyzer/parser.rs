@@ -471,9 +471,7 @@ impl<'a> Parser<'a> {
             }
             TokenType::Number(num) => Term::IntegerConstant(num),
             TokenType::String(str_value) => Term::StringConstant(str_value),
-            TokenType::Keyword(keyword) => {
-                Term::KeywordConstant(KeywordConstantToken::new(keyword))
-            }
+            TokenType::Keyword(keyword) => Term::KeywordConstant(KeywordConstant::new(keyword)),
             TokenType::Lparen => self.parse_expression_term(),
             TokenType::Minus | TokenType::Tilde => self.parse_unary_op_constant(token),
             _ => panic!(
@@ -794,9 +792,7 @@ mod tests {
             actual,
             vec![
                 Statement::While(
-                    Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                        Keyword::True
-                    ))),
+                    Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
                     vec![
                         Statement::Let(
                             IdentifierToken::new("i"),
@@ -850,9 +846,7 @@ mod tests {
             actual,
             vec![
                 Statement::If(
-                    Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                        Keyword::True
-                    ))),
+                    Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
                     vec![
                         Statement::Let(
                             IdentifierToken::new("i"),
@@ -1002,13 +996,13 @@ mod tests {
             actual,
             vec![
                 Statement::Expression(Expression::new(Term::KeywordConstant(
-                    KeywordConstantToken::new(Keyword::This)
+                    KeywordConstant::new(Keyword::This)
                 ))),
                 Statement::Expression(Expression::new(Term::KeywordConstant(
-                    KeywordConstantToken::new(Keyword::Null)
+                    KeywordConstant::new(Keyword::Null)
                 ))),
                 Statement::Expression(Expression::new(Term::KeywordConstant(
-                    KeywordConstantToken::new(Keyword::False)
+                    KeywordConstant::new(Keyword::False)
                 )))
             ]
         );

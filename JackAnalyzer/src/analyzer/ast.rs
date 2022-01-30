@@ -481,14 +481,14 @@ impl BinaryOpToken {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct KeywordConstantToken {
+pub struct KeywordConstant {
     keyword: Keyword,
 }
-impl KeywordConstantToken {
+impl KeywordConstant {
     pub fn new(keyword: Keyword) -> Self {
         match keyword {
             Keyword::True | Keyword::False | Keyword::Null | Keyword::This => {
-                KeywordConstantToken { keyword }
+                KeywordConstant { keyword }
             }
             _ => panic!(
                 "unexpected keyword is used as keyword ocnstant: {:?}",
@@ -558,7 +558,7 @@ impl SubroutineCall {
 pub enum Term {
     IntegerConstant(i32),
     StringConstant(String),
-    KeywordConstant(KeywordConstantToken),
+    KeywordConstant(KeywordConstant),
     VarName(IdentifierToken, Option<Box<Expression>>),
     Expresssion(Box<Expression>),
     SubroutineCall(SubroutineCall),
@@ -1090,9 +1090,7 @@ mod tests {
     #[test]
     fn while_statement_to_xml() {
         let program = Statement::While(
-            Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                Keyword::True,
-            ))),
+            Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
             vec![
                 Statement::Let(
                     IdentifierToken::new("i"),
@@ -1152,9 +1150,7 @@ mod tests {
     #[test]
     fn if_statement_no_else_to_xml() {
         let program = Statement::If(
-            Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                Keyword::True,
-            ))),
+            Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
             vec![
                 Statement::Let(
                     IdentifierToken::new("i"),
@@ -1215,9 +1211,7 @@ mod tests {
     #[test]
     fn if_statement_has_else_to_xml() {
         let program = Statement::If(
-            Expression::new(Term::KeywordConstant(KeywordConstantToken::new(
-                Keyword::True,
-            ))),
+            Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
             vec![Statement::Let(
                 IdentifierToken::new("i"),
                 None,
@@ -1423,7 +1417,7 @@ mod tests {
     #[test]
     fn keyword_constant_expression_to_xml() {
         let program = Statement::Expression(Expression::new(Term::KeywordConstant(
-            KeywordConstantToken::new(Keyword::True),
+            KeywordConstant::new(Keyword::True),
         )));
 
         assert_eq!(
