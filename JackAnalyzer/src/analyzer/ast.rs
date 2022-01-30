@@ -432,33 +432,29 @@ impl BinaryOp {
 impl Node for BinaryOp {
     fn to_xml(&self) -> Element {
         Element::new_fragment(vec![
-            self.op_token.token.get_xml_tag(),
+            self.op_token.0.get_xml_tag(),
             self.right_term.to_xml(),
         ])
     }
 }
 
 #[derive(PartialEq, Debug)]
-pub struct UnaryOpToken {
-    token: TokenType,
-}
+pub struct UnaryOpToken(TokenType);
 impl UnaryOpToken {
     pub fn new(token: TokenType) -> Self {
         match token {
-            TokenType::Tilde | TokenType::Minus => UnaryOpToken { token },
+            TokenType::Tilde | TokenType::Minus => UnaryOpToken(token),
             _ => panic!("unexpected token type is used as unary op: {:?}", token),
         }
     }
 }
 
 #[derive(PartialEq, Debug)]
-pub struct BinaryOpToken {
-    token: TokenType,
-}
+pub struct BinaryOpToken(TokenType);
 impl BinaryOpToken {
     pub fn new(token: TokenType) -> Self {
         if BinaryOpToken::is_binary_op_token_type(&token) {
-            BinaryOpToken { token }
+            BinaryOpToken(token)
         } else {
             panic!("unexpected token type is used as binary op: {:?}", token)
         }
@@ -485,14 +481,12 @@ type IntegerConstant = i32;
 type StringConstant = String;
 
 #[derive(PartialEq, Debug)]
-pub struct KeywordConstant {
-    keyword: Keyword,
-}
+pub struct KeywordConstant(Keyword);
 impl KeywordConstant {
     pub fn new(keyword: Keyword) -> Self {
         match keyword {
             Keyword::True | Keyword::False | Keyword::Null | Keyword::This => {
-                KeywordConstant { keyword }
+                KeywordConstant(keyword)
             }
             _ => panic!(
                 "unexpected keyword is used as keyword ocnstant: {:?}",
@@ -585,7 +579,7 @@ impl Node for Term {
 
             Self::StringConstant(s) => s.get_xml_tag(),
 
-            Self::KeywordConstant(keyword) => keyword.keyword.get_xml_tag(),
+            Self::KeywordConstant(keyword) => keyword.0.get_xml_tag(),
 
             Self::Expresssion(expression) => Element::new_fragment(vec![
                 TokenType::Lparen.get_xml_tag(),
@@ -596,7 +590,7 @@ impl Node for Term {
             Self::SubroutineCall(subroutine_call) => subroutine_call.to_xml(),
 
             Self::UnaryOp(op, term) => {
-                Element::new_fragment(vec![op.token.get_xml_tag(), term.to_xml()])
+                Element::new_fragment(vec![op.0.get_xml_tag(), term.to_xml()])
             }
         };
 

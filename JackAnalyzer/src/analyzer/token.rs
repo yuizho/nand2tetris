@@ -58,19 +58,15 @@ impl Token for Keyword {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct IdentifierToken {
-    identifier: String,
-}
+pub struct IdentifierToken(String);
 impl IdentifierToken {
     pub fn new<S: Into<String>>(identifier: S) -> Self {
-        IdentifierToken {
-            identifier: identifier.into(),
-        }
+        IdentifierToken(identifier.into())
     }
 }
 impl Token for IdentifierToken {
     fn get_xml_tag(&self) -> Element {
-        Element::new_text("identifier", &self.identifier)
+        Element::new_text("identifier", &self.0)
     }
 }
 
@@ -138,9 +134,7 @@ impl TokenType {
             "else" => TokenType::Keyword(Keyword::Else),
             "while" => TokenType::Keyword(Keyword::While),
             "return" => TokenType::Keyword(Keyword::Return),
-            _ => TokenType::Identifier(IdentifierToken {
-                identifier: identify.to_string(),
-            }),
+            _ => TokenType::Identifier(IdentifierToken(identify.to_string())),
         }
     }
 
