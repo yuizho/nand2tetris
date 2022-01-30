@@ -21,22 +21,19 @@ impl<'a> Parser<'a> {
     pub fn parse_program(&mut self) -> Program {
         let token = self.next_token();
         if !token.is(TokenType::Keyword(Keyword::Class)) {
-            panic!(
-                "the code doesn't start class keyword: {}",
-                token.get_xml_tag()
-            );
+            panic!("the code doesn't start class keyword: {:?}", token);
         }
 
         let token = self.next_token();
         let class_name = if let TokenType::Identifier(identifier) = token {
             identifier
         } else {
-            panic!("unexpected syntax of class: {}", token.get_xml_tag());
+            panic!("unexpected syntax of class: {:?}", token);
         };
 
         let token = self.next_token();
         if !token.is(TokenType::Lbrace) {
-            panic!("unexpected syntax of class: {}", token.get_xml_tag());
+            panic!("unexpected syntax of class: {:?}", token);
         }
 
         let mut token = self.next_token();
@@ -52,7 +49,7 @@ impl<'a> Parser<'a> {
                 | TokenType::Keyword(Keyword::Method) => {
                     subroutine_dec.push(self.parse_subroutine(token))
                 }
-                _ => panic!("unexpected syntax of class: {}", token.get_xml_tag()),
+                _ => panic!("unexpected syntax of class: {:?}", token),
             }
             token = self.next_token();
         }
@@ -68,24 +65,21 @@ impl<'a> Parser<'a> {
         let var_name = if let TokenType::Identifier(identifier) = token {
             identifier
         } else {
-            panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+            panic!("unexpected syntax of class var: {:?}", token);
         };
 
         let mut token = self.next_token();
         let mut alt_var_names = vec![];
         while !token.is_eof_or(TokenType::Semicolon) {
             if !token.is(TokenType::Comma) {
-                panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+                panic!("unexpected syntax of class var: {:?}", token);
             }
 
             let alt_var_name = self.next_token();
             if let TokenType::Identifier(identifier) = alt_var_name {
                 alt_var_names.push(identifier);
             } else {
-                panic!(
-                    "unexpected syntax of class var: {}",
-                    alt_var_name.get_xml_tag()
-                );
+                panic!("unexpected syntax of class var: {:?}", alt_var_name);
             };
 
             token = self.next_token();
@@ -108,13 +102,13 @@ impl<'a> Parser<'a> {
         let subroutine_name = if let TokenType::Identifier(identifier) = token {
             identifier
         } else {
-            panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+            panic!("unexpected syntax of subroutine: {:?}", token);
         };
 
         // parse parameters
         let token = self.next_token();
         if !token.is(TokenType::Lparen) {
-            panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+            panic!("unexpected syntax of subroutine: {:?}", token);
         }
 
         let mut token = self.next_token();
@@ -128,10 +122,7 @@ impl<'a> Parser<'a> {
             let param_name = if let TokenType::Identifier(identifier) = var_name {
                 identifier
             } else {
-                panic!(
-                    "unexpected syntax of subroutine: {}",
-                    var_name.get_xml_tag()
-                );
+                panic!("unexpected syntax of subroutine: {:?}", var_name);
             };
             parameters.push((var_type, param_name));
 
@@ -140,7 +131,7 @@ impl<'a> Parser<'a> {
 
         let token = self.next_token();
         if !token.is(TokenType::Lbrace) {
-            panic!("unexpected syntax of subroutine: {}", token.get_xml_tag());
+            panic!("unexpected syntax of subroutine: {:?}", token);
         }
 
         // parse subroutine body
@@ -173,24 +164,21 @@ impl<'a> Parser<'a> {
         let var_name = if let TokenType::Identifier(identifier) = token {
             identifier
         } else {
-            panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+            panic!("unexpected syntax of class var: {:?}", token);
         };
 
         let mut token = self.next_token();
         let mut alt_var_names = vec![];
         while !token.is_eof_or(TokenType::Semicolon) {
             if !token.is(TokenType::Comma) {
-                panic!("unexpected syntax of class var: {}", token.get_xml_tag());
+                panic!("unexpected syntax of class var: {:?}", token);
             }
 
             let alt_var_name = self.next_token();
             if let TokenType::Identifier(identifier) = alt_var_name {
                 alt_var_names.push(identifier);
             } else {
-                panic!(
-                    "unexpected syntax of class var: {}",
-                    alt_var_name.get_xml_tag()
-                );
+                panic!("unexpected syntax of class var: {:?}", alt_var_name);
             };
 
             token = self.next_token();
@@ -226,7 +214,7 @@ impl<'a> Parser<'a> {
 
             let token = self.next_token();
             if !token.is(TokenType::Rbracket) {
-                panic!("unexpected syntax of let: {}", token.get_xml_tag());
+                panic!("unexpected syntax of let: {:?}", token);
             }
 
             (Some(expression), self.next_token())
@@ -235,7 +223,7 @@ impl<'a> Parser<'a> {
         };
 
         if !token.is(TokenType::Assign) {
-            panic!("unexpected syntax of let: {}", token.get_xml_tag());
+            panic!("unexpected syntax of let: {:?}", token);
         }
 
         let token = self.next_token();
@@ -257,7 +245,7 @@ impl<'a> Parser<'a> {
             let expression = Some(self.parse_expression(token));
             let token = self.next_token();
             if !token.is(TokenType::Semicolon) {
-                panic!("unexpected syntax of return: {}", token.get_xml_tag());
+                panic!("unexpected syntax of return: {:?}", token);
             }
             expression
         };
@@ -268,7 +256,7 @@ impl<'a> Parser<'a> {
     fn parse_while_statement(&mut self) -> Statement {
         let token = self.next_token();
         if !token.is(TokenType::Lparen) {
-            panic!("unexpected syntax of while: {}", token.get_xml_tag());
+            panic!("unexpected syntax of while: {:?}", token);
         }
 
         let token = self.next_token();
@@ -276,12 +264,12 @@ impl<'a> Parser<'a> {
 
         let token = self.next_token();
         if !token.is(TokenType::Rparen) {
-            panic!("unexpected syntax of while: {}", token.get_xml_tag());
+            panic!("unexpected syntax of while: {:?}", token);
         }
 
         let token = self.next_token();
         if !token.is(TokenType::Lbrace) {
-            panic!("unexpected syntax of while: {}", token.get_xml_tag());
+            panic!("unexpected syntax of while: {:?}", token);
         }
 
         let mut token = self.next_token();
@@ -297,7 +285,7 @@ impl<'a> Parser<'a> {
     fn parse_if_statement(&mut self) -> Statement {
         let token = self.next_token();
         if !token.is(TokenType::Lparen) {
-            panic!("unexpected syntax of if: {}", token.get_xml_tag());
+            panic!("unexpected syntax of if: {:?}", token);
         }
 
         let token = self.next_token();
@@ -305,12 +293,12 @@ impl<'a> Parser<'a> {
 
         let token = self.next_token();
         if !token.is(TokenType::Rparen) {
-            panic!("unexpected syntax of if: {}", token.get_xml_tag());
+            panic!("unexpected syntax of if: {:?}", token);
         }
 
         let token = self.next_token();
         if !token.is(TokenType::Lbrace) {
-            panic!("unexpected syntax of if: {}", token.get_xml_tag());
+            panic!("unexpected syntax of if: {:?}", token);
         }
 
         let mut token = self.next_token();
@@ -324,7 +312,7 @@ impl<'a> Parser<'a> {
             self.next_token();
             let token = self.next_token();
             if !token.is(TokenType::Lbrace) {
-                panic!("unexpected syntax of else: {}", token.get_xml_tag());
+                panic!("unexpected syntax of else: {:?}", token);
             }
 
             let mut token = self.next_token();
@@ -346,7 +334,7 @@ impl<'a> Parser<'a> {
         let subroutine_call = if let TokenType::Identifier(identifier) = token {
             self.parse_subroutine_call(identifier)
         } else {
-            panic!("unexpected syntax of do statement: {}", token.get_xml_tag());
+            panic!("unexpected syntax of do statement: {:?}", token);
         };
 
         let mut token = self.next_token();
@@ -388,18 +376,12 @@ impl<'a> Parser<'a> {
         let subroutine_name = if let TokenType::Identifier(identifier_token) = token {
             identifier_token
         } else {
-            panic!(
-                "unexpected syntax of subroutine call: {}",
-                token.get_xml_tag()
-            );
+            panic!("unexpected syntax of subroutine call: {:?}", token);
         };
 
         let token = self.next_token();
         if !token.is(TokenType::Lparen) {
-            panic!(
-                "unexpected syntax of subroutine call: {}",
-                token.get_xml_tag()
-            );
+            panic!("unexpected syntax of subroutine call: {:?}", token);
         }
 
         let mut token = self.next_token();
@@ -414,8 +396,8 @@ impl<'a> Parser<'a> {
                 token = self.next_token();
             } else {
                 panic!(
-                    "unexpected syntax of subroutine call: {}",
-                    self.peek_token().get_xml_tag()
+                    "unexpected syntax of subroutine call: {:?}",
+                    self.peek_token()
                 );
             }
         }

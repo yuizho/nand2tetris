@@ -1,7 +1,8 @@
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
+use super::xml::Element;
 
 pub trait Node {
-    fn to_xml(&self) -> String;
+    fn to_xml(&self) -> Element;
 }
 
 #[derive(PartialEq, Debug)]
@@ -24,29 +25,25 @@ impl Program {
     }
 }
 impl Node for Program {
-    fn to_xml(&self) -> String {
-        fn vec_to_xml<T: Node>(vec: &[T]) -> String {
+    fn to_xml(&self) -> Element {
+        fn vec_to_xml<T: Node>(vec: &[T]) -> Element {
             if vec.is_empty() {
-                "".to_string()
+                Element::empty()
             } else {
-                format!(
-                    "\n{}",
-                    vec.iter()
-                        .map(|v| v.to_xml())
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                )
+                Element::new_fragment(vec.iter().map(|v| v.to_xml()).collect::<Vec<_>>())
             }
         }
 
-        format!(
-            "<class>\n{}\n{}\n{}{}{}\n{}\n</class>",
-            Keyword::Class.get_xml_tag(),
-            self.class_name.get_xml_tag(),
-            TokenType::Lbrace.get_xml_tag(),
-            vec_to_xml(&self.class_var_dec),
-            vec_to_xml(&self.subroutine_dec),
-            TokenType::Rbrace.get_xml_tag()
+        Element::new_elements(
+            "class",
+            vec![
+                Keyword::Class.get_xml_tag(),
+                self.class_name.get_xml_tag(),
+                TokenType::Lbrace.get_xml_tag(),
+                vec_to_xml(&self.class_var_dec),
+                vec_to_xml(&self.subroutine_dec),
+                TokenType::Rbrace.get_xml_tag(),
+            ],
         )
     }
 }
@@ -106,27 +103,29 @@ impl ClassVarDec {
     }
 }
 impl Node for ClassVarDec {
-    fn to_xml(&self) -> String {
+    fn to_xml(&self) -> Element {
         let class_var_names = if self.alt_var_names.is_empty() {
-            "".to_string()
+            Element::empty()
         } else {
-            format!(
-                "\n{}",
+            Element::new_fragment(
                 self.alt_var_names
                     .iter()
-                    .map(|i| format!("{}\n{}", TokenType::Comma.get_xml_tag(), i.get_xml_tag()))
-                    .collect::<Vec<_>>()
-                    .join("\n")
+                    .map(|i| {
+                        Element::new_fragment(vec![TokenType::Comma.get_xml_tag(), i.get_xml_tag()])
+                    })
+                    .collect::<Vec<_>>(),
             )
         };
 
-        format!(
-            "<classVarDec>\n{}\n{}\n{}{}\n{}\n</classVarDec>",
-            self.var_identifier.get_xml_tag(),
-            self.var_type.type_token.get_xml_tag(),
-            self.var_name.get_xml_tag(),
-            class_var_names,
-            TokenType::Semicolon.get_xml_tag(),
+        Element::new_elements(
+            "classVarDec",
+            vec![
+                self.var_identifier.get_xml_tag(),
+                self.var_type.type_token.get_xml_tag(),
+                self.var_name.get_xml_tag(),
+                class_var_names,
+                TokenType::Semicolon.get_xml_tag(),
+            ],
         )
     }
 }
@@ -167,63 +166,60 @@ impl SubroutineDec {
     }
 }
 impl Node for SubroutineDec {
-    fn to_xml(&self) -> String {
+    fn to_xml(&self) -> Element {
         let parameters = if self.parameters.is_empty() {
-            "".to_string()
+            Element::empty()
         } else {
-            format!(
-                "\n{}",
+            Element::new_joinned_fragment(
                 self.parameters
                     .iter()
-                    .map(|(t, i)| format!("{}\n{}", t.type_token.get_xml_tag(), i.get_xml_tag()))
-                    .collect::<Vec<_>>()
-                    .join(&format!("\n{}\n", TokenType::Comma.get_xml_tag()))
+                    .map(|(t, i)| {
+                        Element::new_fragment(vec![t.type_token.get_xml_tag(), i.get_xml_tag()])
+                    })
+                    .collect::<Vec<_>>(),
+                TokenType::Comma.get_xml_tag(),
             )
         };
         let vars = if self.var_dec.is_empty() {
-            "".to_string()
+            Element::empty()
         } else {
-            format!(
-                "\n{}",
-                self.var_dec
-                    .iter()
-                    .map(|s| s.to_xml())
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            )
+            Element::new_fragment(self.var_dec.iter().map(|s| s.to_xml()).collect::<Vec<_>>())
         };
         let statements = if self.statements.is_empty() {
-            "".to_string()
+            Element::empty()
         } else {
-            format!(
-                "\n{}",
+            Element::new_fragment(
                 self.statements
                     .iter()
                     .map(|s| s.to_xml())
-                    .collect::<Vec<_>>()
-                    .join("\n")
+                    .collect::<Vec<_>>(),
             )
         };
 
-        format!(
-            "<subroutineDec>\n{}\n{}\n{}\n{}\n<subroutineBody>\n{}\n</subroutineBody>\n</subroutineDec>",
-            self.subroutine_identifier.get_xml_tag(),
-            match &self.return_type {
-                Some(class_type) => class_type.type_token.get_xml_tag(),
-                None => Keyword::Void.get_xml_tag(),
-            },
-            self.subroutine_name.get_xml_tag(),
-            format!(
-                "{}\n<parameterList>{}\n</parameterList>\n{}",
-                TokenType::Lparen.get_xml_tag(),
-                parameters,
-                TokenType::Rparen.get_xml_tag()
-            ),
-            format!("{}{}\n<statements>{}\n</statements>\n{}",
-            TokenType::Lbrace.get_xml_tag(),
-            vars,
-            statements,
-            TokenType::Rbrace.get_xml_tag()),
+        Element::new_elements(
+            "subroutineDec",
+            vec![
+                self.subroutine_identifier.get_xml_tag(),
+                match &self.return_type {
+                    Some(class_type) => class_type.type_token.get_xml_tag(),
+                    None => Keyword::Void.get_xml_tag(),
+                },
+                self.subroutine_name.get_xml_tag(),
+                Element::new_fragment(vec![
+                    TokenType::Lparen.get_xml_tag(),
+                    Element::new_element("parameterList", parameters),
+                    TokenType::Rparen.get_xml_tag(),
+                ]),
+                Element::new_element(
+                    "subroutineBody",
+                    Element::new_fragment(vec![
+                        TokenType::Lbrace.get_xml_tag(),
+                        vars,
+                        Element::new_element("statements", statements),
+                        TokenType::Rbrace.get_xml_tag(),
+                    ]),
+                ),
+            ],
         )
     }
 }
@@ -248,27 +244,31 @@ impl VarDec {
     }
 }
 impl Node for VarDec {
-    fn to_xml(&self) -> String {
+    fn to_xml(&self) -> Element {
         let var_names = if self.alt_var_names.is_empty() {
-            "".to_string()
+            Element::empty()
         } else {
-            format!(
-                "\n{}",
-                self.alt_var_names
-                    .iter()
-                    .map(|i| format!("{}\n{}", TokenType::Comma.get_xml_tag(), i.get_xml_tag()))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            )
+            Element::new_fragment(vec![
+                TokenType::Comma.get_xml_tag(),
+                Element::new_joinned_fragment(
+                    self.alt_var_names
+                        .iter()
+                        .map(|i| i.get_xml_tag())
+                        .collect::<Vec<_>>(),
+                    TokenType::Comma.get_xml_tag(),
+                ),
+            ])
         };
 
-        format!(
-            "<varDec>\n{}\n{}\n{}{}\n{}\n</varDec>",
-            Keyword::Var.get_xml_tag(),
-            self.var_type.type_token.get_xml_tag(),
-            self.var_name.get_xml_tag(),
-            var_names,
-            TokenType::Semicolon.get_xml_tag(),
+        Element::new_elements(
+            "varDec",
+            vec![
+                Keyword::Var.get_xml_tag(),
+                self.var_type.type_token.get_xml_tag(),
+                self.var_name.get_xml_tag(),
+                var_names,
+                TokenType::Semicolon.get_xml_tag(),
+            ],
         )
     }
 }
@@ -283,108 +283,103 @@ pub enum Statement {
     Expression(Expression),
 }
 impl Node for Statement {
-    fn to_xml(&self) -> String {
+    fn to_xml(&self) -> Element {
         match self {
-            Self::Let(var_name, index_expression, expression) => {
-                format!(
-                    "<letStatement>\n{}\n{}\n{}{}\n{}\n{}\n</letStatement>",
+            Self::Let(var_name, index_expression, expression) => Element::new_elements(
+                "letStatement",
+                vec![
                     TokenType::Keyword(Keyword::Let).get_xml_tag(),
                     var_name.get_xml_tag(),
                     match index_expression {
-                        Some(exp) => {
-                            format!(
-                                "{}\n{}\n{}\n",
-                                TokenType::Lbracket.get_xml_tag(),
-                                exp.to_xml(),
-                                TokenType::Rbracket.get_xml_tag()
-                            )
-                        }
-                        None => "".to_string(),
+                        Some(exp) => Element::new_fragment(vec![
+                            TokenType::Lbracket.get_xml_tag(),
+                            exp.to_xml(),
+                            TokenType::Rbracket.get_xml_tag(),
+                        ]),
+                        None => Element::empty(),
                     },
                     TokenType::Assign.get_xml_tag(),
                     expression.to_xml(),
-                    TokenType::Semicolon.get_xml_tag()
-                )
-            }
+                    TokenType::Semicolon.get_xml_tag(),
+                ],
+            ),
 
-            Self::While(expression, statements) => {
-                format!(
-                    "<whileStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n</whileStatement>",
+            Self::While(expression, statements) => Element::new_elements(
+                "whileStatement",
+                vec![
                     Keyword::While.get_xml_tag(),
                     TokenType::Lparen.get_xml_tag(),
                     expression.to_xml(),
                     TokenType::Rparen.get_xml_tag(),
                     TokenType::Lbrace.get_xml_tag(),
-                    format!(
-                        "<statements>\n{}\n</statements>",
-                        statements
-                            .iter()
-                            .map(|s| s.to_xml())
-                            .collect::<Vec<_>>()
-                            .join("\n")
+                    Element::new_elements(
+                        "statements",
+                        statements.iter().map(|s| s.to_xml()).collect::<Vec<_>>(),
                     ),
                     TokenType::Rbrace.get_xml_tag(),
-                )
-            }
+                ],
+            ),
 
             Self::If(expression, if_statements, else_statements) => {
-                fn statements_to_xml(v: &[Statement]) -> String {
+                fn statements_to_xml(v: &[Statement]) -> Element {
                     if v.is_empty() {
-                        "<statements>\n</statements>".to_string()
+                        Element::new_element("statements", Element::empty())
                     } else {
-                        format!(
-                            "<statements>{}\n</statements>",
-                            format!(
-                                "\n{}",
-                                v.iter().map(|s| s.to_xml()).collect::<Vec<_>>().join("\n")
-                            )
+                        Element::new_elements(
+                            "statements",
+                            v.iter().map(|s| s.to_xml()).collect::<Vec<_>>(),
                         )
                     }
                 }
 
-                format!(
-                    "<ifStatement>\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}</ifStatement>",
-                    Keyword::If.get_xml_tag(),
-                    TokenType::Lparen.get_xml_tag(),
-                    expression.to_xml(),
-                    TokenType::Rparen.get_xml_tag(),
-                    TokenType::Lbrace.get_xml_tag(),
-                    statements_to_xml(if_statements),
-                    TokenType::Rbrace.get_xml_tag(),
-                    match else_statements {
-                        Some(statements) => format!(
-                            "{}\n{}\n{}\n{}\n",
-                            Keyword::Else.get_xml_tag(),
-                            TokenType::Lbrace.get_xml_tag(),
-                            statements_to_xml(statements),
-                            TokenType::Rbrace.get_xml_tag(),
-                        ),
-                        None => "".to_string(),
-                    }
+                Element::new_elements(
+                    "ifStatement",
+                    vec![
+                        Keyword::If.get_xml_tag(),
+                        TokenType::Lparen.get_xml_tag(),
+                        expression.to_xml(),
+                        TokenType::Rparen.get_xml_tag(),
+                        TokenType::Lbrace.get_xml_tag(),
+                        statements_to_xml(if_statements),
+                        TokenType::Rbrace.get_xml_tag(),
+                        match else_statements {
+                            Some(statements) => Element::new_fragment(vec![
+                                Keyword::Else.get_xml_tag(),
+                                TokenType::Lbrace.get_xml_tag(),
+                                statements_to_xml(statements),
+                                TokenType::Rbrace.get_xml_tag(),
+                            ]),
+                            None => Element::empty(),
+                        },
+                    ],
                 )
             }
 
-            Self::Return(Some(expression)) => format!(
-                "<returnStatement>\n{}\n{}\n{}\n</returnStatement>",
-                TokenType::Keyword(Keyword::Return).get_xml_tag(),
-                expression.to_xml(),
-                TokenType::Semicolon.get_xml_tag()
-            ),
-
-            Self::Do(subroutine_call) => format!(
-                "<doStatement>\n{}\n{}\n{}\n</doStatement>",
-                Keyword::Do.get_xml_tag(),
-                subroutine_call.to_xml(),
-                TokenType::Semicolon.get_xml_tag()
-            ),
-
-            Self::Return(None) => {
-                format!(
-                    "<returnStatement>\n{}\n{}\n</returnStatement>",
+            Self::Return(Some(expression)) => Element::new_elements(
+                "returnStatement",
+                vec![
                     TokenType::Keyword(Keyword::Return).get_xml_tag(),
-                    TokenType::Semicolon.get_xml_tag()
-                )
-            }
+                    expression.to_xml(),
+                    TokenType::Semicolon.get_xml_tag(),
+                ],
+            ),
+
+            Self::Do(subroutine_call) => Element::new_elements(
+                "doStatement",
+                vec![
+                    Keyword::Do.get_xml_tag(),
+                    subroutine_call.to_xml(),
+                    TokenType::Semicolon.get_xml_tag(),
+                ],
+            ),
+
+            Self::Return(None) => Element::new_elements(
+                "returnStatement",
+                vec![
+                    TokenType::Keyword(Keyword::Return).get_xml_tag(),
+                    TokenType::Semicolon.get_xml_tag(),
+                ],
+            ),
 
             Self::Expression(expression) => expression.to_xml(),
         }
@@ -412,16 +407,12 @@ impl Expression {
     }
 }
 impl Node for Expression {
-    fn to_xml(&self) -> String {
+    fn to_xml(&self) -> Element {
         let binary_op_tag = match &self.binary_op {
-            Some(binary_op) => format!("{}\n", binary_op.to_xml()),
-            None => "".to_string(),
+            Some(binary_op) => binary_op.to_xml(),
+            None => Element::empty(),
         };
-        format!(
-            "<expression>\n{}\n{}</expression>",
-            self.left_term.to_xml(),
-            binary_op_tag
-        )
+        Element::new_elements("expression", vec![self.left_term.to_xml(), binary_op_tag])
     }
 }
 
@@ -439,12 +430,11 @@ impl BinaryOp {
     }
 }
 impl Node for BinaryOp {
-    fn to_xml(&self) -> String {
-        format!(
-            "{}\n{}",
+    fn to_xml(&self) -> Element {
+        Element::new_fragment(vec![
             self.op_token.token.get_xml_tag(),
-            self.right_term.to_xml()
-        )
+            self.right_term.to_xml(),
+        ])
     }
 }
 
@@ -535,29 +525,32 @@ impl SubroutineCall {
         }
     }
 
-    pub fn to_xml(&self) -> String {
-        format!(
-            "{}{}\n{}\n<expressionList>\n{}</expressionList>\n{}",
+    pub fn to_xml(&self) -> Element {
+        Element::new_fragment(vec![
             match &self.parent_name {
-                Some(name) => format!("{}\n<symbol> . </symbol>\n", name.get_xml_tag()),
-                None => "".to_string(),
+                Some(name) => {
+                    Element::new_fragment(vec![name.get_xml_tag(), TokenType::Dot.get_xml_tag()])
+                }
+                None => Element::empty(),
             },
             self.subroutine_name.get_xml_tag(),
             TokenType::Lparen.get_xml_tag(),
-            if self.expressions.is_empty() {
-                "".to_string()
-            } else {
-                format!(
-                    "{}\n",
-                    self.expressions
-                        .iter()
-                        .map(|s| s.to_xml())
-                        .collect::<Vec<_>>()
-                        .join(format!("\n{}\n", TokenType::Comma.get_xml_tag()).as_str())
-                )
-            },
-            TokenType::Rparen.get_xml_tag()
-        )
+            Element::new_element(
+                "expressionList",
+                if self.expressions.is_empty() {
+                    Element::empty()
+                } else {
+                    Element::new_joinned_fragment(
+                        self.expressions
+                            .iter()
+                            .map(|e| e.to_xml())
+                            .collect::<Vec<_>>(),
+                        TokenType::Comma.get_xml_tag(),
+                    )
+                },
+            ),
+            TokenType::Rparen.get_xml_tag(),
+        ])
     }
 }
 
@@ -572,16 +565,15 @@ pub enum Term {
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Node for Term {
-    fn to_xml(&self) -> String {
+    fn to_xml(&self) -> Element {
         let xml_tag = match self {
             Self::VarName(token, expression_opt) => match expression_opt {
-                Some(expression) => format!(
-                    "{}\n{}\n{}\n{}",
+                Some(expression) => Element::new_fragment(vec![
                     token.get_xml_tag(),
                     TokenType::Lbracket.get_xml_tag(),
                     expression.to_xml(),
                     TokenType::Rbracket.get_xml_tag(),
-                ),
+                ]),
                 None => token.get_xml_tag(),
             },
 
@@ -591,18 +583,20 @@ impl Node for Term {
 
             Self::KeywordConstant(keyword) => keyword.keyword.get_xml_tag(),
 
-            Self::Expresssion(expression) => format!(
-                "{}\n{}\n{}",
+            Self::Expresssion(expression) => Element::new_fragment(vec![
                 TokenType::Lparen.get_xml_tag(),
                 expression.to_xml(),
-                TokenType::Rparen.get_xml_tag()
-            ),
+                TokenType::Rparen.get_xml_tag(),
+            ]),
 
             Self::SubroutineCall(subroutine_call) => subroutine_call.to_xml(),
 
-            Self::UnaryOp(op, term) => format!("{}\n{}", op.token.get_xml_tag(), term.to_xml()),
+            Self::UnaryOp(op, term) => {
+                Element::new_fragment(vec![op.token.get_xml_tag(), term.to_xml()])
+            }
         };
-        format!("<term>\n{}\n</term>", xml_tag)
+
+        Element::new_element("term", xml_tag)
     }
 }
 
@@ -610,6 +604,19 @@ impl Node for Term {
 mod tests {
     use crate::analyzer::ast::*;
     use crate::analyzer::token::*;
+    use std::io::Cursor;
+
+    fn get_xml_string(node: impl Node) -> String {
+        let elm = node.to_xml();
+        let mut cursor = Cursor::new(Vec::new());
+        elm.write(&mut cursor).unwrap();
+
+        cursor
+            .into_inner()
+            .iter()
+            .map(|&s| s as char)
+            .collect::<String>()
+    }
 
     #[test]
     fn program_to_xml() {
@@ -657,7 +664,7 @@ mod tests {
         );
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<class>
 <keyword> class </keyword>
 <identifier> Square </identifier>
@@ -722,7 +729,8 @@ mod tests {
 </subroutineBody>
 </subroutineDec>
 <symbol> } </symbol>
-</class>"
+</class>
+"
         );
     }
 
@@ -736,13 +744,14 @@ mod tests {
         );
 
         assert_eq!(
-            class_var_dec.to_xml(),
+            get_xml_string(class_var_dec),
             "<classVarDec>
 <keyword> static </keyword>
 <keyword> boolean </keyword>
 <identifier> test </identifier>
 <symbol> ; </symbol>
-</classVarDec>"
+</classVarDec>
+"
         );
     }
 
@@ -756,7 +765,7 @@ mod tests {
         );
 
         assert_eq!(
-            class_var_dec.to_xml(),
+            get_xml_string(class_var_dec),
             "<classVarDec>
 <keyword> field </keyword>
 <keyword> int </keyword>
@@ -766,7 +775,8 @@ mod tests {
 <symbol> , </symbol>
 <identifier> j2 </identifier>
 <symbol> ; </symbol>
-</classVarDec>"
+</classVarDec>
+"
         );
     }
 
@@ -779,13 +789,14 @@ mod tests {
         );
 
         assert_eq!(
-            var_dec.to_xml(),
+            get_xml_string(var_dec),
             "<varDec>
 <keyword> var </keyword>
 <identifier> String </identifier>
 <identifier> s </identifier>
 <symbol> ; </symbol>
-</varDec>"
+</varDec>
+"
         );
     }
 
@@ -817,7 +828,7 @@ mod tests {
         );
 
         assert_eq!(
-            subroutine_dec.to_xml(),
+            get_xml_string(subroutine_dec),
             "<subroutineDec>
 <keyword> method </keyword>
 <keyword> void </keyword>
@@ -864,7 +875,8 @@ mod tests {
 </statements>
 <symbol> } </symbol>
 </subroutineBody>
-</subroutineDec>"
+</subroutineDec>
+"
         );
     }
 
@@ -905,7 +917,7 @@ mod tests {
         );
 
         assert_eq!(
-            subroutine_dec.to_xml(),
+            get_xml_string(subroutine_dec),
             "<subroutineDec>
 <keyword> method </keyword>
 <keyword> boolean </keyword>
@@ -957,7 +969,8 @@ mod tests {
 </statements>
 <symbol> } </symbol>
 </subroutineBody>
-</subroutineDec>"
+</subroutineDec>
+"
         );
     }
 
@@ -970,7 +983,7 @@ mod tests {
         );
 
         assert_eq!(
-            var_dec.to_xml(),
+            get_xml_string(var_dec),
             "<varDec>
 <keyword> var </keyword>
 <keyword> int </keyword>
@@ -978,7 +991,8 @@ mod tests {
 <symbol> , </symbol>
 <identifier> j </identifier>
 <symbol> ; </symbol>
-</varDec>"
+</varDec>
+"
         );
     }
 
@@ -993,7 +1007,7 @@ mod tests {
         ));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> i </identifier>
@@ -1002,7 +1016,8 @@ mod tests {
 <term>
 <integerConstant> 2 </integerConstant>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1018,7 +1033,7 @@ mod tests {
         );
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<letStatement>
 <keyword> let </keyword>
 <identifier> myVar </identifier>
@@ -1029,7 +1044,8 @@ mod tests {
 </term>
 </expression>
 <symbol> ; </symbol>
-</letStatement>"
+</letStatement>
+"
         )
     }
 
@@ -1048,7 +1064,7 @@ mod tests {
         );
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<letStatement>
 <keyword> let </keyword>
 <identifier> myVar </identifier>
@@ -1066,7 +1082,8 @@ mod tests {
 </term>
 </expression>
 <symbol> ; </symbol>
-</letStatement>"
+</letStatement>
+"
         )
     }
 
@@ -1091,7 +1108,7 @@ mod tests {
         );
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<whileStatement>
 <keyword> while </keyword>
 <symbol> ( </symbol>
@@ -1127,7 +1144,8 @@ mod tests {
 </letStatement>
 </statements>
 <symbol> } </symbol>
-</whileStatement>"
+</whileStatement>
+"
         )
     }
 
@@ -1153,7 +1171,7 @@ mod tests {
         );
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<ifStatement>
 <keyword> if </keyword>
 <symbol> ( </symbol>
@@ -1189,7 +1207,8 @@ mod tests {
 </letStatement>
 </statements>
 <symbol> } </symbol>
-</ifStatement>"
+</ifStatement>
+"
         )
     }
 
@@ -1219,7 +1238,7 @@ mod tests {
         );
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<ifStatement>
 <keyword> if </keyword>
 <symbol> ( </symbol>
@@ -1271,7 +1290,8 @@ mod tests {
 </letStatement>
 </statements>
 <symbol> } </symbol>
-</ifStatement>"
+</ifStatement>
+"
         )
     }
 
@@ -1284,7 +1304,7 @@ mod tests {
         ));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<doStatement>
 <keyword> do </keyword>
 <identifier> game </identifier>
@@ -1295,7 +1315,8 @@ mod tests {
 </expressionList>
 <symbol> ) </symbol>
 <symbol> ; </symbol>
-</doStatement>"
+</doStatement>
+"
         )
     }
 
@@ -1304,11 +1325,12 @@ mod tests {
         let program = Statement::Return(None);
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<returnStatement>
 <keyword> return </keyword>
 <symbol> ; </symbol>
-</returnStatement>"
+</returnStatement>
+"
         )
     }
 
@@ -1320,7 +1342,7 @@ mod tests {
         }));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<returnStatement>
 <keyword> return </keyword>
 <expression>
@@ -1329,7 +1351,8 @@ mod tests {
 </term>
 </expression>
 <symbol> ; </symbol>
-</returnStatement>"
+</returnStatement>
+"
         )
     }
 
@@ -1341,12 +1364,13 @@ mod tests {
         });
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> foo </identifier>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1361,7 +1385,7 @@ mod tests {
         });
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> foo </identifier>
@@ -1373,7 +1397,8 @@ mod tests {
 </expression>
 <symbol> ] </symbol>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1385,12 +1410,13 @@ mod tests {
         });
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <stringConstant> str value!! </stringConstant>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1401,12 +1427,13 @@ mod tests {
         )));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <keyword> true </keyword>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1420,7 +1447,7 @@ mod tests {
         ))));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <symbol> ( </symbol>
@@ -1434,7 +1461,8 @@ mod tests {
 </expression>
 <symbol> ) </symbol>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1446,7 +1474,7 @@ mod tests {
         )));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <symbol> - </symbol>
@@ -1454,7 +1482,8 @@ mod tests {
 <integerConstant> 1 </integerConstant>
 </term>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1470,13 +1499,18 @@ mod tests {
                 Box::new(Term::IntegerConstant(10)),
             ))),
         ];
+        let elm = Element::new_fragment(program.iter().map(|s| s.to_xml()).collect::<Vec<_>>());
+        let mut cursor = Cursor::new(Vec::new());
+        elm.write(&mut cursor).unwrap();
+
+        let actual = cursor
+            .into_inner()
+            .iter()
+            .map(|&s| s as char)
+            .collect::<String>();
 
         assert_eq!(
-            program
-                .iter()
-                .map(|s| s.to_xml())
-                .collect::<Vec<_>>()
-                .join("\n"),
+            actual,
             "<expression>
 <term>
 <symbol> - </symbol>
@@ -1492,7 +1526,8 @@ mod tests {
 <integerConstant> 10 </integerConstant>
 </term>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1503,7 +1538,7 @@ mod tests {
         )));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> new </identifier>
@@ -1512,7 +1547,8 @@ mod tests {
 </expressionList>
 <symbol> ) </symbol>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1534,7 +1570,7 @@ mod tests {
             ))));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> new </identifier>
@@ -1558,7 +1594,8 @@ mod tests {
 </expressionList>
 <symbol> ) </symbol>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1573,7 +1610,7 @@ mod tests {
         )));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> SquareGame </identifier>
@@ -1584,7 +1621,8 @@ mod tests {
 </expressionList>
 <symbol> ) </symbol>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 
@@ -1608,7 +1646,7 @@ mod tests {
         )));
 
         assert_eq!(
-            program.to_xml(),
+            get_xml_string(program),
             "<expression>
 <term>
 <identifier> SquareGame </identifier>
@@ -1634,7 +1672,8 @@ mod tests {
 </expressionList>
 <symbol> ) </symbol>
 </term>
-</expression>"
+</expression>
+"
         )
     }
 }

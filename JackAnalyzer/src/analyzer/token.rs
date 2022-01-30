@@ -1,3 +1,5 @@
+use super::xml::Element;
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Keyword {
     Class,
@@ -24,35 +26,34 @@ pub enum Keyword {
 }
 
 pub trait Token {
-    fn get_xml_tag(&self) -> String;
+    fn get_xml_tag(&self) -> Element;
 }
 
 impl Token for Keyword {
-    fn get_xml_tag(&self) -> String {
-        let xml_tag = match self {
-            Keyword::Class => "<keyword> class </keyword>",
-            Keyword::Constructor => "<keyword> constructor </keyword>",
-            Keyword::Function => "<keyword> function </keyword>",
-            Keyword::Method => "<keyword> method </keyword>",
-            Keyword::Field => "<keyword> field </keyword>",
-            Keyword::Static => "<keyword> static </keyword>",
-            Keyword::Var => "<keyword> var </keyword>",
-            Keyword::Int => "<keyword> int </keyword>",
-            Keyword::Char => "<keyword> char </keyword>",
-            Keyword::Boolean => "<keyword> boolean </keyword>",
-            Keyword::Void => "<keyword> void </keyword>",
-            Keyword::True => "<keyword> true </keyword>",
-            Keyword::False => "<keyword> false </keyword>",
-            Keyword::Null => "<keyword> null </keyword>",
-            Keyword::This => "<keyword> this </keyword>",
-            Keyword::Let => "<keyword> let </keyword>",
-            Keyword::Do => "<keyword> do </keyword>",
-            Keyword::If => "<keyword> if </keyword>",
-            Keyword::Else => "<keyword> else </keyword>",
-            Keyword::While => "<keyword> while </keyword>",
-            Keyword::Return => "<keyword> return </keyword>",
-        };
-        xml_tag.to_string()
+    fn get_xml_tag(&self) -> Element {
+        match self {
+            Keyword::Class => Element::new_text("keyword", "class"),
+            Keyword::Constructor => Element::new_text("keyword", "constructor"),
+            Keyword::Function => Element::new_text("keyword", "function"),
+            Keyword::Method => Element::new_text("keyword", "method"),
+            Keyword::Field => Element::new_text("keyword", "field"),
+            Keyword::Static => Element::new_text("keyword", "static"),
+            Keyword::Var => Element::new_text("keyword", "var"),
+            Keyword::Int => Element::new_text("keyword", "int"),
+            Keyword::Char => Element::new_text("keyword", "char"),
+            Keyword::Boolean => Element::new_text("keyword", "boolean"),
+            Keyword::Void => Element::new_text("keyword", "void"),
+            Keyword::True => Element::new_text("keyword", "true"),
+            Keyword::False => Element::new_text("keyword", "false"),
+            Keyword::Null => Element::new_text("keyword", "null"),
+            Keyword::This => Element::new_text("keyword", "this"),
+            Keyword::Let => Element::new_text("keyword", "let"),
+            Keyword::Do => Element::new_text("keyword", "do"),
+            Keyword::If => Element::new_text("keyword", "if"),
+            Keyword::Else => Element::new_text("keyword", "else"),
+            Keyword::While => Element::new_text("keyword", "while"),
+            Keyword::Return => Element::new_text("keyword", "return"),
+        }
     }
 }
 
@@ -68,20 +69,20 @@ impl IdentifierToken {
     }
 }
 impl Token for IdentifierToken {
-    fn get_xml_tag(&self) -> String {
-        format!("<identifier> {} </identifier>", self.identifier)
+    fn get_xml_tag(&self) -> Element {
+        Element::new_text("identifier", &self.identifier)
     }
 }
 
 impl Token for i32 {
-    fn get_xml_tag(&self) -> String {
-        format!("<integerConstant> {} </integerConstant>", self)
+    fn get_xml_tag(&self) -> Element {
+        Element::new_text("integerConstant", &self.to_string())
     }
 }
 
 impl Token for String {
-    fn get_xml_tag(&self) -> String {
-        format!("<stringConstant> {} </stringConstant>", self)
+    fn get_xml_tag(&self) -> Element {
+        Element::new_text("stringConstant", self)
     }
 }
 
@@ -143,32 +144,32 @@ impl TokenType {
         }
     }
 
-    pub fn get_xml_tag(&self) -> String {
+    pub fn get_xml_tag(&self) -> Element {
         match self {
-            TokenType::Lbrace => "<symbol> { </symbol>".to_string(),
-            TokenType::Rbrace => "<symbol> } </symbol>".to_string(),
-            TokenType::Lparen => "<symbol> ( </symbol>".to_string(),
-            TokenType::Rparen => "<symbol> ) </symbol>".to_string(),
-            TokenType::Lbracket => "<symbol> [ </symbol>".to_string(),
-            TokenType::Rbracket => "<symbol> ] </symbol>".to_string(),
-            TokenType::Dot => "<symbol> . </symbol>".to_string(),
-            TokenType::Comma => "<symbol> , </symbol>".to_string(),
-            TokenType::Semicolon => "<symbol> ; </symbol>".to_string(),
-            TokenType::Plus => "<symbol> + </symbol>".to_string(),
-            TokenType::Minus => "<symbol> - </symbol>".to_string(),
-            TokenType::Asterisk => "<symbol> * </symbol>".to_string(),
-            TokenType::Slash => "<symbol> / </symbol>".to_string(),
-            TokenType::And => "<symbol> &amp; </symbol>".to_string(),
-            TokenType::Or => "<symbol> | </symbol>".to_string(),
-            TokenType::Lt => "<symbol> &lt; </symbol>".to_string(),
-            TokenType::Gt => "<symbol> &gt; </symbol>".to_string(),
-            TokenType::Assign => "<symbol> = </symbol>".to_string(),
-            TokenType::Tilde => "<symbol> ~ </symbol>".to_string(),
+            TokenType::Lbrace => Element::new_text("symbol", "{"),
+            TokenType::Rbrace => Element::new_text("symbol", "}"),
+            TokenType::Lparen => Element::new_text("symbol", "("),
+            TokenType::Rparen => Element::new_text("symbol", ")"),
+            TokenType::Lbracket => Element::new_text("symbol", "["),
+            TokenType::Rbracket => Element::new_text("symbol", "]"),
+            TokenType::Dot => Element::new_text("symbol", "."),
+            TokenType::Comma => Element::new_text("symbol", ","),
+            TokenType::Semicolon => Element::new_text("symbol", ";"),
+            TokenType::Plus => Element::new_text("symbol", "+"),
+            TokenType::Minus => Element::new_text("symbol", "-"),
+            TokenType::Asterisk => Element::new_text("symbol", "*"),
+            TokenType::Slash => Element::new_text("symbol", "/"),
+            TokenType::And => Element::new_text("symbol", "&amp;"),
+            TokenType::Or => Element::new_text("symbol", "|"),
+            TokenType::Lt => Element::new_text("symbol", "&lt;"),
+            TokenType::Gt => Element::new_text("symbol", "&gt;"),
+            TokenType::Assign => Element::new_text("symbol", "="),
+            TokenType::Tilde => Element::new_text("symbol", "~"),
             TokenType::Keyword(keyword) => keyword.get_xml_tag(),
             TokenType::Identifier(ident) => ident.get_xml_tag(),
             TokenType::Number(num) => num.get_xml_tag(),
-            TokenType::String(str) => format!("<stringConstant> {} </stringConstant>", str),
-            _ => "".to_string(),
+            TokenType::String(str) => Element::new_text("stringConstant", str),
+            _ => Element::empty(),
         }
     }
 
