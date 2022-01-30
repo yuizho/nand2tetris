@@ -6,7 +6,7 @@ use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 mod analyzer;
-use analyzer::compiler::CompilationEngine;
+use analyzer::ast::Node;
 use analyzer::parser::Parser;
 use analyzer::tokenizer::JackTokenizer;
 
@@ -17,14 +17,17 @@ fn main() {
     let new_file_name = create_output_file_path(&args);
     let mut buf_writer =
         BufWriter::new(File::create(new_file_name).expect("failed to create xml file."));
-    let mut compilation_engine = CompilationEngine::new(&mut buf_writer);
 
     for file_name in file_names {
         let f = File::open(&file_name).expect("file not found");
         let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(&mut tokenizer);
-        let program_ast = parser.parse_program();
-        compilation_engine.compile(program_ast);
+        // parse and write xml file
+        parser
+            .parse_program()
+            .to_xml()
+            .write(&mut buf_writer)
+            .expect("failed to write xml");
     }
 
     buf_writer.flush().expect("failed to flush");
