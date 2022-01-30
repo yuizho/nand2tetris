@@ -666,69 +666,69 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<class>
-<keyword> class </keyword>
-<identifier> Square </identifier>
-<symbol> { </symbol>
-<classVarDec>
-<keyword> field </keyword>
-<keyword> int </keyword>
-<identifier> size </identifier>
-<symbol> ; </symbol>
-</classVarDec>
-<subroutineDec>
-<keyword> method </keyword>
-<keyword> void </keyword>
-<identifier> main </identifier>
-<symbol> ( </symbol>
-<parameterList>
-</parameterList>
-<symbol> ) </symbol>
-<subroutineBody>
-<symbol> { </symbol>
-<varDec>
-<keyword> var </keyword>
-<identifier> SquareGame </identifier>
-<identifier> game </identifier>
-<symbol> ; </symbol>
-</varDec>
-<varDec>
-<keyword> var </keyword>
-<keyword> int </keyword>
-<identifier> num </identifier>
-<symbol> ; </symbol>
-</varDec>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> game </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<identifier> game </identifier>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-<doStatement>
-<keyword> do </keyword>
-<identifier> game </identifier>
-<symbol> . </symbol>
-<identifier> run </identifier>
-<symbol> ( </symbol>
-<expressionList>
-</expressionList>
-<symbol> ) </symbol>
-<symbol> ; </symbol>
-</doStatement>
-<returnStatement>
-<keyword> return </keyword>
-<symbol> ; </symbol>
-</returnStatement>
-</statements>
-<symbol> } </symbol>
-</subroutineBody>
-</subroutineDec>
-<symbol> } </symbol>
+  <keyword> class </keyword>
+  <identifier> Square </identifier>
+  <symbol> { </symbol>
+  <classVarDec>
+    <keyword> field </keyword>
+    <keyword> int </keyword>
+    <identifier> size </identifier>
+    <symbol> ; </symbol>
+  </classVarDec>
+  <subroutineDec>
+    <keyword> method </keyword>
+    <keyword> void </keyword>
+    <identifier> main </identifier>
+    <symbol> ( </symbol>
+    <parameterList>
+    </parameterList>
+    <symbol> ) </symbol>
+    <subroutineBody>
+      <symbol> { </symbol>
+      <varDec>
+        <keyword> var </keyword>
+        <identifier> SquareGame </identifier>
+        <identifier> game </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <varDec>
+        <keyword> var </keyword>
+        <keyword> int </keyword>
+        <identifier> num </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <statements>
+        <letStatement>
+          <keyword> let </keyword>
+          <identifier> game </identifier>
+          <symbol> = </symbol>
+          <expression>
+            <term>
+              <identifier> game </identifier>
+            </term>
+          </expression>
+          <symbol> ; </symbol>
+        </letStatement>
+        <doStatement>
+          <keyword> do </keyword>
+          <identifier> game </identifier>
+          <symbol> . </symbol>
+          <identifier> run </identifier>
+          <symbol> ( </symbol>
+          <expressionList>
+          </expressionList>
+          <symbol> ) </symbol>
+          <symbol> ; </symbol>
+        </doStatement>
+        <returnStatement>
+          <keyword> return </keyword>
+          <symbol> ; </symbol>
+        </returnStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <symbol> } </symbol>
 </class>
 "
         );
@@ -746,10 +746,10 @@ mod tests {
         assert_eq!(
             get_xml_string(class_var_dec),
             "<classVarDec>
-<keyword> static </keyword>
-<keyword> boolean </keyword>
-<identifier> test </identifier>
-<symbol> ; </symbol>
+  <keyword> static </keyword>
+  <keyword> boolean </keyword>
+  <identifier> test </identifier>
+  <symbol> ; </symbol>
 </classVarDec>
 "
         );
@@ -767,14 +767,14 @@ mod tests {
         assert_eq!(
             get_xml_string(class_var_dec),
             "<classVarDec>
-<keyword> field </keyword>
-<keyword> int </keyword>
-<identifier> i </identifier>
-<symbol> , </symbol>
-<identifier> j1 </identifier>
-<symbol> , </symbol>
-<identifier> j2 </identifier>
-<symbol> ; </symbol>
+  <keyword> field </keyword>
+  <keyword> int </keyword>
+  <identifier> i </identifier>
+  <symbol> , </symbol>
+  <identifier> j1 </identifier>
+  <symbol> , </symbol>
+  <identifier> j2 </identifier>
+  <symbol> ; </symbol>
 </classVarDec>
 "
         );
@@ -791,10 +791,10 @@ mod tests {
         assert_eq!(
             get_xml_string(var_dec),
             "<varDec>
-<keyword> var </keyword>
-<identifier> String </identifier>
-<identifier> s </identifier>
-<symbol> ; </symbol>
+  <keyword> var </keyword>
+  <identifier> String </identifier>
+  <identifier> s </identifier>
+  <symbol> ; </symbol>
 </varDec>
 "
         );
@@ -830,51 +830,51 @@ mod tests {
         assert_eq!(
             get_xml_string(subroutine_dec),
             "<subroutineDec>
-<keyword> method </keyword>
-<keyword> void </keyword>
-<identifier> main </identifier>
-<symbol> ( </symbol>
-<parameterList>
-</parameterList>
-<symbol> ) </symbol>
-<subroutineBody>
-<symbol> { </symbol>
-<varDec>
-<keyword> var </keyword>
-<identifier> SquareGame </identifier>
-<identifier> game </identifier>
-<symbol> ; </symbol>
-</varDec>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> game </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<identifier> game </identifier>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-<doStatement>
-<keyword> do </keyword>
-<identifier> game </identifier>
-<symbol> . </symbol>
-<identifier> run </identifier>
-<symbol> ( </symbol>
-<expressionList>
-</expressionList>
-<symbol> ) </symbol>
-<symbol> ; </symbol>
-</doStatement>
-<returnStatement>
-<keyword> return </keyword>
-<symbol> ; </symbol>
-</returnStatement>
-</statements>
-<symbol> } </symbol>
-</subroutineBody>
+  <keyword> method </keyword>
+  <keyword> void </keyword>
+  <identifier> main </identifier>
+  <symbol> ( </symbol>
+  <parameterList>
+  </parameterList>
+  <symbol> ) </symbol>
+  <subroutineBody>
+    <symbol> { </symbol>
+    <varDec>
+      <keyword> var </keyword>
+      <identifier> SquareGame </identifier>
+      <identifier> game </identifier>
+      <symbol> ; </symbol>
+    </varDec>
+    <statements>
+      <letStatement>
+        <keyword> let </keyword>
+        <identifier> game </identifier>
+        <symbol> = </symbol>
+        <expression>
+          <term>
+            <identifier> game </identifier>
+          </term>
+        </expression>
+        <symbol> ; </symbol>
+      </letStatement>
+      <doStatement>
+        <keyword> do </keyword>
+        <identifier> game </identifier>
+        <symbol> . </symbol>
+        <identifier> run </identifier>
+        <symbol> ( </symbol>
+        <expressionList>
+        </expressionList>
+        <symbol> ) </symbol>
+        <symbol> ; </symbol>
+      </doStatement>
+      <returnStatement>
+        <keyword> return </keyword>
+        <symbol> ; </symbol>
+      </returnStatement>
+    </statements>
+    <symbol> } </symbol>
+  </subroutineBody>
 </subroutineDec>
 "
         );
@@ -919,56 +919,56 @@ mod tests {
         assert_eq!(
             get_xml_string(subroutine_dec),
             "<subroutineDec>
-<keyword> method </keyword>
-<keyword> boolean </keyword>
-<identifier> main </identifier>
-<symbol> ( </symbol>
-<parameterList>
-<keyword> boolean </keyword>
-<identifier> b </identifier>
-<symbol> , </symbol>
-<keyword> char </keyword>
-<identifier> c </identifier>
-</parameterList>
-<symbol> ) </symbol>
-<subroutineBody>
-<symbol> { </symbol>
-<varDec>
-<keyword> var </keyword>
-<identifier> SquareGame </identifier>
-<identifier> game </identifier>
-<symbol> ; </symbol>
-</varDec>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> game </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<identifier> game </identifier>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-<doStatement>
-<keyword> do </keyword>
-<identifier> game </identifier>
-<symbol> . </symbol>
-<identifier> run </identifier>
-<symbol> ( </symbol>
-<expressionList>
-</expressionList>
-<symbol> ) </symbol>
-<symbol> ; </symbol>
-</doStatement>
-<returnStatement>
-<keyword> return </keyword>
-<symbol> ; </symbol>
-</returnStatement>
-</statements>
-<symbol> } </symbol>
-</subroutineBody>
+  <keyword> method </keyword>
+  <keyword> boolean </keyword>
+  <identifier> main </identifier>
+  <symbol> ( </symbol>
+  <parameterList>
+    <keyword> boolean </keyword>
+    <identifier> b </identifier>
+    <symbol> , </symbol>
+    <keyword> char </keyword>
+    <identifier> c </identifier>
+  </parameterList>
+  <symbol> ) </symbol>
+  <subroutineBody>
+    <symbol> { </symbol>
+    <varDec>
+      <keyword> var </keyword>
+      <identifier> SquareGame </identifier>
+      <identifier> game </identifier>
+      <symbol> ; </symbol>
+    </varDec>
+    <statements>
+      <letStatement>
+        <keyword> let </keyword>
+        <identifier> game </identifier>
+        <symbol> = </symbol>
+        <expression>
+          <term>
+            <identifier> game </identifier>
+          </term>
+        </expression>
+        <symbol> ; </symbol>
+      </letStatement>
+      <doStatement>
+        <keyword> do </keyword>
+        <identifier> game </identifier>
+        <symbol> . </symbol>
+        <identifier> run </identifier>
+        <symbol> ( </symbol>
+        <expressionList>
+        </expressionList>
+        <symbol> ) </symbol>
+        <symbol> ; </symbol>
+      </doStatement>
+      <returnStatement>
+        <keyword> return </keyword>
+        <symbol> ; </symbol>
+      </returnStatement>
+    </statements>
+    <symbol> } </symbol>
+  </subroutineBody>
 </subroutineDec>
 "
         );
@@ -985,12 +985,12 @@ mod tests {
         assert_eq!(
             get_xml_string(var_dec),
             "<varDec>
-<keyword> var </keyword>
-<keyword> int </keyword>
-<identifier> i </identifier>
-<symbol> , </symbol>
-<identifier> j </identifier>
-<symbol> ; </symbol>
+  <keyword> var </keyword>
+  <keyword> int </keyword>
+  <identifier> i </identifier>
+  <symbol> , </symbol>
+  <identifier> j </identifier>
+  <symbol> ; </symbol>
 </varDec>
 "
         );
@@ -1009,13 +1009,13 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> i </identifier>
-</term>
-<symbol> + </symbol>
-<term>
-<integerConstant> 2 </integerConstant>
-</term>
+  <term>
+    <identifier> i </identifier>
+  </term>
+  <symbol> + </symbol>
+  <term>
+    <integerConstant> 2 </integerConstant>
+  </term>
 </expression>
 "
         )
@@ -1035,15 +1035,15 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<letStatement>
-<keyword> let </keyword>
-<identifier> myVar </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<identifier> anotherVar </identifier>
-</term>
-</expression>
-<symbol> ; </symbol>
+  <keyword> let </keyword>
+  <identifier> myVar </identifier>
+  <symbol> = </symbol>
+  <expression>
+    <term>
+      <identifier> anotherVar </identifier>
+    </term>
+  </expression>
+  <symbol> ; </symbol>
 </letStatement>
 "
         )
@@ -1066,22 +1066,22 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<letStatement>
-<keyword> let </keyword>
-<identifier> myVar </identifier>
-<symbol> [ </symbol>
-<expression>
-<term>
-<identifier> i </identifier>
-</term>
-</expression>
-<symbol> ] </symbol>
-<symbol> = </symbol>
-<expression>
-<term>
-<identifier> anotherVar </identifier>
-</term>
-</expression>
-<symbol> ; </symbol>
+  <keyword> let </keyword>
+  <identifier> myVar </identifier>
+  <symbol> [ </symbol>
+  <expression>
+    <term>
+      <identifier> i </identifier>
+    </term>
+  </expression>
+  <symbol> ] </symbol>
+  <symbol> = </symbol>
+  <expression>
+    <term>
+      <identifier> anotherVar </identifier>
+    </term>
+  </expression>
+  <symbol> ; </symbol>
 </letStatement>
 "
         )
@@ -1110,40 +1110,40 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<whileStatement>
-<keyword> while </keyword>
-<symbol> ( </symbol>
-<expression>
-<term>
-<keyword> true </keyword>
-</term>
-</expression>
-<symbol> ) </symbol>
-<symbol> { </symbol>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> i </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-<letStatement>
-<keyword> let </keyword>
-<identifier> j </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 2 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-</statements>
-<symbol> } </symbol>
+  <keyword> while </keyword>
+  <symbol> ( </symbol>
+  <expression>
+    <term>
+      <keyword> true </keyword>
+    </term>
+  </expression>
+  <symbol> ) </symbol>
+  <symbol> { </symbol>
+  <statements>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> i </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 1 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> j </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 2 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+  </statements>
+  <symbol> } </symbol>
 </whileStatement>
 "
         )
@@ -1173,40 +1173,40 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<ifStatement>
-<keyword> if </keyword>
-<symbol> ( </symbol>
-<expression>
-<term>
-<keyword> true </keyword>
-</term>
-</expression>
-<symbol> ) </symbol>
-<symbol> { </symbol>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> i </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-<letStatement>
-<keyword> let </keyword>
-<identifier> j </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 2 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-</statements>
-<symbol> } </symbol>
+  <keyword> if </keyword>
+  <symbol> ( </symbol>
+  <expression>
+    <term>
+      <keyword> true </keyword>
+    </term>
+  </expression>
+  <symbol> ) </symbol>
+  <symbol> { </symbol>
+  <statements>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> i </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 1 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> j </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 2 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+  </statements>
+  <symbol> } </symbol>
 </ifStatement>
 "
         )
@@ -1240,56 +1240,56 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<ifStatement>
-<keyword> if </keyword>
-<symbol> ( </symbol>
-<expression>
-<term>
-<keyword> true </keyword>
-</term>
-</expression>
-<symbol> ) </symbol>
-<symbol> { </symbol>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> i </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-</statements>
-<symbol> } </symbol>
-<keyword> else </keyword>
-<symbol> { </symbol>
-<statements>
-<letStatement>
-<keyword> let </keyword>
-<identifier> ii </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-<letStatement>
-<keyword> let </keyword>
-<identifier> jj </identifier>
-<symbol> = </symbol>
-<expression>
-<term>
-<integerConstant> 2 </integerConstant>
-</term>
-</expression>
-<symbol> ; </symbol>
-</letStatement>
-</statements>
-<symbol> } </symbol>
+  <keyword> if </keyword>
+  <symbol> ( </symbol>
+  <expression>
+    <term>
+      <keyword> true </keyword>
+    </term>
+  </expression>
+  <symbol> ) </symbol>
+  <symbol> { </symbol>
+  <statements>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> i </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 1 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+  </statements>
+  <symbol> } </symbol>
+  <keyword> else </keyword>
+  <symbol> { </symbol>
+  <statements>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> ii </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 1 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+    <letStatement>
+      <keyword> let </keyword>
+      <identifier> jj </identifier>
+      <symbol> = </symbol>
+      <expression>
+        <term>
+          <integerConstant> 2 </integerConstant>
+        </term>
+      </expression>
+      <symbol> ; </symbol>
+    </letStatement>
+  </statements>
+  <symbol> } </symbol>
 </ifStatement>
 "
         )
@@ -1306,15 +1306,15 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<doStatement>
-<keyword> do </keyword>
-<identifier> game </identifier>
-<symbol> . </symbol>
-<identifier> run </identifier>
-<symbol> ( </symbol>
-<expressionList>
-</expressionList>
-<symbol> ) </symbol>
-<symbol> ; </symbol>
+  <keyword> do </keyword>
+  <identifier> game </identifier>
+  <symbol> . </symbol>
+  <identifier> run </identifier>
+  <symbol> ( </symbol>
+  <expressionList>
+  </expressionList>
+  <symbol> ) </symbol>
+  <symbol> ; </symbol>
 </doStatement>
 "
         )
@@ -1327,8 +1327,8 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<returnStatement>
-<keyword> return </keyword>
-<symbol> ; </symbol>
+  <keyword> return </keyword>
+  <symbol> ; </symbol>
 </returnStatement>
 "
         )
@@ -1344,13 +1344,13 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<returnStatement>
-<keyword> return </keyword>
-<expression>
-<term>
-<identifier> square </identifier>
-</term>
-</expression>
-<symbol> ; </symbol>
+  <keyword> return </keyword>
+  <expression>
+    <term>
+      <identifier> square </identifier>
+    </term>
+  </expression>
+  <symbol> ; </symbol>
 </returnStatement>
 "
         )
@@ -1366,9 +1366,9 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> foo </identifier>
-</term>
+  <term>
+    <identifier> foo </identifier>
+  </term>
 </expression>
 "
         )
@@ -1387,16 +1387,16 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> foo </identifier>
-<symbol> [ </symbol>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> ] </symbol>
-</term>
+  <term>
+    <identifier> foo </identifier>
+    <symbol> [ </symbol>
+    <expression>
+      <term>
+        <integerConstant> 1 </integerConstant>
+      </term>
+    </expression>
+    <symbol> ] </symbol>
+  </term>
 </expression>
 "
         )
@@ -1412,9 +1412,9 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<stringConstant> str value!! </stringConstant>
-</term>
+  <term>
+    <stringConstant> str value!! </stringConstant>
+  </term>
 </expression>
 "
         )
@@ -1429,9 +1429,9 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<keyword> true </keyword>
-</term>
+  <term>
+    <keyword> true </keyword>
+  </term>
 </expression>
 "
         )
@@ -1449,18 +1449,18 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<symbol> ( </symbol>
-<expression>
-<term>
-<symbol> - </symbol>
-<term>
-<identifier> i </identifier>
-</term>
-</term>
-</expression>
-<symbol> ) </symbol>
-</term>
+  <term>
+    <symbol> ( </symbol>
+    <expression>
+      <term>
+        <symbol> - </symbol>
+        <term>
+          <identifier> i </identifier>
+        </term>
+      </term>
+    </expression>
+    <symbol> ) </symbol>
+  </term>
 </expression>
 "
         )
@@ -1476,12 +1476,12 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<symbol> - </symbol>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</term>
+  <term>
+    <symbol> - </symbol>
+    <term>
+      <integerConstant> 1 </integerConstant>
+    </term>
+  </term>
 </expression>
 "
         )
@@ -1512,20 +1512,20 @@ mod tests {
         assert_eq!(
             actual,
             "<expression>
-<term>
-<symbol> - </symbol>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</term>
+  <term>
+    <symbol> - </symbol>
+    <term>
+      <integerConstant> 1 </integerConstant>
+    </term>
+  </term>
 </expression>
 <expression>
-<term>
-<symbol> ~ </symbol>
-<term>
-<integerConstant> 10 </integerConstant>
-</term>
-</term>
+  <term>
+    <symbol> ~ </symbol>
+    <term>
+      <integerConstant> 10 </integerConstant>
+    </term>
+  </term>
 </expression>
 "
         )
@@ -1540,13 +1540,13 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> new </identifier>
-<symbol> ( </symbol>
-<expressionList>
-</expressionList>
-<symbol> ) </symbol>
-</term>
+  <term>
+    <identifier> new </identifier>
+    <symbol> ( </symbol>
+    <expressionList>
+    </expressionList>
+    <symbol> ) </symbol>
+  </term>
 </expression>
 "
         )
@@ -1572,28 +1572,28 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> new </identifier>
-<symbol> ( </symbol>
-<expressionList>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> , </symbol>
-<expression>
-<term>
-<integerConstant> 2 </integerConstant>
-</term>
-<symbol> + </symbol>
-<term>
-<integerConstant> 3 </integerConstant>
-</term>
-</expression>
-</expressionList>
-<symbol> ) </symbol>
-</term>
+  <term>
+    <identifier> new </identifier>
+    <symbol> ( </symbol>
+    <expressionList>
+      <expression>
+        <term>
+          <integerConstant> 1 </integerConstant>
+        </term>
+      </expression>
+      <symbol> , </symbol>
+      <expression>
+        <term>
+          <integerConstant> 2 </integerConstant>
+        </term>
+        <symbol> + </symbol>
+        <term>
+          <integerConstant> 3 </integerConstant>
+        </term>
+      </expression>
+    </expressionList>
+    <symbol> ) </symbol>
+  </term>
 </expression>
 "
         )
@@ -1612,15 +1612,15 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> SquareGame </identifier>
-<symbol> . </symbol>
-<identifier> new </identifier>
-<symbol> ( </symbol>
-<expressionList>
-</expressionList>
-<symbol> ) </symbol>
-</term>
+  <term>
+    <identifier> SquareGame </identifier>
+    <symbol> . </symbol>
+    <identifier> new </identifier>
+    <symbol> ( </symbol>
+    <expressionList>
+    </expressionList>
+    <symbol> ) </symbol>
+  </term>
 </expression>
 "
         )
@@ -1648,30 +1648,30 @@ mod tests {
         assert_eq!(
             get_xml_string(program),
             "<expression>
-<term>
-<identifier> SquareGame </identifier>
-<symbol> . </symbol>
-<identifier> new </identifier>
-<symbol> ( </symbol>
-<expressionList>
-<expression>
-<term>
-<integerConstant> 1 </integerConstant>
-</term>
-</expression>
-<symbol> , </symbol>
-<expression>
-<term>
-<integerConstant> 2 </integerConstant>
-</term>
-<symbol> + </symbol>
-<term>
-<integerConstant> 3 </integerConstant>
-</term>
-</expression>
-</expressionList>
-<symbol> ) </symbol>
-</term>
+  <term>
+    <identifier> SquareGame </identifier>
+    <symbol> . </symbol>
+    <identifier> new </identifier>
+    <symbol> ( </symbol>
+    <expressionList>
+      <expression>
+        <term>
+          <integerConstant> 1 </integerConstant>
+        </term>
+      </expression>
+      <symbol> , </symbol>
+      <expression>
+        <term>
+          <integerConstant> 2 </integerConstant>
+        </term>
+        <symbol> + </symbol>
+        <term>
+          <integerConstant> 3 </integerConstant>
+        </term>
+      </expression>
+    </expressionList>
+    <symbol> ) </symbol>
+  </term>
 </expression>
 "
         )

@@ -1,5 +1,7 @@
 use std::io::{self, Write};
 
+const INDENT_SPACE_COUNT: usize = 2;
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Element {
     name: String,
@@ -62,23 +64,28 @@ impl Element {
     }
 
     pub fn write<W: Write>(&self, writer: &mut W) -> io::Result<()> {
+        self.write_with_indent(writer, 0)
+    }
+
+    fn write_with_indent<W: Write>(&self, writer: &mut W, level: usize) -> io::Result<()> {
         use Content::*;
+        let prefix = " ".repeat(level);
         match &self.content {
             Empty => (),
             Elements(elements) => {
-                writeln!(writer, "<{}>", self.name)?;
+                writeln!(writer, "{}<{}>", prefix, self.name)?;
                 for elm in elements {
-                    elm.write(writer)?;
+                    elm.write_with_indent(writer, level + INDENT_SPACE_COUNT)?;
                 }
-                writeln!(writer, "</{}>", self.name)?;
+                writeln!(writer, "{}</{}>", prefix, self.name)?;
             }
             Fragment(elements) => {
                 for elm in elements {
-                    elm.write(writer)?;
+                    elm.write_with_indent(writer, level)?;
                 }
             }
             Text(text) => {
-                writeln!(writer, "<{}> {} </{0}>", self.name, text)?;
+                writeln!(writer, "{}<{}> {} </{1}>", prefix, self.name, text)?;
             }
         }
         Ok(())
@@ -108,9 +115,9 @@ mod tests {
         assert_eq!(
             actual,
             "<expression>
-<term>
-<keyword> true </keyword>
-</term>
+  <term>
+    <keyword> true </keyword>
+  </term>
 </expression>
 "
         );
