@@ -480,6 +480,10 @@ impl BinaryOpToken {
     }
 }
 
+type IntegerConstant = i32;
+
+type StringConstant = String;
+
 #[derive(PartialEq, Debug)]
 pub struct KeywordConstant {
     keyword: Keyword,
@@ -556,8 +560,8 @@ impl SubroutineCall {
 
 #[derive(PartialEq, Debug)]
 pub enum Term {
-    IntegerConstant(i32),
-    StringConstant(String),
+    IntegerConstant(IntegerConstant),
+    StringConstant(StringConstant),
     KeywordConstant(KeywordConstant),
     VarName(IdentifierToken, Option<Box<Expression>>),
     Expresssion(Box<Expression>),
