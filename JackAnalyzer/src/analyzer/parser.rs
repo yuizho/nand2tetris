@@ -10,14 +10,6 @@ impl<'a> Parser<'a> {
         Parser { tokenizer }
     }
 
-    pub fn next_token(&mut self) -> TokenType {
-        self.tokenizer.advance()
-    }
-
-    pub fn peek_token(&mut self) -> TokenType {
-        self.tokenizer.peek()
-    }
-
     pub fn parse_program(&mut self) -> Program {
         let token = self.next_token();
         if !token.is(TokenType::Keyword(Keyword::Class)) {
@@ -55,6 +47,14 @@ impl<'a> Parser<'a> {
         }
 
         Program::new(class_name, var_dec, subroutine_dec)
+    }
+
+    fn next_token(&mut self) -> TokenType {
+        self.tokenizer.advance()
+    }
+
+    fn peek_token(&mut self) -> TokenType {
+        self.tokenizer.peek()
     }
 
     fn parse_class_var(&mut self, var_identifier: TokenType) -> ClassVarDec {
