@@ -49,22 +49,24 @@ impl JackTokenizer {
     }
 
     pub fn advance(&mut self) -> Result<TokenType> {
+        use TokenType::*;
+
         self.skip_whitespace();
 
         let token = match self.current_char {
-            '"' => TokenType::String(self.read_string()),
-            '{' => TokenType::Lbrace,
-            '}' => TokenType::Rbrace,
-            '(' => TokenType::Lparen,
-            ')' => TokenType::Rparen,
-            '[' => TokenType::Lbracket,
-            ']' => TokenType::Rbracket,
-            '.' => TokenType::Dot,
-            ',' => TokenType::Comma,
-            ';' => TokenType::Semicolon,
-            '+' => TokenType::Plus,
-            '-' => TokenType::Minus,
-            '*' => TokenType::Asterisk,
+            '"' => String(self.read_string()),
+            '{' => Lbrace,
+            '}' => Rbrace,
+            '(' => Lparen,
+            ')' => Rparen,
+            '[' => Lbracket,
+            ']' => Rbracket,
+            '.' => Dot,
+            ',' => Comma,
+            ';' => Semicolon,
+            '+' => Plus,
+            '-' => Minus,
+            '*' => Asterisk,
             '/' => {
                 if self.peek_char() == '/' {
                     self.skip_line_comments();
@@ -75,20 +77,20 @@ impl JackTokenizer {
                     self.read_char();
                     return self.advance();
                 } else {
-                    TokenType::Slash
+                    Slash
                 }
             }
-            '&' => TokenType::And,
-            '|' => TokenType::Or,
-            '<' => TokenType::Lt,
-            '>' => TokenType::Gt,
-            '=' => TokenType::Assign,
-            '~' => TokenType::Tilde,
+            '&' => And,
+            '|' => Or,
+            '<' => Lt,
+            '>' => Gt,
+            '=' => Assign,
+            '~' => Tilde,
             _ if self.is_letter() => {
                 return Ok(TokenType::lookup_identify(&self.read_identifier()))
             }
-            _ if self.is_digit() => return Ok(TokenType::Number(self.read_number())),
-            c if c == EMPTY_CHAR => TokenType::Eof,
+            _ if self.is_digit() => return Ok(Number(self.read_number())),
+            c if c == EMPTY_CHAR => Eof,
             c => return Err(anyhow!("unexpected token: {}", c)),
         };
 
