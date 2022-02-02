@@ -1,6 +1,6 @@
 use super::xml::Element;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Keyword {
     Class,
     Constructor,
@@ -57,7 +57,7 @@ impl Token for Keyword {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct IdentifierToken(String);
 impl IdentifierToken {
     pub fn new<S: Into<String>>(identifier: S) -> Self {
@@ -82,7 +82,7 @@ impl Token for String {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TokenType {
     Lbrace,    // "{"
     Rbrace,    // "}"
