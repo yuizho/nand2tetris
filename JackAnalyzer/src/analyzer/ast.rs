@@ -461,17 +461,10 @@ impl BinaryOpToken {
     }
 
     pub fn is_binary_op_token_type(token: &TokenType) -> bool {
+        use super::token::TokenType::*;
         matches!(
             token,
-            TokenType::Plus
-                | TokenType::Minus
-                | TokenType::Asterisk
-                | TokenType::Slash
-                | TokenType::And
-                | TokenType::Or
-                | TokenType::Gt
-                | TokenType::Lt
-                | TokenType::Assign
+            Plus | Minus | Asterisk | Slash | And | Or | Gt | Lt | Assign
         )
     }
 }
