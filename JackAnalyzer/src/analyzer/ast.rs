@@ -5,7 +5,7 @@ pub trait Node {
     fn to_xml(&self) -> Element;
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Program {
     class_name: IdentifierToken,
     class_var_dec: Vec<ClassVarDec>,
@@ -48,7 +48,7 @@ impl Node for Program {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct ClassTypeToken {
     type_token: TokenType,
 }
@@ -72,7 +72,7 @@ impl ClassTypeToken {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct ClassVarDec {
     var_identifier: Keyword,
     var_type: ClassTypeToken,
@@ -130,7 +130,7 @@ impl Node for ClassVarDec {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct SubroutineDec {
     subroutine_identifier: Keyword,
     return_type: Option<ClassTypeToken>,
@@ -224,7 +224,7 @@ impl Node for SubroutineDec {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct VarDec {
     var_type: ClassTypeToken,
     var_name: IdentifierToken,
@@ -273,7 +273,7 @@ impl Node for VarDec {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Statement {
     Let(IdentifierToken, Option<Expression>, Expression),
     While(Expression, Vec<Statement>),
@@ -386,7 +386,7 @@ impl Node for Statement {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Expression {
     pub left_term: Term,
     binary_op: Option<BinaryOp>,
@@ -416,7 +416,7 @@ impl Node for Expression {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct BinaryOp {
     op_token: BinaryOpToken,
     right_term: Term,
@@ -438,7 +438,7 @@ impl Node for BinaryOp {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct UnaryOpToken(TokenType);
 impl UnaryOpToken {
     pub fn new(token: TokenType) -> Self {
@@ -449,7 +449,7 @@ impl UnaryOpToken {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct BinaryOpToken(TokenType);
 impl BinaryOpToken {
     pub fn new(token: TokenType) -> Self {
@@ -473,7 +473,7 @@ type IntegerConstant = i32;
 
 type StringConstant = String;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct KeywordConstant(Keyword);
 impl KeywordConstant {
     pub fn new(keyword: Keyword) -> Self {
@@ -489,7 +489,7 @@ impl KeywordConstant {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct SubroutineCall {
     parent_name: Option<IdentifierToken>,
     subroutine_name: IdentifierToken,
@@ -545,7 +545,7 @@ impl SubroutineCall {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Term {
     IntegerConstant(IntegerConstant),
     StringConstant(StringConstant),
