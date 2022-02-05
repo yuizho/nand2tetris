@@ -595,12 +595,13 @@ impl Node for Term {
 mod tests {
     use crate::analyzer::ast::*;
     use crate::analyzer::token::*;
+    use crate::analyzer::xml::XmlWriter;
     use std::io::Cursor;
 
     fn get_xml_string(node: impl Node) -> String {
         let elm = node.to_xml();
         let mut cursor = Cursor::new(Vec::new());
-        elm.write(&mut cursor).unwrap();
+        cursor.write_xml(&elm).unwrap();
 
         cursor
             .into_inner()
@@ -1486,7 +1487,7 @@ mod tests {
         ];
         let elm = Element::new_fragment(program.iter().map(|s| s.to_xml()).collect::<Vec<_>>());
         let mut cursor = Cursor::new(Vec::new());
-        elm.write(&mut cursor).unwrap();
+        cursor.write_xml(&elm).unwrap();
 
         let actual = cursor
             .into_inner()

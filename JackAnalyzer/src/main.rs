@@ -9,6 +9,7 @@ mod analyzer;
 use analyzer::ast::Node;
 use analyzer::parser::Parser;
 use analyzer::tokenizer::JackTokenizer;
+use analyzer::xml::XmlWriter;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -21,8 +22,9 @@ fn main() -> Result<()> {
         let f = File::open(&file_name)?;
         let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(&mut tokenizer);
+        let elements = parser.parse_program()?.to_xml();
         // parse and write xml file
-        parser.parse_program()?.to_xml().write(&mut buf_writer)?;
+        buf_writer.write_xml(&elements)?;
     }
 
     buf_writer.flush()?;

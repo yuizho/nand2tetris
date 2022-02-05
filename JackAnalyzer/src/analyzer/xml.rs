@@ -60,30 +60,37 @@ impl Element {
             content: Content::Empty,
         }
     }
+}
 
-    pub fn write<W: Write>(&self, writer: &mut W) -> io::Result<()> {
-        self.write_with_indent(writer, 0)
+pub trait XmlWriter {
+    fn write_xml(&mut self, elm: &Element) -> io::Result<()>;
+    fn write_with_indent(&mut self, elm: &Element, indent_level: usize) -> io::Result<()>;
+}
+
+impl<W: Write> XmlWriter for W {
+    fn write_xml(&mut self, elm: &Element) -> io::Result<()> {
+        self.write_with_indent(elm, 0)
     }
 
-    fn write_with_indent<W: Write>(&self, writer: &mut W, indent_level: usize) -> io::Result<()> {
+    fn write_with_indent(&mut self, elm: &Element, indent_level: usize) -> io::Result<()> {
         use Content::*;
         let indent = "  ".repeat(indent_level);
-        match &self.content {
+        match &elm.content {
             Empty => (),
             Elements(elements) => {
-                writeln!(writer, "{}<{}>", indent, self.name)?;
+                writeln!(self, "{}<{}>", indent, elm.name)?;
                 for elm in elements {
-                    elm.write_with_indent(writer, indent_level + 1)?;
+                    self.write_with_indent(elm, indent_level + 1)?;
                 }
-                writeln!(writer, "{}</{}>", indent, self.name)?;
+                writeln!(self, "{}</{}>", indent, elm.name)?;
             }
             Fragment(elements) => {
                 for elm in elements {
-                    elm.write_with_indent(writer, indent_level)?;
+                    self.write_with_indent(elm, indent_level)?;
                 }
             }
             Text(text) => {
-                writeln!(writer, "{}<{}> {} </{1}>", indent, self.name, text)?;
+                writeln!(self, "{}<{}> {} </{1}>", indent, elm.name, text)?;
             }
         }
         Ok(())
@@ -92,13 +99,12 @@ impl Element {
 
 #[cfg(test)]
 mod tests {
-    use crate::analyzer::xml::Element;
+    use crate::analyzer::xml::{Element, XmlWriter};
     use std::io::Cursor;
 
-    fn get_xml_string(elm: Element) -> String {
+    fn get_xml_string(elm: &Element) -> String {
         let mut cursor = Cursor::new(Vec::new());
-        elm.write(&mut cursor).unwrap();
-
+        cursor.write_xml(elm).unwrap();
         cursor
             .into_inner()
             .iter()
@@ -132,7 +138,7 @@ mod tests {
                 ),
             ],
         );
-        let actual = get_xml_string(elm);
+        let actual = get_xml_string(&elm);
 
         assert_eq!(
             actual,
@@ -157,7 +163,7 @@ mod tests {
             "expression",
             Element::new_element("term", Element::new_text("keyword", "true")),
         );
-        let actual = get_xml_string(elm);
+        let actual = get_xml_string(&elm);
 
         assert_eq!(
             actual,
