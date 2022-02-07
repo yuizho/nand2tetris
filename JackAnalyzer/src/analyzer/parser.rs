@@ -13,7 +13,7 @@ impl<'a> Parser<'a> {
 
     pub fn parse_program(&mut self) -> Result<Program> {
         let token = self.next_token()?;
-        if !token.is(TokenType::Keyword(Keyword::Class)) {
+        if !token.is(&TokenType::Keyword(Keyword::Class)) {
             return Err(anyhow!("the code doesn't start class keyword: {:?}", token));
         }
 
@@ -25,14 +25,14 @@ impl<'a> Parser<'a> {
         };
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Lbrace) {
+        if !token.is(&TokenType::Lbrace) {
             return Err(anyhow!("unexpected syntax of class: {:?}", token));
         }
 
         let mut token = self.next_token()?;
         let mut var_dec = vec![];
         let mut subroutine_dec = vec![];
-        while !token.is_eof_or(TokenType::Rbrace) {
+        while !token.is_eof_or(&TokenType::Rbrace) {
             match &token {
                 TokenType::Keyword(Keyword::Static) | TokenType::Keyword(Keyword::Field) => {
                     var_dec.push(self.parse_class_var(token)?);
@@ -71,8 +71,8 @@ impl<'a> Parser<'a> {
 
         let mut token = self.next_token()?;
         let mut alt_var_names = vec![];
-        while !token.is_eof_or(TokenType::Semicolon) {
-            if !token.is(TokenType::Comma) {
+        while !token.is_eof_or(&TokenType::Semicolon) {
+            if !token.is(&TokenType::Comma) {
                 return Err(anyhow!("unexpected syntax of class var: {:?}", token));
             }
 
@@ -116,14 +116,14 @@ impl<'a> Parser<'a> {
 
         // parse parameters
         let token = self.next_token()?;
-        if !token.is(TokenType::Lparen) {
+        if !token.is(&TokenType::Lparen) {
             return Err(anyhow!("unexpected syntax of subroutine: {:?}", token));
         }
 
         let mut token = self.next_token()?;
         let mut parameters = vec![];
-        while !token.is_eof_or(TokenType::Rparen) {
-            if token.is(TokenType::Comma) {
+        while !token.is_eof_or(&TokenType::Rparen) {
+            if token.is(&TokenType::Comma) {
                 token = self.next_token()?;
             }
             let var_type = ClassTypeToken::new(token);
@@ -139,7 +139,7 @@ impl<'a> Parser<'a> {
         }
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Lbrace) {
+        if !token.is(&TokenType::Lbrace) {
             return Err(anyhow!("unexpected syntax of subroutine: {:?}", token));
         }
 
@@ -147,7 +147,7 @@ impl<'a> Parser<'a> {
         let mut token = self.next_token()?;
         let mut var_dec = vec![];
         let mut statements = vec![];
-        while !token.is_eof_or(TokenType::Rbrace) {
+        while !token.is_eof_or(&TokenType::Rbrace) {
             match &token {
                 TokenType::Keyword(Keyword::Var) => var_dec.push(self.parse_local_var()?),
                 _ => statements.push(self.parse_statement(token)?),
@@ -178,8 +178,8 @@ impl<'a> Parser<'a> {
 
         let mut token = self.next_token()?;
         let mut alt_var_names = vec![];
-        while !token.is_eof_or(TokenType::Semicolon) {
-            if !token.is(TokenType::Comma) {
+        while !token.is_eof_or(&TokenType::Semicolon) {
+            if !token.is(&TokenType::Comma) {
                 return Err(anyhow!("unexpected syntax of class var: {:?}", token));
             }
 
@@ -223,12 +223,12 @@ impl<'a> Parser<'a> {
         };
 
         let token = self.next_token()?;
-        let (index_expression, token) = if token.is(TokenType::Lbracket) {
+        let (index_expression, token) = if token.is(&TokenType::Lbracket) {
             let token = self.next_token()?;
             let expression = self.parse_expression(token)?;
 
             let token = self.next_token()?;
-            if !token.is(TokenType::Rbracket) {
+            if !token.is(&TokenType::Rbracket) {
                 return Err(anyhow!("unexpected syntax of let: {:?}", token));
             }
 
@@ -237,7 +237,7 @@ impl<'a> Parser<'a> {
             (None, token)
         };
 
-        if !token.is(TokenType::Assign) {
+        if !token.is(&TokenType::Assign) {
             return Err(anyhow!("unexpected syntax of let: {:?}", token));
         }
 
@@ -245,7 +245,7 @@ impl<'a> Parser<'a> {
         let expression = self.parse_expression(token)?;
 
         let mut token = self.next_token()?;
-        while !token.is_eof_or(TokenType::Semicolon) {
+        while !token.is_eof_or(&TokenType::Semicolon) {
             token = self.next_token()?;
         }
 
@@ -258,12 +258,12 @@ impl<'a> Parser<'a> {
 
     fn parse_return_statement(&mut self) -> Result<Statement> {
         let token = self.next_token()?;
-        let expression = if token.is(TokenType::Semicolon) {
+        let expression = if token.is(&TokenType::Semicolon) {
             None
         } else {
             let expression = Some(self.parse_expression(token)?);
             let token = self.next_token()?;
-            if !token.is(TokenType::Semicolon) {
+            if !token.is(&TokenType::Semicolon) {
                 return Err(anyhow!("unexpected syntax of return: {:?}", token));
             }
             expression
@@ -274,7 +274,7 @@ impl<'a> Parser<'a> {
 
     fn parse_while_statement(&mut self) -> Result<Statement> {
         let token = self.next_token()?;
-        if !token.is(TokenType::Lparen) {
+        if !token.is(&TokenType::Lparen) {
             return Err(anyhow!("unexpected syntax of while: {:?}", token));
         }
 
@@ -282,18 +282,18 @@ impl<'a> Parser<'a> {
         let expression = self.parse_expression(token)?;
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Rparen) {
+        if !token.is(&TokenType::Rparen) {
             return Err(anyhow!("unexpected syntax of while: {:?}", token));
         }
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Lbrace) {
+        if !token.is(&TokenType::Lbrace) {
             return Err(anyhow!("unexpected syntax of while: {:?}", token));
         }
 
         let mut token = self.next_token()?;
         let mut statements = vec![];
-        while !token.is_eof_or(TokenType::Rbrace) {
+        while !token.is_eof_or(&TokenType::Rbrace) {
             statements.push(self.parse_statement(token)?);
             token = self.next_token()?;
         }
@@ -303,7 +303,7 @@ impl<'a> Parser<'a> {
 
     fn parse_if_statement(&mut self) -> Result<Statement> {
         let token = self.next_token()?;
-        if !token.is(TokenType::Lparen) {
+        if !token.is(&TokenType::Lparen) {
             return Err(anyhow!("unexpected syntax of if: {:?}", token));
         }
 
@@ -311,18 +311,18 @@ impl<'a> Parser<'a> {
         let expression = self.parse_expression(token)?;
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Rparen) {
+        if !token.is(&TokenType::Rparen) {
             return Err(anyhow!("unexpected syntax of if: {:?}", token));
         }
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Lbrace) {
+        if !token.is(&TokenType::Lbrace) {
             return Err(anyhow!("unexpected syntax of if: {:?}", token));
         }
 
         let mut token = self.next_token()?;
         let mut if_statements = vec![];
-        while !token.is_eof_or(TokenType::Rbrace) {
+        while !token.is_eof_or(&TokenType::Rbrace) {
             if_statements.push(self.parse_statement(token)?);
             token = self.next_token()?;
         }
@@ -330,13 +330,13 @@ impl<'a> Parser<'a> {
         let else_statements = if self.peek_token_is(TokenType::Keyword(Keyword::Else))? {
             self.next_token()?;
             let token = self.next_token()?;
-            if !token.is(TokenType::Lbrace) {
+            if !token.is(&TokenType::Lbrace) {
                 return Err(anyhow!("unexpected syntax of else: {:?}", token));
             }
 
             let mut token = self.next_token()?;
             let mut statements = vec![];
-            while !token.is_eof_or(TokenType::Rbrace) {
+            while !token.is_eof_or(&TokenType::Rbrace) {
                 statements.push(self.parse_statement(token)?);
                 token = self.next_token()?;
             }
@@ -357,7 +357,7 @@ impl<'a> Parser<'a> {
         };
 
         let mut token = self.next_token()?;
-        while !token.is_eof_or(TokenType::Semicolon) {
+        while !token.is_eof_or(&TokenType::Semicolon) {
             token = self.next_token()?;
         }
 
@@ -368,7 +368,7 @@ impl<'a> Parser<'a> {
         let expression = self.parse_expression(token)?;
 
         let mut token = self.next_token()?;
-        while !token.is_eof_or(TokenType::Semicolon) {
+        while !token.is_eof_or(&TokenType::Semicolon) {
             token = self.next_token()?;
         }
         Ok(Statement::Expression(expression))
@@ -402,13 +402,13 @@ impl<'a> Parser<'a> {
         };
 
         let token = self.next_token()?;
-        if !token.is(TokenType::Lparen) {
+        if !token.is(&TokenType::Lparen) {
             return Err(anyhow!("unexpected syntax of subroutine call: {:?}", token));
         }
 
         let mut token = self.next_token()?;
         let mut expressions = vec![];
-        while !token.is_eof_or(TokenType::Rparen) {
+        while !token.is_eof_or(&TokenType::Rparen) {
             expressions.push(self.parse_expression(token)?);
 
             if self.peek_token_is(TokenType::Comma)? {
