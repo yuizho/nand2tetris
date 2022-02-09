@@ -16,28 +16,28 @@ enum LocalAttribute {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct ClassSymbol {
+struct Symbol<T> {
     symbol_type: SymbolType,
-    attribute: ClassAttribute,
+    attribute: T,
     number: usize,
 }
 
 #[derive(PartialEq, Eq, Debug)]
-pub struct ClassSymbolTable {
-    symbols: HashMap<Name, ClassSymbol>,
+pub struct SymbolTable<T: Eq + PartialEq> {
+    symbols: HashMap<Name, Symbol<T>>,
 }
-impl ClassSymbolTable {
+impl<T: Eq + PartialEq> SymbolTable<T> {
     fn new() -> Self {
-        ClassSymbolTable {
+        SymbolTable {
             symbols: HashMap::new(),
         }
     }
 
-    fn add_symbol(&mut self, name: Name, symbol_type: SymbolType, attribute: ClassAttribute) {
+    fn add_symbol(&mut self, name: Name, symbol_type: SymbolType, attribute: T) {
         let number = self.var_count(&attribute);
         self.symbols.insert(
             name,
-            ClassSymbol {
+            Symbol {
                 symbol_type,
                 attribute,
                 number,
@@ -45,14 +45,14 @@ impl ClassSymbolTable {
         );
     }
 
-    fn var_count(&self, attribute: &ClassAttribute) -> usize {
+    fn var_count(&self, attribute: &T) -> usize {
         self.symbols
             .iter()
             .filter(|(_, v)| &v.attribute == attribute)
             .count()
     }
 
-    fn attr_of(&self, name: &str) -> Option<&ClassAttribute> {
+    fn attr_of(&self, name: &str) -> Option<&T> {
         let symbol = self.symbols.get(name)?;
         Some(&symbol.attribute)
     }
@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn class_symbol_table_var_count() {
-        let mut symbol_table = ClassSymbolTable::new();
+        let mut symbol_table = SymbolTable::<ClassAttribute>::new();
         symbol_table.add_symbol(
             "first".to_string(),
             "String".to_string(),
@@ -87,11 +87,37 @@ mod tests {
 
     #[test]
     fn class_symbol_table_index_of() {
-        let mut symbol_table = ClassSymbolTable::new();
+        let mut symbol_table = SymbolTable::<ClassAttribute>::new();
         symbol_table.add_symbol(
             "first".to_string(),
             "String".to_string(),
             ClassAttribute::Field,
+        );
+
+        assert_eq!(Some(&0), symbol_table.index_of("first"));
+        assert_eq!(None, symbol_table.index_of("none"));
+    }
+
+    #[test]
+    fn local_symbol_table_var_count() {
+        let mut symbol_table = SymbolTable::<LocalAttribute>::new();
+        symbol_table.add_symbol(
+            "first".to_string(),
+            "String".to_string(),
+            LocalAttribute::Argument,
+        );
+
+        assert_eq!(0, symbol_table.var_count(&LocalAttribute::Var));
+        assert_eq!(1, symbol_table.var_count(&LocalAttribute::Argument));
+    }
+
+    #[test]
+    fn local_symbol_table_index_of() {
+        let mut symbol_table = SymbolTable::<LocalAttribute>::new();
+        symbol_table.add_symbol(
+            "first".to_string(),
+            "String".to_string(),
+            LocalAttribute::Var,
         );
 
         assert_eq!(Some(&0), symbol_table.index_of("first"));
