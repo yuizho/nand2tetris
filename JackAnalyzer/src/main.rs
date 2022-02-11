@@ -6,7 +6,6 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 mod analyzer;
-use analyzer::ast::Node;
 use analyzer::parser::Parser;
 use analyzer::tokenizer::JackTokenizer;
 use analyzer::xml::XmlWriter;
