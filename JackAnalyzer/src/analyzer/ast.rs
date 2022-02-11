@@ -1,8 +1,26 @@
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
 use super::xml::Element;
 
-pub trait Node {
-    fn to_xml(&self) -> Element;
+pub enum Node {
+    Program(Program),
+    ClassVarDec(ClassVarDec),
+    SubroutineDec(SubroutineDec),
+    VarDec(VarDec),
+    Statement(Statement),
+    Expression(Expression),
+}
+impl Node {
+    fn to_xml(&self) -> Element {
+        use Node::*;
+        match self {
+            Program(node) => node.to_xml(),
+            ClassVarDec(node) => node.to_xml(),
+            SubroutineDec(node) => node.to_xml(),
+            VarDec(node) => node.to_xml(),
+            Statement(node) => node.to_xml(),
+            Expression(node) => node.to_xml(),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -23,25 +41,34 @@ impl Program {
             subroutine_dec,
         }
     }
-}
-impl Node for Program {
-    fn to_xml(&self) -> Element {
-        fn vec_to_xml<T: Node>(vec: &[T]) -> Element {
-            if vec.is_empty() {
-                Element::empty()
-            } else {
-                Element::new_fragment(vec.iter().map(|v| v.to_xml()).collect::<Vec<_>>())
-            }
-        }
 
+    pub fn to_xml(&self) -> Element {
         Element::new_elements(
             "class",
             vec![
                 Keyword::Class.get_xml_tag(),
                 self.class_name.get_xml_tag(),
                 TokenType::Lbrace.get_xml_tag(),
-                vec_to_xml(&self.class_var_dec),
-                vec_to_xml(&self.subroutine_dec),
+                if self.class_var_dec.is_empty() {
+                    Element::empty()
+                } else {
+                    Element::new_fragment(
+                        self.class_var_dec
+                            .iter()
+                            .map(|v| v.to_xml())
+                            .collect::<Vec<_>>(),
+                    )
+                },
+                if self.subroutine_dec.is_empty() {
+                    Element::empty()
+                } else {
+                    Element::new_fragment(
+                        self.subroutine_dec
+                            .iter()
+                            .map(|v| v.to_xml())
+                            .collect::<Vec<_>>(),
+                    )
+                },
                 TokenType::Rbrace.get_xml_tag(),
             ],
         )
@@ -101,8 +128,7 @@ impl ClassVarDec {
             alt_var_names,
         }
     }
-}
-impl Node for ClassVarDec {
+
     fn to_xml(&self) -> Element {
         let class_var_names = if self.alt_var_names.is_empty() {
             Element::empty()
@@ -164,8 +190,7 @@ impl SubroutineDec {
             statements,
         }
     }
-}
-impl Node for SubroutineDec {
+
     fn to_xml(&self) -> Element {
         let parameters = if self.parameters.is_empty() {
             Element::empty()
@@ -242,8 +267,7 @@ impl VarDec {
             alt_var_names,
         }
     }
-}
-impl Node for VarDec {
+
     fn to_xml(&self) -> Element {
         let var_names = if self.alt_var_names.is_empty() {
             Element::empty()
@@ -282,7 +306,7 @@ pub enum Statement {
     Return(Option<Expression>),
     Expression(Expression),
 }
-impl Node for Statement {
+impl Statement {
     fn to_xml(&self) -> Element {
         match self {
             Self::Let(var_name, index_expression, expression) => Element::new_elements(
@@ -405,8 +429,7 @@ impl Expression {
             binary_op: Some(binary_op),
         }
     }
-}
-impl Node for Expression {
+
     fn to_xml(&self) -> Element {
         let binary_op_tag = match &self.binary_op {
             Some(binary_op) => binary_op.to_xml(),
@@ -428,8 +451,7 @@ impl BinaryOp {
             right_term: term,
         }
     }
-}
-impl Node for BinaryOp {
+
     fn to_xml(&self) -> Element {
         Element::new_fragment(vec![
             self.op_token.0.get_xml_tag(),
@@ -555,7 +577,7 @@ pub enum Term {
     SubroutineCall(SubroutineCall),
     UnaryOp(UnaryOpToken, Box<Term>),
 }
-impl Node for Term {
+impl Term {
     fn to_xml(&self) -> Element {
         let xml_tag = match self {
             Self::VarName(token, expression_opt) => match expression_opt {
@@ -598,7 +620,7 @@ mod tests {
     use crate::analyzer::xml::XmlWriter;
     use std::io::Cursor;
 
-    fn get_xml_string(node: impl Node) -> String {
+    fn get_xml_string(node: Node) -> String {
         let elm = node.to_xml();
         let mut cursor = Cursor::new(Vec::new());
         cursor.write_xml(&elm).unwrap();
@@ -656,7 +678,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Program(program)),
             "<class>
   <keyword> class </keyword>
   <identifier> Square </identifier>
@@ -736,7 +758,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(class_var_dec),
+            get_xml_string(Node::ClassVarDec(class_var_dec)),
             "<classVarDec>
   <keyword> static </keyword>
   <keyword> boolean </keyword>
@@ -757,7 +779,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(class_var_dec),
+            get_xml_string(Node::ClassVarDec(class_var_dec)),
             "<classVarDec>
   <keyword> field </keyword>
   <keyword> int </keyword>
@@ -781,7 +803,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(var_dec),
+            get_xml_string(Node::VarDec(var_dec)),
             "<varDec>
   <keyword> var </keyword>
   <identifier> String </identifier>
@@ -820,7 +842,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(subroutine_dec),
+            get_xml_string(Node::SubroutineDec(subroutine_dec)),
             "<subroutineDec>
   <keyword> method </keyword>
   <keyword> void </keyword>
@@ -909,7 +931,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(subroutine_dec),
+            get_xml_string(Node::SubroutineDec(subroutine_dec)),
             "<subroutineDec>
   <keyword> method </keyword>
   <keyword> boolean </keyword>
@@ -975,7 +997,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(var_dec),
+            get_xml_string(Node::VarDec(var_dec)),
             "<varDec>
   <keyword> var </keyword>
   <keyword> int </keyword>
@@ -999,7 +1021,7 @@ mod tests {
         ));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> i </identifier>
@@ -1025,7 +1047,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<letStatement>
   <keyword> let </keyword>
   <identifier> myVar </identifier>
@@ -1056,7 +1078,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<letStatement>
   <keyword> let </keyword>
   <identifier> myVar </identifier>
@@ -1098,7 +1120,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<whileStatement>
   <keyword> while </keyword>
   <symbol> ( </symbol>
@@ -1159,7 +1181,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<ifStatement>
   <keyword> if </keyword>
   <symbol> ( </symbol>
@@ -1224,7 +1246,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<ifStatement>
   <keyword> if </keyword>
   <symbol> ( </symbol>
@@ -1290,7 +1312,7 @@ mod tests {
         ));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<doStatement>
   <keyword> do </keyword>
   <identifier> game </identifier>
@@ -1311,7 +1333,7 @@ mod tests {
         let program = Statement::Return(None);
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<returnStatement>
   <keyword> return </keyword>
   <symbol> ; </symbol>
@@ -1328,7 +1350,7 @@ mod tests {
         }));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<returnStatement>
   <keyword> return </keyword>
   <expression>
@@ -1350,7 +1372,7 @@ mod tests {
         });
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> foo </identifier>
@@ -1371,7 +1393,7 @@ mod tests {
         });
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> foo </identifier>
@@ -1396,7 +1418,7 @@ mod tests {
         });
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <stringConstant> str value!! </stringConstant>
@@ -1413,7 +1435,7 @@ mod tests {
         )));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <keyword> true </keyword>
@@ -1433,7 +1455,7 @@ mod tests {
         ))));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <symbol> ( </symbol>
@@ -1460,7 +1482,7 @@ mod tests {
         )));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <symbol> - </symbol>
@@ -1524,7 +1546,7 @@ mod tests {
         )));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> new </identifier>
@@ -1556,7 +1578,7 @@ mod tests {
             ))));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> new </identifier>
@@ -1596,7 +1618,7 @@ mod tests {
         )));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> SquareGame </identifier>
@@ -1632,7 +1654,7 @@ mod tests {
         )));
 
         assert_eq!(
-            get_xml_string(program),
+            get_xml_string(Node::Statement(program)),
             "<expression>
   <term>
     <identifier> SquareGame </identifier>
