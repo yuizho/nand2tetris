@@ -1,18 +1,41 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 type Name = String;
 type SymbolType = String;
 
 #[derive(PartialEq, Eq, Debug)]
-enum ClassAttribute {
+pub enum ClassAttribute {
     Static,
     Field,
 }
+impl FromStr for ClassAttribute {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<ClassAttribute, Self::Err> {
+        match input {
+            "static" => Ok(Self::Static),
+            "field" => Ok(Self::Field),
+            s => Err(format!("unexpected str: {}", s)),
+        }
+    }
+}
 
 #[derive(PartialEq, Eq, Debug)]
-enum LocalAttribute {
+pub enum LocalAttribute {
     Argument,
     Var,
+}
+impl FromStr for LocalAttribute {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<LocalAttribute, Self::Err> {
+        match input {
+            "argument" => Ok(Self::Argument),
+            "var" => Ok(Self::Var),
+            s => Err(format!("unexpected str: {}", s)),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -27,13 +50,13 @@ pub struct SymbolTable<T: Eq + PartialEq> {
     symbols: HashMap<Name, Symbol<T>>,
 }
 impl<T: Eq + PartialEq> SymbolTable<T> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         SymbolTable {
             symbols: HashMap::new(),
         }
     }
 
-    fn add_symbol(&mut self, name: Name, symbol_type: SymbolType, attribute: T) {
+    pub fn add_symbol(&mut self, name: Name, symbol_type: SymbolType, attribute: T) {
         let number = self.var_count(&attribute);
         self.symbols.insert(
             name,

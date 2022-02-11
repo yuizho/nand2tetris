@@ -1,5 +1,7 @@
+use super::symbol_table::{ClassAttribute, LocalAttribute, SymbolTable};
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
 use super::xml::Element;
+use std::str::FromStr;
 
 pub trait Node {
     fn to_xml(&self) -> Element;
@@ -10,6 +12,7 @@ pub struct Program {
     class_name: IdentifierToken,
     class_var_dec: Vec<ClassVarDec>,
     subroutine_dec: Vec<SubroutineDec>,
+    class_symbol_table: SymbolTable<ClassAttribute>,
 }
 impl Program {
     pub fn new(
@@ -17,10 +20,28 @@ impl Program {
         class_var_dec: Vec<ClassVarDec>,
         subroutine_dec: Vec<SubroutineDec>,
     ) -> Self {
+        // TODO: class and subroutin are also needs to add as symbol?
+        let mut class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        for c in &class_var_dec {
+            class_symbol_table.add_symbol(
+                c.var_name.0.clone(),
+                c.var_type.to_string(),
+                ClassAttribute::from_str(&c.var_identifier.to_string()).unwrap(),
+            );
+            for alt in &c.alt_var_names {
+                class_symbol_table.add_symbol(
+                    alt.0.clone(),
+                    c.var_type.to_string(),
+                    ClassAttribute::from_str(&c.var_identifier.to_string()).unwrap(),
+                );
+            }
+        }
+
         Program {
             class_name,
             class_var_dec,
             subroutine_dec,
+            class_symbol_table,
         }
     }
 }
@@ -69,6 +90,17 @@ impl ClassTypeToken {
                 type_token
             )
         }
+    }
+}
+impl ToString for ClassTypeToken {
+    fn to_string(&self) -> String {
+        use TokenType::*;
+        let s = match &self.type_token {
+            Keyword(kw) => kw.to_string(),
+            Identifier(id) => id.0.clone(),
+            _ => panic!("unreachable"),
+        };
+        s.to_string()
     }
 }
 

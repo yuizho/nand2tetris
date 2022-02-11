@@ -57,9 +57,38 @@ impl Token for Keyword {
         }
     }
 }
+impl ToString for Keyword {
+    fn to_string(&self) -> String {
+        use Keyword::*;
+        let s = match self {
+            Class => "class",
+            Constructor => "constructor",
+            Function => "function",
+            Method => "method",
+            Field => "field",
+            Static => "static",
+            Var => "var",
+            Int => "int",
+            Char => "char",
+            Boolean => "boolean",
+            Void => "void",
+            True => "true",
+            False => "false",
+            Null => "null",
+            This => "this",
+            Let => "let",
+            Do => "do",
+            If => "if",
+            Else => "else",
+            While => "while",
+            Return => "return",
+        };
+        s.to_string()
+    }
+}
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub struct IdentifierToken(String);
+pub struct IdentifierToken(pub String);
 impl IdentifierToken {
     pub fn new<S: Into<String>>(identifier: S) -> Self {
         IdentifierToken(identifier.into())
