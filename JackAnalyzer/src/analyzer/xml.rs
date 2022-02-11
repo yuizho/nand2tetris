@@ -1,9 +1,27 @@
 use std::io::{self, Write};
 
+pub type Attribute = (String, String);
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Element {
     name: String,
     content: Content,
+    attributes: Vec<Attribute>,
+}
+impl Element {
+    fn get_attributes_str(&self) -> Option<String> {
+        if self.attributes.is_empty() {
+            None
+        } else {
+            Some(
+                self.attributes
+                    .iter()
+                    .map(|(k, v)| format!("{}=\"{}\"", k, v))
+                    .collect::<Vec<String>>()
+                    .join(" "),
+            )
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -19,6 +37,19 @@ impl Element {
         Element {
             name: name.into(),
             content: Content::Elements(vec![child]),
+            attributes: vec![],
+        }
+    }
+
+    pub fn new_element_with_attr<S: Into<String>>(
+        name: S,
+        child: Element,
+        attributes: Vec<Attribute>,
+    ) -> Self {
+        Element {
+            name: name.into(),
+            content: Content::Elements(vec![child]),
+            attributes,
         }
     }
 
@@ -26,6 +57,19 @@ impl Element {
         Element {
             name: name.into(),
             content: Content::Elements(children),
+            attributes: vec![],
+        }
+    }
+
+    pub fn new_elements_with_attr<S: Into<String>>(
+        name: S,
+        children: Vec<Element>,
+        attributes: Vec<Attribute>,
+    ) -> Self {
+        Element {
+            name: name.into(),
+            content: Content::Elements(children),
+            attributes,
         }
     }
 
@@ -33,6 +77,7 @@ impl Element {
         Element {
             name: "".to_string(),
             content: Content::Fragment(children),
+            attributes: vec![],
         }
     }
 
@@ -51,6 +96,19 @@ impl Element {
         Element {
             name: name.into(),
             content: Content::Text(text.into()),
+            attributes: vec![],
+        }
+    }
+
+    pub fn new_text_with_attr<S: Into<String>>(
+        name: S,
+        text: S,
+        attributes: Vec<Attribute>,
+    ) -> Self {
+        Element {
+            name: name.into(),
+            content: Content::Text(text.into()),
+            attributes,
         }
     }
 
@@ -58,6 +116,7 @@ impl Element {
         Element {
             name: "".to_string(),
             content: Content::Empty,
+            attributes: vec![],
         }
     }
 }
@@ -78,7 +137,16 @@ impl<W: Write> XmlWriter for W {
         match &elm.content {
             Empty => (),
             Elements(elements) => {
-                writeln!(self, "{}<{}>", indent, elm.name)?;
+                writeln!(
+                    self,
+                    "{}<{}{}>",
+                    indent,
+                    elm.name,
+                    match elm.get_attributes_str() {
+                        Some(attr) => format!(" {}", attr),
+                        None => "".to_string(),
+                    }
+                )?;
                 for elm in elements {
                     self.write_with_indent(elm, indent_level + 1)?;
                 }
@@ -90,7 +158,17 @@ impl<W: Write> XmlWriter for W {
                 }
             }
             Text(text) => {
-                writeln!(self, "{}<{}> {} </{1}>", indent, elm.name, text)?;
+                writeln!(
+                    self,
+                    "{}<{}{}> {} </{1}>",
+                    indent,
+                    elm.name,
+                    match elm.get_attributes_str() {
+                        Some(attr) => format!(" {}", attr),
+                        None => "".to_string(),
+                    },
+                    text
+                )?;
             }
         }
         Ok(())
@@ -158,7 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn write() {
+    fn element() {
         let elm = Element::new_element(
             "expression",
             Element::new_element("term", Element::new_text("keyword", "true")),
@@ -168,6 +246,29 @@ mod tests {
         assert_eq!(
             actual,
             "<expression>
+  <term>
+    <keyword> true </keyword>
+  </term>
+</expression>
+"
+        );
+    }
+
+    #[test]
+    fn elemnt_with_attr() {
+        let elm = Element::new_element_with_attr(
+            "expression",
+            Element::new_element("term", Element::new_text("keyword", "true")),
+            vec![
+                ("hoge".to_string(), "value~!!".to_string()),
+                ("hoge2".to_string(), "value~!!!!".to_string()),
+            ],
+        );
+        let actual = get_xml_string(&elm);
+
+        assert_eq!(
+            actual,
+            "<expression hoge=\"value~!!\" hoge2=\"value~!!!!\">
   <term>
     <keyword> true </keyword>
   </term>
