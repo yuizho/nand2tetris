@@ -1,4 +1,4 @@
-use super::xml::Element;
+use super::xml::{Attribute, Element};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Keyword {
@@ -27,6 +27,7 @@ pub enum Keyword {
 
 pub trait Token {
     fn get_xml_tag(&self) -> Element;
+    fn get_xml_tag_with_attr(&self, attributers: Vec<Attribute>) -> Element;
 }
 
 impl Token for Keyword {
@@ -54,6 +55,33 @@ impl Token for Keyword {
             Else => Element::new_text("keyword", "else"),
             While => Element::new_text("keyword", "while"),
             Return => Element::new_text("keyword", "return"),
+        }
+    }
+
+    fn get_xml_tag_with_attr(&self, attributers: Vec<Attribute>) -> Element {
+        use Keyword::*;
+        match self {
+            Class => Element::new_text_with_attr("keyword", "class", attributers),
+            Constructor => Element::new_text_with_attr("keyword", "constructor", attributers),
+            Function => Element::new_text_with_attr("keyword", "function", attributers),
+            Method => Element::new_text_with_attr("keyword", "method", attributers),
+            Field => Element::new_text_with_attr("keyword", "field", attributers),
+            Static => Element::new_text_with_attr("keyword", "static", attributers),
+            Var => Element::new_text_with_attr("keyword", "var", attributers),
+            Int => Element::new_text_with_attr("keyword", "int", attributers),
+            Char => Element::new_text_with_attr("keyword", "char", attributers),
+            Boolean => Element::new_text_with_attr("keyword", "boolean", attributers),
+            Void => Element::new_text_with_attr("keyword", "void", attributers),
+            True => Element::new_text_with_attr("keyword", "true", attributers),
+            False => Element::new_text_with_attr("keyword", "false", attributers),
+            Null => Element::new_text_with_attr("keyword", "null", attributers),
+            This => Element::new_text_with_attr("keyword", "this", attributers),
+            Let => Element::new_text_with_attr("keyword", "let", attributers),
+            Do => Element::new_text_with_attr("keyword", "do", attributers),
+            If => Element::new_text_with_attr("keyword", "if", attributers),
+            Else => Element::new_text_with_attr("keyword", "else", attributers),
+            While => Element::new_text_with_attr("keyword", "while", attributers),
+            Return => Element::new_text_with_attr("keyword", "return", attributers),
         }
     }
 }
@@ -98,17 +126,26 @@ impl Token for IdentifierToken {
     fn get_xml_tag(&self) -> Element {
         Element::new_text("identifier", &self.0)
     }
+    fn get_xml_tag_with_attr(&self, attributes: Vec<Attribute>) -> Element {
+        Element::new_text_with_attr("identifier", &self.0, attributes)
+    }
 }
 
 impl Token for i32 {
     fn get_xml_tag(&self) -> Element {
         Element::new_text("integerConstant", &self.to_string())
     }
+    fn get_xml_tag_with_attr(&self, attributes: Vec<Attribute>) -> Element {
+        Element::new_text_with_attr("integerConstant", &self.to_string(), attributes)
+    }
 }
 
 impl Token for String {
     fn get_xml_tag(&self) -> Element {
         Element::new_text("stringConstant", self)
+    }
+    fn get_xml_tag_with_attr(&self, attributes: Vec<Attribute>) -> Element {
+        Element::new_text_with_attr("stringConstant", self, attributes)
     }
 }
 

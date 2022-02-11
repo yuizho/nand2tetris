@@ -3,28 +3,6 @@ use super::token::{IdentifierToken, Keyword, Token, TokenType};
 use super::xml::Element;
 use std::str::FromStr;
 
-pub enum Node {
-    Program(Program),
-    ClassVarDec(ClassVarDec),
-    SubroutineDec(SubroutineDec),
-    VarDec(VarDec),
-    Statement(Statement),
-    Expression(Expression),
-}
-impl Node {
-    fn to_xml(&self) -> Element {
-        use Node::*;
-        match self {
-            Program(node) => node.to_xml(),
-            ClassVarDec(node) => node.to_xml(),
-            SubroutineDec(node) => node.to_xml(),
-            VarDec(node) => node.to_xml(),
-            Statement(node) => node.to_xml(),
-            Expression(node) => node.to_xml(),
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Debug)]
 pub struct Program {
     class_name: IdentifierToken,
@@ -86,7 +64,7 @@ impl Program {
                     Element::new_fragment(
                         self.subroutine_dec
                             .iter()
-                            .map(|v| v.to_xml())
+                            .map(|v| v.to_xml(&self.class_symbol_table))
                             .collect::<Vec<_>>(),
                     )
                 },
@@ -169,7 +147,14 @@ impl ClassVarDec {
                 self.alt_var_names
                     .iter()
                     .map(|i| {
-                        Element::new_fragment(vec![TokenType::Comma.get_xml_tag(), i.get_xml_tag()])
+                        Element::new_fragment(vec![
+                            TokenType::Comma.get_xml_tag(),
+                            i.get_xml_tag_with_attr(vec![
+                                ("category".to_string(), self.var_type.to_string()),
+                                ("how".to_string(), "define".to_string()),
+                                ("attribute".to_string(), self.var_identifier.to_string()),
+                            ]),
+                        ])
                     })
                     .collect::<Vec<_>>(),
             )
@@ -180,7 +165,11 @@ impl ClassVarDec {
             vec![
                 self.var_identifier.get_xml_tag(),
                 self.var_type.type_token.get_xml_tag(),
-                self.var_name.get_xml_tag(),
+                self.var_name.get_xml_tag_with_attr(vec![
+                    ("category".to_string(), self.var_type.to_string()),
+                    ("how".to_string(), "define".to_string()),
+                    ("attribute".to_string(), self.var_identifier.to_string()),
+                ]),
                 class_var_names,
                 TokenType::Semicolon.get_xml_tag(),
             ],
@@ -196,6 +185,7 @@ pub struct SubroutineDec {
     parameters: Vec<(ClassTypeToken, IdentifierToken)>,
     var_dec: Vec<VarDec>,
     statements: Vec<Statement>,
+    local_symbol_table: SymbolTable<LocalAttribute>,
 }
 impl SubroutineDec {
     pub fn new(
@@ -213,6 +203,23 @@ impl SubroutineDec {
             },
             _ => panic!("unexpected var_identifier: {:?}", subroutine_identifier),
         };
+
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        for (class_type, identifier) in &parameters {
+            local_symbol_table.add_symbol(
+                identifier.0.clone(),
+                class_type.to_string(),
+                LocalAttribute::Argument,
+            );
+        }
+        for v in &var_dec {
+            local_symbol_table.add_symbol(
+                v.var_name.0.clone(),
+                v.var_type.to_string(),
+                LocalAttribute::Var,
+            );
+        }
+
         SubroutineDec {
             subroutine_identifier,
             return_type,
@@ -220,10 +227,11 @@ impl SubroutineDec {
             parameters,
             var_dec,
             statements,
+            local_symbol_table,
         }
     }
 
-    fn to_xml(&self) -> Element {
+    fn to_xml(&self, class_symbol_table: &SymbolTable<ClassAttribute>) -> Element {
         let parameters = if self.parameters.is_empty() {
             Element::empty()
         } else {
@@ -231,7 +239,17 @@ impl SubroutineDec {
                 self.parameters
                     .iter()
                     .map(|(t, i)| {
-                        Element::new_fragment(vec![t.type_token.get_xml_tag(), i.get_xml_tag()])
+                        Element::new_fragment(vec![
+                            t.type_token.get_xml_tag(),
+                            i.get_xml_tag_with_attr(vec![
+                                ("category".to_string(), t.to_string()),
+                                ("how".to_string(), "define".to_string()),
+                                (
+                                    "attribute".to_string(),
+                                    LocalAttribute::Argument.to_string(),
+                                ),
+                            ]),
+                        ])
                     })
                     .collect::<Vec<_>>(),
                 TokenType::Comma.get_xml_tag(),
@@ -248,7 +266,7 @@ impl SubroutineDec {
             Element::new_fragment(
                 self.statements
                     .iter()
-                    .map(|s| s.to_xml())
+                    .map(|s| s.to_xml(class_symbol_table, &self.local_symbol_table))
                     .collect::<Vec<_>>(),
             )
         };
@@ -309,7 +327,13 @@ impl VarDec {
                 Element::new_joinned_fragment(
                     self.alt_var_names
                         .iter()
-                        .map(|i| i.get_xml_tag())
+                        .map(|i| {
+                            i.get_xml_tag_with_attr(vec![
+                                ("category".to_string(), self.var_type.to_string()),
+                                ("how".to_string(), "define".to_string()),
+                                ("attribute".to_string(), LocalAttribute::Var.to_string()),
+                            ])
+                        })
                         .collect::<Vec<_>>(),
                     TokenType::Comma.get_xml_tag(),
                 ),
@@ -321,7 +345,11 @@ impl VarDec {
             vec![
                 Keyword::Var.get_xml_tag(),
                 self.var_type.type_token.get_xml_tag(),
-                self.var_name.get_xml_tag(),
+                self.var_name.get_xml_tag_with_attr(vec![
+                    ("category".to_string(), self.var_type.to_string()),
+                    ("how".to_string(), "define".to_string()),
+                    ("attribute".to_string(), LocalAttribute::Var.to_string()),
+                ]),
                 var_names,
                 TokenType::Semicolon.get_xml_tag(),
             ],
@@ -339,7 +367,11 @@ pub enum Statement {
     Expression(Expression),
 }
 impl Statement {
-    fn to_xml(&self) -> Element {
+    fn to_xml(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Element {
         match self {
             Self::Let(var_name, index_expression, expression) => Element::new_elements(
                 "letStatement",
@@ -349,13 +381,13 @@ impl Statement {
                     match index_expression {
                         Some(exp) => Element::new_fragment(vec![
                             TokenType::Lbracket.get_xml_tag(),
-                            exp.to_xml(),
+                            exp.to_xml(class_symbol_table, local_symbol_table),
                             TokenType::Rbracket.get_xml_tag(),
                         ]),
                         None => Element::empty(),
                     },
                     TokenType::Assign.get_xml_tag(),
-                    expression.to_xml(),
+                    expression.to_xml(class_symbol_table, local_symbol_table),
                     TokenType::Semicolon.get_xml_tag(),
                 ],
             ),
@@ -365,25 +397,34 @@ impl Statement {
                 vec![
                     Keyword::While.get_xml_tag(),
                     TokenType::Lparen.get_xml_tag(),
-                    expression.to_xml(),
+                    expression.to_xml(class_symbol_table, local_symbol_table),
                     TokenType::Rparen.get_xml_tag(),
                     TokenType::Lbrace.get_xml_tag(),
                     Element::new_elements(
                         "statements",
-                        statements.iter().map(|s| s.to_xml()).collect::<Vec<_>>(),
+                        statements
+                            .iter()
+                            .map(|s| s.to_xml(class_symbol_table, local_symbol_table))
+                            .collect::<Vec<_>>(),
                     ),
                     TokenType::Rbrace.get_xml_tag(),
                 ],
             ),
 
             Self::If(expression, if_statements, else_statements) => {
-                fn statements_to_xml(v: &[Statement]) -> Element {
+                fn statements_to_xml(
+                    v: &[Statement],
+                    class_symbol_table: &SymbolTable<ClassAttribute>,
+                    local_symbol_table: &SymbolTable<LocalAttribute>,
+                ) -> Element {
                     if v.is_empty() {
                         Element::new_element("statements", Element::empty())
                     } else {
                         Element::new_elements(
                             "statements",
-                            v.iter().map(|s| s.to_xml()).collect::<Vec<_>>(),
+                            v.iter()
+                                .map(|s| s.to_xml(class_symbol_table, local_symbol_table))
+                                .collect::<Vec<_>>(),
                         )
                     }
                 }
@@ -393,16 +434,20 @@ impl Statement {
                     vec![
                         Keyword::If.get_xml_tag(),
                         TokenType::Lparen.get_xml_tag(),
-                        expression.to_xml(),
+                        expression.to_xml(class_symbol_table, local_symbol_table),
                         TokenType::Rparen.get_xml_tag(),
                         TokenType::Lbrace.get_xml_tag(),
-                        statements_to_xml(if_statements),
+                        statements_to_xml(if_statements, class_symbol_table, local_symbol_table),
                         TokenType::Rbrace.get_xml_tag(),
                         match else_statements {
                             Some(statements) => Element::new_fragment(vec![
                                 Keyword::Else.get_xml_tag(),
                                 TokenType::Lbrace.get_xml_tag(),
-                                statements_to_xml(statements),
+                                statements_to_xml(
+                                    statements,
+                                    class_symbol_table,
+                                    local_symbol_table,
+                                ),
                                 TokenType::Rbrace.get_xml_tag(),
                             ]),
                             None => Element::empty(),
@@ -415,7 +460,7 @@ impl Statement {
                 "returnStatement",
                 vec![
                     TokenType::Keyword(Keyword::Return).get_xml_tag(),
-                    expression.to_xml(),
+                    expression.to_xml(class_symbol_table, local_symbol_table),
                     TokenType::Semicolon.get_xml_tag(),
                 ],
             ),
@@ -424,7 +469,7 @@ impl Statement {
                 "doStatement",
                 vec![
                     Keyword::Do.get_xml_tag(),
-                    subroutine_call.to_xml(),
+                    subroutine_call.to_xml(class_symbol_table, local_symbol_table),
                     TokenType::Semicolon.get_xml_tag(),
                 ],
             ),
@@ -437,7 +482,9 @@ impl Statement {
                 ],
             ),
 
-            Self::Expression(expression) => expression.to_xml(),
+            Self::Expression(expression) => {
+                expression.to_xml(class_symbol_table, local_symbol_table)
+            }
         }
     }
 }
@@ -462,12 +509,23 @@ impl Expression {
         }
     }
 
-    fn to_xml(&self) -> Element {
+    fn to_xml(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Element {
         let binary_op_tag = match &self.binary_op {
-            Some(binary_op) => binary_op.to_xml(),
+            Some(binary_op) => binary_op.to_xml(class_symbol_table, local_symbol_table),
             None => Element::empty(),
         };
-        Element::new_elements("expression", vec![self.left_term.to_xml(), binary_op_tag])
+        Element::new_elements(
+            "expression",
+            vec![
+                self.left_term
+                    .to_xml(class_symbol_table, local_symbol_table),
+                binary_op_tag,
+            ],
+        )
     }
 }
 
@@ -484,10 +542,15 @@ impl BinaryOp {
         }
     }
 
-    fn to_xml(&self) -> Element {
+    fn to_xml(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Element {
         Element::new_fragment(vec![
             self.op_token.0.get_xml_tag(),
-            self.right_term.to_xml(),
+            self.right_term
+                .to_xml(class_symbol_table, local_symbol_table),
         ])
     }
 }
@@ -570,7 +633,11 @@ impl SubroutineCall {
         }
     }
 
-    pub fn to_xml(&self) -> Element {
+    pub fn to_xml(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Element {
         Element::new_fragment(vec![
             match &self.parent_name {
                 Some(name) => {
@@ -588,7 +655,7 @@ impl SubroutineCall {
                     Element::new_joinned_fragment(
                         self.expressions
                             .iter()
-                            .map(|e| e.to_xml())
+                            .map(|e| e.to_xml(class_symbol_table, local_symbol_table))
                             .collect::<Vec<_>>(),
                         TokenType::Comma.get_xml_tag(),
                     )
@@ -610,17 +677,45 @@ pub enum Term {
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Term {
-    fn to_xml(&self) -> Element {
+    fn to_xml(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Element {
         let xml_tag = match self {
-            Self::VarName(token, expression_opt) => match expression_opt {
-                Some(expression) => Element::new_fragment(vec![
-                    token.get_xml_tag(),
-                    TokenType::Lbracket.get_xml_tag(),
-                    expression.to_xml(),
-                    TokenType::Rbracket.get_xml_tag(),
-                ]),
-                None => token.get_xml_tag(),
-            },
+            Self::VarName(token, expression_opt) => {
+                let name = &token.0;
+                let attributes = vec![
+                    (
+                        "category".to_string(),
+                        class_symbol_table
+                            .type_of(name)
+                            .or_else(|| local_symbol_table.type_of(name))
+                            .unwrap()
+                            .to_string(),
+                    ),
+                    ("how".to_string(), "use".to_string()),
+                    (
+                        "attribute".to_string(),
+                        match class_symbol_table.attr_of(name) {
+                            Some(attr) => attr.to_string(),
+                            None => match local_symbol_table.attr_of(name) {
+                                Some(attr) => attr.to_string(),
+                                None => panic!("the variable is not defined: {}", name),
+                            },
+                        },
+                    ),
+                ];
+                match expression_opt {
+                    Some(expression) => Element::new_fragment(vec![
+                        token.get_xml_tag_with_attr(attributes),
+                        TokenType::Lbracket.get_xml_tag(),
+                        expression.to_xml(class_symbol_table, local_symbol_table),
+                        TokenType::Rbracket.get_xml_tag(),
+                    ]),
+                    None => token.get_xml_tag_with_attr(attributes),
+                }
+            }
 
             Self::IntegerConstant(num) => num.get_xml_tag(),
 
@@ -630,15 +725,18 @@ impl Term {
 
             Self::Expresssion(expression) => Element::new_fragment(vec![
                 TokenType::Lparen.get_xml_tag(),
-                expression.to_xml(),
+                expression.to_xml(class_symbol_table, local_symbol_table),
                 TokenType::Rparen.get_xml_tag(),
             ]),
 
-            Self::SubroutineCall(subroutine_call) => subroutine_call.to_xml(),
-
-            Self::UnaryOp(op, term) => {
-                Element::new_fragment(vec![op.0.get_xml_tag(), term.to_xml()])
+            Self::SubroutineCall(subroutine_call) => {
+                subroutine_call.to_xml(class_symbol_table, local_symbol_table)
             }
+
+            Self::UnaryOp(op, term) => Element::new_fragment(vec![
+                op.0.get_xml_tag(),
+                term.to_xml(class_symbol_table, local_symbol_table),
+            ]),
         };
 
         Element::new_element("term", xml_tag)
@@ -652,11 +750,9 @@ mod tests {
     use crate::analyzer::xml::XmlWriter;
     use std::io::Cursor;
 
-    fn get_xml_string(node: Node) -> String {
-        let elm = node.to_xml();
+    fn elm_to_str(elm: Element) -> String {
         let mut cursor = Cursor::new(Vec::new());
         cursor.write_xml(&elm).unwrap();
-
         cursor
             .into_inner()
             .iter()
@@ -710,7 +806,7 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(Node::Program(program)),
+            elm_to_str(program.to_xml()),
             "<class>
   <keyword> class </keyword>
   <identifier> Square </identifier>
@@ -718,7 +814,7 @@ mod tests {
   <classVarDec>
     <keyword> field </keyword>
     <keyword> int </keyword>
-    <identifier> size </identifier>
+    <identifier category=\"int\" how=\"define\" attribute=\"field\"> size </identifier>
     <symbol> ; </symbol>
   </classVarDec>
   <subroutineDec>
@@ -734,13 +830,13 @@ mod tests {
       <varDec>
         <keyword> var </keyword>
         <identifier> SquareGame </identifier>
-        <identifier> game </identifier>
+        <identifier category=\"SquareGame\" how=\"define\" attribute=\"var\"> game </identifier>
         <symbol> ; </symbol>
       </varDec>
       <varDec>
         <keyword> var </keyword>
         <keyword> int </keyword>
-        <identifier> num </identifier>
+        <identifier category=\"int\" how=\"define\" attribute=\"var\"> num </identifier>
         <symbol> ; </symbol>
       </varDec>
       <statements>
@@ -750,7 +846,7 @@ mod tests {
           <symbol> = </symbol>
           <expression>
             <term>
-              <identifier> game </identifier>
+              <identifier category=\"SquareGame\" how=\"use\" attribute=\"var\"> game </identifier>
             </term>
           </expression>
           <symbol> ; </symbol>
@@ -790,11 +886,11 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(Node::ClassVarDec(class_var_dec)),
+            elm_to_str(class_var_dec.to_xml()),
             "<classVarDec>
   <keyword> static </keyword>
   <keyword> boolean </keyword>
-  <identifier> test </identifier>
+  <identifier category=\"boolean\" how=\"define\" attribute=\"static\"> test </identifier>
   <symbol> ; </symbol>
 </classVarDec>
 "
@@ -811,15 +907,15 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(Node::ClassVarDec(class_var_dec)),
+            elm_to_str(class_var_dec.to_xml()),
             "<classVarDec>
   <keyword> field </keyword>
   <keyword> int </keyword>
-  <identifier> i </identifier>
+  <identifier category=\"int\" how=\"define\" attribute=\"field\"> i </identifier>
   <symbol> , </symbol>
-  <identifier> j1 </identifier>
+  <identifier category=\"int\" how=\"define\" attribute=\"field\"> j1 </identifier>
   <symbol> , </symbol>
-  <identifier> j2 </identifier>
+  <identifier category=\"int\" how=\"define\" attribute=\"field\"> j2 </identifier>
   <symbol> ; </symbol>
 </classVarDec>
 "
@@ -835,11 +931,11 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(Node::VarDec(var_dec)),
+            elm_to_str(var_dec.to_xml()),
             "<varDec>
   <keyword> var </keyword>
   <identifier> String </identifier>
-  <identifier> s </identifier>
+  <identifier category=\"String\" how=\"define\" attribute=\"var\"> s </identifier>
   <symbol> ; </symbol>
 </varDec>
 "
@@ -873,8 +969,10 @@ mod tests {
             ],
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::SubroutineDec(subroutine_dec)),
+            elm_to_str(subroutine_dec.to_xml(&class_symbol_table)),
             "<subroutineDec>
   <keyword> method </keyword>
   <keyword> void </keyword>
@@ -888,7 +986,7 @@ mod tests {
     <varDec>
       <keyword> var </keyword>
       <identifier> SquareGame </identifier>
-      <identifier> game </identifier>
+      <identifier category=\"SquareGame\" how=\"define\" attribute=\"var\"> game </identifier>
       <symbol> ; </symbol>
     </varDec>
     <statements>
@@ -898,7 +996,7 @@ mod tests {
         <symbol> = </symbol>
         <expression>
           <term>
-            <identifier> game </identifier>
+            <identifier category=\"SquareGame\" how=\"use\" attribute=\"var\"> game </identifier>
           </term>
         </expression>
         <symbol> ; </symbol>
@@ -962,8 +1060,10 @@ mod tests {
             ],
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::SubroutineDec(subroutine_dec)),
+            elm_to_str(subroutine_dec.to_xml(&class_symbol_table)),
             "<subroutineDec>
   <keyword> method </keyword>
   <keyword> boolean </keyword>
@@ -971,10 +1071,10 @@ mod tests {
   <symbol> ( </symbol>
   <parameterList>
     <keyword> boolean </keyword>
-    <identifier> b </identifier>
+    <identifier category=\"boolean\" how=\"define\" attribute=\"argument\"> b </identifier>
     <symbol> , </symbol>
     <keyword> char </keyword>
-    <identifier> c </identifier>
+    <identifier category=\"char\" how=\"define\" attribute=\"argument\"> c </identifier>
   </parameterList>
   <symbol> ) </symbol>
   <subroutineBody>
@@ -982,7 +1082,7 @@ mod tests {
     <varDec>
       <keyword> var </keyword>
       <identifier> SquareGame </identifier>
-      <identifier> game </identifier>
+      <identifier category=\"SquareGame\" how=\"define\" attribute=\"var\"> game </identifier>
       <symbol> ; </symbol>
     </varDec>
     <statements>
@@ -992,7 +1092,7 @@ mod tests {
         <symbol> = </symbol>
         <expression>
           <term>
-            <identifier> game </identifier>
+            <identifier category=\"SquareGame\" how=\"use\" attribute=\"var\"> game </identifier>
           </term>
         </expression>
         <symbol> ; </symbol>
@@ -1029,13 +1129,13 @@ mod tests {
         );
 
         assert_eq!(
-            get_xml_string(Node::VarDec(var_dec)),
+            elm_to_str(var_dec.to_xml()),
             "<varDec>
   <keyword> var </keyword>
   <keyword> int </keyword>
-  <identifier> i </identifier>
+  <identifier category=\"int\" how=\"define\" attribute=\"var\"> i </identifier>
   <symbol> , </symbol>
-  <identifier> j </identifier>
+  <identifier category=\"int\" how=\"define\" attribute=\"var\"> j </identifier>
   <symbol> ; </symbol>
 </varDec>
 "
@@ -1052,11 +1152,15 @@ mod tests {
             ),
         ));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol("i".to_string(), "int".to_string(), LocalAttribute::Argument);
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
-    <identifier> i </identifier>
+    <identifier category=\"int\" how=\"use\" attribute=\"argument\"> i </identifier>
   </term>
   <symbol> + </symbol>
   <term>
@@ -1078,15 +1182,23 @@ mod tests {
             },
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol(
+            "anotherVar".to_string(),
+            "char".to_string(),
+            LocalAttribute::Argument,
+        );
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<letStatement>
   <keyword> let </keyword>
   <identifier> myVar </identifier>
   <symbol> = </symbol>
   <expression>
     <term>
-      <identifier> anotherVar </identifier>
+      <identifier category=\"char\" how=\"use\" attribute=\"argument\"> anotherVar </identifier>
     </term>
   </expression>
   <symbol> ; </symbol>
@@ -1109,22 +1221,31 @@ mod tests {
             },
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol("i".to_string(), "int".to_string(), LocalAttribute::Var);
+        local_symbol_table.add_symbol(
+            "anotherVar".to_string(),
+            "bool".to_string(),
+            LocalAttribute::Argument,
+        );
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<letStatement>
   <keyword> let </keyword>
   <identifier> myVar </identifier>
   <symbol> [ </symbol>
   <expression>
     <term>
-      <identifier> i </identifier>
+      <identifier category=\"int\" how=\"use\" attribute=\"var\"> i </identifier>
     </term>
   </expression>
   <symbol> ] </symbol>
   <symbol> = </symbol>
   <expression>
     <term>
-      <identifier> anotherVar </identifier>
+      <identifier category=\"bool\" how=\"use\" attribute=\"argument\"> anotherVar </identifier>
     </term>
   </expression>
   <symbol> ; </symbol>
@@ -1151,8 +1272,11 @@ mod tests {
             ],
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<whileStatement>
   <keyword> while </keyword>
   <symbol> ( </symbol>
@@ -1212,8 +1336,11 @@ mod tests {
             None,
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<ifStatement>
   <keyword> if </keyword>
   <symbol> ( </symbol>
@@ -1277,8 +1404,11 @@ mod tests {
             ]),
         );
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<ifStatement>
   <keyword> if </keyword>
   <symbol> ( </symbol>
@@ -1343,8 +1473,11 @@ mod tests {
             vec![],
         ));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<doStatement>
   <keyword> do </keyword>
   <identifier> game </identifier>
@@ -1364,8 +1497,11 @@ mod tests {
     fn return_statement_no_identifier_to_xml() {
         let program = Statement::Return(None);
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<returnStatement>
   <keyword> return </keyword>
   <symbol> ; </symbol>
@@ -1381,13 +1517,21 @@ mod tests {
             binary_op: None,
         }));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol(
+            "square".to_string(),
+            "bool".to_string(),
+            LocalAttribute::Argument,
+        );
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<returnStatement>
   <keyword> return </keyword>
   <expression>
     <term>
-      <identifier> square </identifier>
+      <identifier category=\"bool\" how=\"use\" attribute=\"argument\"> square </identifier>
     </term>
   </expression>
   <symbol> ; </symbol>
@@ -1403,11 +1547,19 @@ mod tests {
             binary_op: None,
         });
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol(
+            "foo".to_string(),
+            "bool".to_string(),
+            LocalAttribute::Argument,
+        );
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
-    <identifier> foo </identifier>
+    <identifier category=\"bool\" how=\"use\" attribute=\"argument\"> foo </identifier>
   </term>
 </expression>
 "
@@ -1424,11 +1576,19 @@ mod tests {
             binary_op: None,
         });
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol(
+            "foo".to_string(),
+            "bool".to_string(),
+            LocalAttribute::Argument,
+        );
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
-    <identifier> foo </identifier>
+    <identifier category=\"bool\" how=\"use\" attribute=\"argument\"> foo </identifier>
     <symbol> [ </symbol>
     <expression>
       <term>
@@ -1449,8 +1609,11 @@ mod tests {
             binary_op: None,
         });
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <stringConstant> str value!! </stringConstant>
@@ -1466,8 +1629,11 @@ mod tests {
             KeywordConstant::new(Keyword::True),
         )));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <keyword> true </keyword>
@@ -1486,8 +1652,12 @@ mod tests {
             )),
         ))));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol("i".to_string(), "int".to_string(), LocalAttribute::Argument);
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <symbol> ( </symbol>
@@ -1495,7 +1665,7 @@ mod tests {
       <term>
         <symbol> - </symbol>
         <term>
-          <identifier> i </identifier>
+          <identifier category=\"int\" how=\"use\" attribute=\"argument\"> i </identifier>
         </term>
       </term>
     </expression>
@@ -1513,8 +1683,11 @@ mod tests {
             Box::new(Term::IntegerConstant(1)),
         )));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <symbol> - </symbol>
@@ -1539,7 +1712,17 @@ mod tests {
                 Box::new(Term::IntegerConstant(10)),
             ))),
         ];
-        let elm = Element::new_fragment(program.iter().map(|s| s.to_xml()).collect::<Vec<_>>());
+        let elm = Element::new_fragment(
+            program
+                .iter()
+                .map(|s| {
+                    s.to_xml(
+                        &SymbolTable::<ClassAttribute>::new(),
+                        &SymbolTable::<LocalAttribute>::new(),
+                    )
+                })
+                .collect::<Vec<_>>(),
+        );
         let mut cursor = Cursor::new(Vec::new());
         cursor.write_xml(&elm).unwrap();
 
@@ -1577,8 +1760,11 @@ mod tests {
             SubroutineCall::new(IdentifierToken::new("new"), vec![]),
         )));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <identifier> new </identifier>
@@ -1609,8 +1795,11 @@ mod tests {
                 ],
             ))));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <identifier> new </identifier>
@@ -1649,8 +1838,11 @@ mod tests {
             ),
         )));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <identifier> SquareGame </identifier>
@@ -1685,8 +1877,11 @@ mod tests {
             ),
         )));
 
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
         assert_eq!(
-            get_xml_string(Node::Statement(program)),
+            elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
     <identifier> SquareGame </identifier>

@@ -20,6 +20,16 @@ impl FromStr for ClassAttribute {
         }
     }
 }
+impl ToString for ClassAttribute {
+    fn to_string(&self) -> String {
+        use ClassAttribute::*;
+        let s = match self {
+            Static => "static",
+            Field => "field",
+        };
+        s.to_string()
+    }
+}
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum LocalAttribute {
@@ -37,6 +47,16 @@ impl FromStr for LocalAttribute {
         }
     }
 }
+impl ToString for LocalAttribute {
+    fn to_string(&self) -> String {
+        use LocalAttribute::*;
+        let s = match self {
+            Argument => "argument",
+            Var => "var",
+        };
+        s.to_string()
+    }
+}
 
 #[derive(PartialEq, Eq, Debug)]
 struct Symbol<T> {
@@ -46,10 +66,10 @@ struct Symbol<T> {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-pub struct SymbolTable<T: Eq + PartialEq> {
+pub struct SymbolTable<T: Eq + PartialEq + ToString> {
     symbols: HashMap<Name, Symbol<T>>,
 }
-impl<T: Eq + PartialEq> SymbolTable<T> {
+impl<T: Eq + PartialEq + ToString> SymbolTable<T> {
     pub fn new() -> Self {
         SymbolTable {
             symbols: HashMap::new(),
@@ -75,17 +95,17 @@ impl<T: Eq + PartialEq> SymbolTable<T> {
             .count()
     }
 
-    fn attr_of(&self, name: &str) -> Option<&T> {
+    pub fn attr_of(&self, name: &str) -> Option<&T> {
         let symbol = self.symbols.get(name)?;
         Some(&symbol.attribute)
     }
 
-    fn type_of(&self, name: &str) -> Option<&str> {
+    pub fn type_of(&self, name: &str) -> Option<&str> {
         let symbol = self.symbols.get(name)?;
         Some(&symbol.symbol_type)
     }
 
-    fn index_of(&self, name: &str) -> Option<&usize> {
+    pub fn index_of(&self, name: &str) -> Option<&usize> {
         let symbol = self.symbols.get(name)?;
         Some(&symbol.number)
     }
