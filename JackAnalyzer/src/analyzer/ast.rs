@@ -179,6 +179,7 @@ impl ClassVarDec {
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct SubroutineDec {
+    class_name: IdentifierToken,
     subroutine_identifier: Keyword,
     return_type: Option<ClassTypeToken>,
     subroutine_name: IdentifierToken,
@@ -189,6 +190,7 @@ pub struct SubroutineDec {
 }
 impl SubroutineDec {
     pub fn new(
+        class_name: IdentifierToken,
         subroutine_identifier: TokenType,
         return_type: Option<ClassTypeToken>,
         subroutine_name: IdentifierToken,
@@ -205,6 +207,11 @@ impl SubroutineDec {
         };
 
         let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol(
+            "this".to_string(),
+            class_name.0.clone(),
+            LocalAttribute::Argument,
+        );
         for (class_type, identifier) in &parameters {
             local_symbol_table.add_symbol(
                 identifier.0.clone(),
@@ -221,6 +228,7 @@ impl SubroutineDec {
         }
 
         SubroutineDec {
+            class_name,
             subroutine_identifier,
             return_type,
             subroutine_name,
@@ -771,6 +779,7 @@ mod tests {
                 vec![],
             )],
             vec![SubroutineDec::new(
+                IdentifierToken::new("Square"),
                 TokenType::Keyword(Keyword::Method),
                 None,
                 IdentifierToken::new("main"),
@@ -945,6 +954,7 @@ mod tests {
     #[test]
     fn no_parameter_subroutine_dec_to_xml() {
         let subroutine_dec = SubroutineDec::new(
+            IdentifierToken::new("Square"),
             TokenType::Keyword(Keyword::Method),
             None,
             IdentifierToken::new("main"),
@@ -1027,6 +1037,7 @@ mod tests {
     #[test]
     fn parameter_subroutine_dec_to_xml() {
         let subroutine_dec = SubroutineDec::new(
+            IdentifierToken::new("Square"),
             TokenType::Keyword(Keyword::Method),
             Some(ClassTypeToken::new(TokenType::Keyword(Keyword::Boolean))),
             IdentifierToken::new("main"),

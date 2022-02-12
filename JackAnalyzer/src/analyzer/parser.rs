@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
                 TokenType::Keyword(Keyword::Constructor)
                 | TokenType::Keyword(Keyword::Function)
                 | TokenType::Keyword(Keyword::Method) => {
-                    subroutine_dec.push(self.parse_subroutine(token)?)
+                    subroutine_dec.push(self.parse_subroutine(class_name.clone(), token)?)
                 }
                 _ => return Err(anyhow!("unexpected syntax of class: {:?}", token)),
             }
@@ -97,7 +97,11 @@ impl<'a> Parser<'a> {
         ))
     }
 
-    fn parse_subroutine(&mut self, subroutine_identifier: TokenType) -> Result<SubroutineDec> {
+    fn parse_subroutine(
+        &mut self,
+        class_name: IdentifierToken,
+        subroutine_identifier: TokenType,
+    ) -> Result<SubroutineDec> {
         // parse return type
         let token = self.next_token()?;
         let return_type = if let TokenType::Keyword(Keyword::Void) = token {
@@ -156,6 +160,7 @@ impl<'a> Parser<'a> {
         }
 
         Ok(SubroutineDec::new(
+            class_name,
             subroutine_identifier,
             return_type,
             subroutine_name,
@@ -588,6 +593,7 @@ mod tests {
                 )],
                 vec![
                     SubroutineDec::new(
+                        IdentifierToken::new("Main"),
                         TokenType::Keyword(Keyword::Function),
                         None,
                         IdentifierToken::new("main"),
@@ -621,6 +627,7 @@ mod tests {
                         ],
                     ),
                     SubroutineDec::new(
+                        IdentifierToken::new("Main"),
                         TokenType::Keyword(Keyword::Method),
                         None,
                         IdentifierToken::new("hoge"),
