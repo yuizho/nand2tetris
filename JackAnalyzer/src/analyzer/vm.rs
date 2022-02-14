@@ -1,12 +1,12 @@
-struct VmClass {
+pub struct VmClass {
     subroutines: Vec<Subroutine>,
 }
 impl VmClass {
-    fn new(subroutines: Vec<Subroutine>) -> Self {
+    pub fn new(subroutines: Vec<Subroutine>) -> Self {
         Self { subroutines }
     }
 
-    fn compile(&self) -> String {
+    pub fn compile(&self) -> String {
         self.subroutines
             .iter()
             .map(|s| s.compile())
@@ -15,7 +15,7 @@ impl VmClass {
     }
 }
 
-struct Subroutine {
+pub struct Subroutine {
     class_name: String,
     subroutine_name: String,
     local_var_count: usize,
@@ -23,7 +23,7 @@ struct Subroutine {
 }
 
 impl Subroutine {
-    fn new<S: Into<String>>(
+    pub fn new<S: Into<String>>(
         class_name: S,
         subroutine_name: S,
         local_var_count: usize,
@@ -123,7 +123,7 @@ impl ToString for ArthmeticCommand {
 type Index = usize;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-enum Command {
+pub enum Command {
     Push(Segment, Index),
     Pop(Segment, Index),
     Arthmetic(ArthmeticCommand),

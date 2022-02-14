@@ -1,5 +1,6 @@
 use super::symbol_table::{ClassAttribute, LocalAttribute, SymbolTable};
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
+use super::vm::{Command, Subroutine, VmClass};
 use super::xml::Element;
 use std::str::FromStr;
 
@@ -39,6 +40,15 @@ impl Program {
             subroutine_dec,
             class_symbol_table,
         }
+    }
+
+    fn to_vm(&self) -> VmClass {
+        VmClass::new(
+            self.subroutine_dec
+                .iter()
+                .map(|s| s.to_vm(&self.class_symbol_table))
+                .collect::<Vec<Subroutine>>(),
+        )
     }
 
     pub fn to_xml(&self) -> Element {
@@ -239,6 +249,16 @@ impl SubroutineDec {
         }
     }
 
+    fn to_vm(&self, class_symbol_table: &SymbolTable<ClassAttribute>) -> Subroutine {
+        Subroutine::new(
+            self.class_name.0.clone(),
+            self.subroutine_name.0.clone(),
+            self.var_dec.len(),
+            // TODO: needs impl commands
+            vec![],
+        )
+    }
+
     fn to_xml(&self, class_symbol_table: &SymbolTable<ClassAttribute>) -> Element {
         let parameters = if self.parameters.is_empty() {
             Element::empty()
@@ -375,6 +395,15 @@ pub enum Statement {
     Expression(Expression),
 }
 impl Statement {
+    fn to_vm(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Vec<Command> {
+        // TODO: impl
+        vec![]
+    }
+
     fn to_xml(
         &self,
         class_symbol_table: &SymbolTable<ClassAttribute>,
@@ -517,6 +546,15 @@ impl Expression {
         }
     }
 
+    fn to_vm(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Vec<Command> {
+        // TODO: impl
+        vec![]
+    }
+
     fn to_xml(
         &self,
         class_symbol_table: &SymbolTable<ClassAttribute>,
@@ -548,6 +586,15 @@ impl BinaryOp {
             op_token: op,
             right_term: term,
         }
+    }
+
+    fn to_vm(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Vec<Command> {
+        // TODO: impl
+        vec![]
     }
 
     fn to_xml(
@@ -641,6 +688,15 @@ impl SubroutineCall {
         }
     }
 
+    fn to_vm(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Vec<Command> {
+        // TODO: impl
+        vec![]
+    }
+
     pub fn to_xml(
         &self,
         class_symbol_table: &SymbolTable<ClassAttribute>,
@@ -685,6 +741,15 @@ pub enum Term {
     UnaryOp(UnaryOpToken, Box<Term>),
 }
 impl Term {
+    fn to_vm(
+        &self,
+        class_symbol_table: &SymbolTable<ClassAttribute>,
+        local_symbol_table: &SymbolTable<LocalAttribute>,
+    ) -> Vec<Command> {
+        // TODO: impl
+        vec![]
+    }
+
     fn to_xml(
         &self,
         class_symbol_table: &SymbolTable<ClassAttribute>,
