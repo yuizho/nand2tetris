@@ -61,7 +61,7 @@ impl Subroutine {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-enum Segment {
+pub enum Segment {
     Const,
     Arg,
     Local,

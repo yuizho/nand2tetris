@@ -1,6 +1,6 @@
 use super::symbol_table::{ClassAttribute, LocalAttribute, SymbolTable};
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
-use super::vm::{Command, Subroutine, VmClass};
+use super::vm::{Command, Segment, Subroutine, VmClass};
 use super::xml::Element;
 use std::str::FromStr;
 
@@ -746,8 +746,11 @@ impl Term {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
-        // TODO: impl
-        vec![]
+        use Term::*;
+        match self {
+            IntegerConstant(num) => vec![Command::Push(Segment::Const, *num as usize)],
+            _ => panic!("needs to implement other variants"),
+        }
     }
 
     fn to_xml(
@@ -831,6 +834,16 @@ mod tests {
             .iter()
             .map(|&s| s as char)
             .collect::<String>()
+    }
+
+    #[test]
+    fn integer_constant_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::IntegerConstant(1).to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(vec![Command::Push(Segment::Const, 1)], actual);
     }
 
     #[test]
