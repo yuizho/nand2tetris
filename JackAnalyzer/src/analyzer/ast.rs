@@ -551,8 +551,13 @@ impl Expression {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
-        // TODO: impl
-        vec![]
+        let mut result = vec![];
+
+        result.append(&mut self.left_term.to_vm(class_symbol_table, local_symbol_table));
+
+        // TODO: needs to handle binaly_op
+
+        result
     }
 
     fn to_xml(
@@ -693,8 +698,19 @@ impl SubroutineCall {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
-        // TODO: impl
-        vec![]
+        let mut result = vec![];
+
+        for e in &self.expressions {
+            result.append(&mut e.to_vm(class_symbol_table, local_symbol_table));
+        }
+
+        result.push(Command::Call(
+            self.parent_name.clone().map(|i| i.0),
+            self.subroutine_name.clone().0,
+            self.expressions.len(),
+        ));
+
+        result
     }
 
     pub fn to_xml(
@@ -749,6 +765,9 @@ impl Term {
         use Term::*;
         match self {
             IntegerConstant(num) => vec![Command::Push(Segment::Const, *num as usize)],
+            SubroutineCall(subroutine_call) => {
+                subroutine_call.to_vm(class_symbol_table, local_symbol_table)
+            }
             _ => panic!("needs to implement other variants"),
         }
     }
@@ -834,6 +853,31 @@ mod tests {
             .iter()
             .map(|&s| s as char)
             .collect::<String>()
+    }
+
+    #[test]
+    fn subroutine_call_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::SubroutineCall(SubroutineCall::new_parent_subroutine_call(
+            IdentifierToken("Math".to_string()),
+            IdentifierToken("multiply".to_string()),
+            vec![
+                Expression::new(Term::IntegerConstant(2)),
+                Expression::new(Term::IntegerConstant(3)),
+            ],
+        ))
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
+                Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+            ],
+            actual
+        );
     }
 
     #[test]
