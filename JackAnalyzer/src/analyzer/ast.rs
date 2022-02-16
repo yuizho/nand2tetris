@@ -1,6 +1,6 @@
 use super::symbol_table::{ClassAttribute, LocalAttribute, SymbolTable};
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
-use super::vm::{Command, Segment, Subroutine, VmClass};
+use super::vm::{ArthmeticCommand, Command, Segment, Subroutine, VmClass};
 use super::xml::Element;
 use std::str::FromStr;
 
@@ -555,7 +555,9 @@ impl Expression {
 
         result.append(&mut self.left_term.to_vm(class_symbol_table, local_symbol_table));
 
-        // TODO: needs to handle binaly_op
+        if let Some(binary_op) = &self.binary_op {
+            result.append(&mut binary_op.to_vm(class_symbol_table, local_symbol_table));
+        }
 
         result
     }
@@ -598,8 +600,17 @@ impl BinaryOp {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
-        // TODO: impl
-        vec![]
+        let mut result = vec![];
+
+        result.append(
+            &mut self
+                .right_term
+                .to_vm(class_symbol_table, local_symbol_table),
+        );
+
+        result.push(self.op_token.to_vm());
+
+        result
     }
 
     fn to_xml(
@@ -643,6 +654,22 @@ impl BinaryOpToken {
             token,
             Plus | Minus | Asterisk | Slash | And | Or | Gt | Lt | Assign
         )
+    }
+
+    pub fn to_vm(&self) -> Command {
+        use super::token::TokenType::*;
+        match self.0 {
+            Plus => Command::Arthmetic(ArthmeticCommand::Add),
+            Minus => Command::Arthmetic(ArthmeticCommand::Sub),
+            Asterisk => Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+            Slash => Command::Call(Some("Math".to_string()), "divide".to_string(), 2),
+            And => Command::Arthmetic(ArthmeticCommand::Eq),
+            Or => Command::Arthmetic(ArthmeticCommand::Or),
+            Gt => Command::Arthmetic(ArthmeticCommand::Gt),
+            Lt => Command::Arthmetic(ArthmeticCommand::Lt),
+            Assign => Command::Arthmetic(ArthmeticCommand::Eq),
+            _ => panic!("unreachable "),
+        }
     }
 }
 
@@ -853,6 +880,30 @@ mod tests {
             .iter()
             .map(|&s| s as char)
             .collect::<String>()
+    }
+
+    #[test]
+    fn binary_op_expression_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Expression::new_binary_op(
+            Term::IntegerConstant(2),
+            BinaryOp::new(
+                BinaryOpToken::new(TokenType::Plus),
+                Term::IntegerConstant(3),
+            ),
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
+                Command::Arthmetic(ArthmeticCommand::Add),
+            ],
+            actual
+        );
     }
 
     #[test]

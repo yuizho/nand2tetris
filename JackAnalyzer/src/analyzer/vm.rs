@@ -91,7 +91,7 @@ impl ToString for Segment {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-enum ArthmeticCommand {
+pub enum ArthmeticCommand {
     Add,
     Sub,
     Neg,
