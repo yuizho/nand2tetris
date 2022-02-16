@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 mod analyzer;
 use analyzer::parser::Parser;
 use analyzer::tokenizer::JackTokenizer;
-use analyzer::xml::XmlWriter;
+use analyzer::vm::VmWriter;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -21,9 +21,9 @@ fn main() -> Result<()> {
         let f = File::open(&file_name)?;
         let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(&mut tokenizer);
-        let elements = parser.parse_program()?.to_xml();
+        let vm = parser.parse_program()?.to_vm();
         // parse and write xml file
-        buf_writer.write_xml(&elements)?;
+        buf_writer.write_vm(&vm)?;
     }
 
     buf_writer.flush()?;
@@ -79,10 +79,10 @@ fn create_output_file_path(args: &[String]) -> Result<PathBuf> {
     let absolute_path = fs::canonicalize(&args[1])?;
     if absolute_path.is_dir() {
         Ok(absolute_path.join(format!(
-            "{}.parsed.xml",
+            "{}.vm",
             absolute_path.file_stem().unwrap().to_str().unwrap()
         )))
     } else {
-        Ok(absolute_path.with_extension(OsStr::new("parsed.xml")))
+        Ok(absolute_path.with_extension(OsStr::new("vm")))
     }
 }

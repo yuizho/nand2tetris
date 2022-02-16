@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct VmClass {
     subroutines: Vec<Subroutine>,
@@ -161,6 +163,17 @@ impl Command {
             }
             Return => "return".to_string(),
         }
+    }
+}
+
+pub trait VmWriter {
+    fn write_vm(&mut self, vm: &VmClass) -> io::Result<()>;
+}
+
+impl<W: Write> VmWriter for W {
+    fn write_vm(&mut self, vm: &VmClass) -> io::Result<()> {
+        writeln!(self, "{}", vm.compile())?;
+        Ok(())
     }
 }
 
