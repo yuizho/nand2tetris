@@ -1,3 +1,4 @@
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct VmClass {
     subroutines: Vec<Subroutine>,
 }

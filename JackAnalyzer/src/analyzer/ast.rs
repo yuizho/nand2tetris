@@ -42,7 +42,7 @@ impl Program {
         }
     }
 
-    fn to_vm(&self) -> VmClass {
+    pub fn to_vm(&self) -> VmClass {
         VmClass::new(
             self.subroutine_dec
                 .iter()
@@ -899,9 +899,64 @@ mod tests {
     }
 
     #[test]
+    fn class_to_vm() {
+        let actual = Program::new(
+            IdentifierToken("Main".to_string()),
+            vec![],
+            vec![SubroutineDec::new(
+                IdentifierToken("Main".to_string()),
+                TokenType::Keyword(Keyword::Function),
+                None,
+                IdentifierToken("main".to_string()),
+                vec![],
+                vec![],
+                vec![
+                    Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                        IdentifierToken("Output".to_string()),
+                        IdentifierToken("printInt".to_string()),
+                        vec![Expression::new_binary_op(
+                            Term::IntegerConstant(1),
+                            BinaryOp::new(
+                                BinaryOpToken::new(TokenType::Plus),
+                                Term::Expresssion(Box::new(Expression::new_binary_op(
+                                    Term::IntegerConstant(2),
+                                    BinaryOp::new(
+                                        BinaryOpToken::new(TokenType::Asterisk),
+                                        Term::IntegerConstant(3),
+                                    ),
+                                ))),
+                            ),
+                        )],
+                    )),
+                    Statement::Return(None),
+                ],
+            )],
+        )
+        .to_vm();
+
+        assert_eq!(
+            VmClass::new(vec![Subroutine::new(
+                "Main".to_string(),
+                "main".to_string(),
+                0,
+                vec![
+                    Command::Push(Segment::Const, 1),
+                    Command::Push(Segment::Const, 2),
+                    Command::Push(Segment::Const, 3),
+                    Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                    Command::Arthmetic(ArthmeticCommand::Add),
+                    Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
+                    Command::Push(Segment::None, 0),
+                    Command::Return,
+                ]
+            )]),
+            actual
+        );
+    }
+
+    #[test]
     fn subroutine_to_vm() {
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
-        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
 
         let actual = SubroutineDec::new(
             IdentifierToken("Main".to_string()),
