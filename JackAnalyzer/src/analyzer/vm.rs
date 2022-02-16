@@ -15,6 +15,7 @@ impl VmClass {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Subroutine {
     class_name: String,
     subroutine_name: String,

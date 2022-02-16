@@ -250,12 +250,16 @@ impl SubroutineDec {
     }
 
     fn to_vm(&self, class_symbol_table: &SymbolTable<ClassAttribute>) -> Subroutine {
+        let mut commands = vec![];
+        for s in &self.statements {
+            commands.append(&mut s.to_vm(class_symbol_table, &self.local_symbol_table))
+        }
+
         Subroutine::new(
             self.class_name.0.clone(),
             self.subroutine_name.0.clone(),
             self.var_dec.len(),
-            // TODO: needs impl commands
-            vec![],
+            commands,
         )
     }
 
@@ -400,8 +404,19 @@ impl Statement {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
-        // TODO: impl
-        vec![]
+        use Statement::*;
+        match self {
+            Do(subroutine_call) => subroutine_call.to_vm(class_symbol_table, local_symbol_table),
+            Return(Some(expression)) => {
+                let mut commands = expression.to_vm(class_symbol_table, local_symbol_table);
+                commands.push(Command::Return);
+                commands
+            }
+            Return(None) => {
+                vec![Command::Push(Segment::None, 0), Command::Return]
+            }
+            _ => panic!("needs to implement other variants"),
+        }
     }
 
     fn to_xml(
@@ -792,10 +807,11 @@ impl Term {
         use Term::*;
         match self {
             IntegerConstant(num) => vec![Command::Push(Segment::Const, *num as usize)],
+            Expresssion(expression) => expression.to_vm(class_symbol_table, local_symbol_table),
             SubroutineCall(subroutine_call) => {
                 subroutine_call.to_vm(class_symbol_table, local_symbol_table)
             }
-            _ => panic!("needs to implement other variants"),
+            t => panic!("needs to implement other variants: {:?}", t),
         }
     }
 
@@ -883,6 +899,113 @@ mod tests {
     }
 
     #[test]
+    fn subroutine_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = SubroutineDec::new(
+            IdentifierToken("Main".to_string()),
+            TokenType::Keyword(Keyword::Function),
+            None,
+            IdentifierToken("main".to_string()),
+            vec![],
+            vec![],
+            vec![
+                Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                    IdentifierToken("Output".to_string()),
+                    IdentifierToken("printInt".to_string()),
+                    vec![Expression::new_binary_op(
+                        Term::IntegerConstant(1),
+                        BinaryOp::new(
+                            BinaryOpToken::new(TokenType::Plus),
+                            Term::Expresssion(Box::new(Expression::new_binary_op(
+                                Term::IntegerConstant(2),
+                                BinaryOp::new(
+                                    BinaryOpToken::new(TokenType::Asterisk),
+                                    Term::IntegerConstant(3),
+                                ),
+                            ))),
+                        ),
+                    )],
+                )),
+                Statement::Return(None),
+            ],
+        )
+        .to_vm(&class_symbol_table);
+
+        assert_eq!(
+            Subroutine::new(
+                "Main".to_string(),
+                "main".to_string(),
+                0,
+                vec![
+                    Command::Push(Segment::Const, 1),
+                    Command::Push(Segment::Const, 2),
+                    Command::Push(Segment::Const, 3),
+                    Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                    Command::Arthmetic(ArthmeticCommand::Add),
+                    Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
+                    Command::Push(Segment::None, 0),
+                    Command::Return,
+                ]
+            ),
+            actual
+        );
+    }
+
+    #[test]
+    fn do_statement_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Statement::Do(SubroutineCall::new_parent_subroutine_call(
+            IdentifierToken("Math".to_string()),
+            IdentifierToken("multiply".to_string()),
+            vec![
+                Expression::new(Term::IntegerConstant(2)),
+                Expression::new(Term::IntegerConstant(3)),
+            ],
+        ))
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
+                Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+            ],
+            actual
+        );
+    }
+
+    #[test]
+    fn return_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Statement::Return(Some(Expression::new(Term::IntegerConstant(2))))
+            .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![Command::Push(Segment::Const, 2), Command::Return,],
+            actual
+        );
+    }
+
+    #[test]
+    fn void_return_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Statement::Return(None).to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![Command::Push(Segment::None, 0), Command::Return,],
+            actual
+        );
+    }
+
+    #[test]
     fn binary_op_expression_to_vm() {
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
@@ -904,6 +1027,17 @@ mod tests {
             ],
             actual
         );
+    }
+
+    #[test]
+    fn expression_term_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::Expresssion(Box::new(Expression::new(Term::IntegerConstant(1))))
+            .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(vec![Command::Push(Segment::Const, 1)], actual);
     }
 
     #[test]
