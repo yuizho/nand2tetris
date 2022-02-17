@@ -413,7 +413,7 @@ impl Statement {
                 commands
             }
             Return(None) => {
-                vec![Command::Push(Segment::None, 0), Command::Return]
+                vec![Command::Push(Segment::Const, 0), Command::Return]
             }
             _ => panic!("needs to implement other variants"),
         }
@@ -946,7 +946,7 @@ mod tests {
                     Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
                     Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
-                    Command::Push(Segment::None, 0),
+                    Command::Push(Segment::Const, 0),
                     Command::Return,
                 ]
             )]),
@@ -1000,7 +1000,7 @@ mod tests {
                     Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
                     Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
-                    Command::Push(Segment::None, 0),
+                    Command::Push(Segment::Const, 0),
                     Command::Return,
                 ]
             ),
@@ -1055,7 +1055,7 @@ mod tests {
         let actual = Statement::Return(None).to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(
-            vec![Command::Push(Segment::None, 0), Command::Return,],
+            vec![Command::Push(Segment::Const, 0), Command::Return,],
             actual
         );
     }

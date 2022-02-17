@@ -47,11 +47,15 @@ impl Subroutine {
             self.class_name, self.subroutine_name, self.local_var_count
         );
 
+        // TODO: this code is cause of "Out of segment space" error
+        // https://stackoverflow.com/questions/61493651/error-out-of-segment-space-in-vmemulator-cause-by-a-getter-mwthod-in-jack
+        /*
         let this_config = format!(
             "{}\n{}",
             Command::Push(Segment::Arg, 0).compile(),
             Command::Pop(Segment::Pointer, 0).compile()
         );
+        */
 
         let commands = self
             .commands
@@ -60,7 +64,7 @@ impl Subroutine {
             .collect::<Vec<String>>()
             .join("\n");
 
-        format!("{}\n{}\n{}\n", define, this_config, commands)
+        format!("{}\n{}\n", define, commands)
     }
 }
 
@@ -74,7 +78,6 @@ pub enum Segment {
     That,
     Pointer,
     Temp,
-    None,
 }
 impl ToString for Segment {
     fn to_string(&self) -> String {
@@ -88,7 +91,6 @@ impl ToString for Segment {
             That => "that",
             Pointer => "pointer",
             Temp => "temp",
-            None => "",
         };
         s.to_string()
     }
@@ -142,13 +144,10 @@ impl Command {
             format!(
                 "{}{} {}",
                 command,
-                match segment {
-                    Segment::None => "".to_string(),
-                    seg => format!(" {}", seg.to_string()),
-                },
+                format!(" {}", segment.to_string()),
                 index
             )
-        };
+        }
 
         match self {
             Push(segment, index) => config_seg_and_index("push", segment, index),
@@ -195,7 +194,7 @@ mod tests {
                 Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
                 Command::Arthmetic(ArthmeticCommand::Add),
                 Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
-                Command::Push(Segment::None, 0),
+                Command::Push(Segment::Const, 0),
                 Command::Return,
             ],
         )]);
@@ -204,15 +203,13 @@ mod tests {
 
         assert_eq!(
             "function Main.main 0
-push argument 0
-pop pointer 0
 push constant 1
 push constant 2
 push constant 3
 call Math.multiply 2
 add
 call Output.printInt 1
-push 0
+push constant 0
 return
 ",
             actual
