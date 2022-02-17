@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use std::env;
 use std::ffi::OsStr;
-use std::fs;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -14,19 +13,19 @@ fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     let file_names = get_source_file_paths(&args)?;
 
-    let new_file_name = create_output_file_path(&args)?;
-    let mut buf_writer = BufWriter::new(File::create(new_file_name)?);
-
     for file_name in file_names {
+        let new_file_name = file_name.with_extension(OsStr::new("vm"));
+        let mut buf_writer = BufWriter::new(File::create(new_file_name)?);
         let f = File::open(&file_name)?;
+
         let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(&mut tokenizer);
         let vm = parser.parse_program()?.to_vm();
-        // parse and write xml file
+
         buf_writer.write_vm(&vm)?;
+        buf_writer.flush()?;
     }
 
-    buf_writer.flush()?;
     Ok(())
 }
 
@@ -68,21 +67,5 @@ fn get_source_file_paths(args: &[String]) -> Result<Vec<PathBuf>> {
             }
         },
         None => return Err(anyhow!("the specified file doesn't have extension.")),
-    }
-}
-
-fn create_output_file_path(args: &[String]) -> Result<PathBuf> {
-    if args.len() < 2 {
-        return Err(anyhow!("this command needs at least one argument"));
-    }
-
-    let absolute_path = fs::canonicalize(&args[1])?;
-    if absolute_path.is_dir() {
-        Ok(absolute_path.join(format!(
-            "{}.vm",
-            absolute_path.file_stem().unwrap().to_str().unwrap()
-        )))
-    } else {
-        Ok(absolute_path.with_extension(OsStr::new("vm")))
     }
 }
