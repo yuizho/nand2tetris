@@ -64,7 +64,7 @@ impl Subroutine {
             .collect::<Vec<String>>()
             .join("\n");
 
-        format!("{}\n{}\n", define, commands)
+        format!("{}\n{}", define, commands)
     }
 }
 
@@ -210,8 +210,7 @@ call Math.multiply 2
 add
 call Output.printInt 1
 push constant 0
-return
-",
+return",
             actual
         );
     }
