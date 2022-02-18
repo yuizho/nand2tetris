@@ -111,6 +111,7 @@ pub enum ArthmeticCommand {
 
 impl ToString for ArthmeticCommand {
     fn to_string(&self) -> String {
+        use ArthmeticCommand::*;
         let s = match self {
             Add => "add",
             Sub => "sub",
@@ -133,6 +134,9 @@ pub enum Command {
     Push(Segment, Index),
     Pop(Segment, Index),
     Arthmetic(ArthmeticCommand),
+    Label(String),
+    GoTo(String),
+    If(String),
     Call(Option<String>, String, usize),
     Return,
 }
@@ -153,6 +157,9 @@ impl Command {
             Push(segment, index) => config_seg_and_index("push", segment, index),
             Pop(segment, index) => config_seg_and_index("pop", segment, index),
             Arthmetic(command) => command.to_string(),
+            Label(label) => format!("label {}", label),
+            GoTo(label) => format!("goto {}", label),
+            If(label) => format!("if-goto {}", label),
             Call(parent_name, subroutin_name, local_var_count) => {
                 let parent_name = match parent_name {
                     Some(name) => format!("{}.", name),
@@ -179,7 +186,6 @@ impl<W: Write> VmWriter for W {
 #[cfg(test)]
 mod tests {
     use crate::analyzer::vm::*;
-    //use std::io::Cursor;
 
     #[test]
     fn simple_main_class() {
@@ -209,6 +215,46 @@ push constant 3
 call Math.multiply 2
 add
 call Output.printInt 1
+push constant 0
+return",
+            actual
+        );
+    }
+
+    #[test]
+    fn if_else() {
+        let class = VmClass::new(vec![Subroutine::new(
+            "Main",
+            "main",
+            0,
+            vec![
+                Command::Push(Segment::Const, 1),
+                Command::Push(Segment::Const, 2),
+                Command::Arthmetic(ArthmeticCommand::Lt),
+                Command::If("IF_TRUE".to_string()),
+                Command::GoTo("IF_FALSE".to_string()),
+                Command::Label("IF_TRUE".to_string()),
+                Command::Push(Segment::Const, 1),
+                Command::Return,
+                Command::Label("IF_FALSE".to_string()),
+                Command::Push(Segment::Const, 0),
+                Command::Return,
+            ],
+        )]);
+
+        let actual = class.compile();
+
+        assert_eq!(
+            "function Main.main 0
+push constant 1
+push constant 2
+lt
+if-goto IF_TRUE
+goto IF_FALSE
+label IF_TRUE
+push constant 1
+return
+label IF_FALSE
 push constant 0
 return",
             actual
