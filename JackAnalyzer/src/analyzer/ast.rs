@@ -709,6 +709,14 @@ impl UnaryOpToken {
             _ => panic!("unexpected token type is used as unary op: {:?}", token),
         }
     }
+
+    pub fn to_vm(&self) -> Command {
+        match self.0 {
+            TokenType::Tilde => Command::Arthmetic(ArthmeticCommand::Not),
+            TokenType::Minus => Command::Arthmetic(ArthmeticCommand::Neg),
+            _ => panic!("unreachable"),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -869,6 +877,12 @@ impl Term {
             Expresssion(expression) => expression.to_vm(class_symbol_table, local_symbol_table),
             SubroutineCall(subroutine_call) => {
                 subroutine_call.to_vm(class_symbol_table, local_symbol_table)
+            }
+            UnaryOp(token, term) => {
+                let mut result = vec![];
+                result.append(&mut term.to_vm(class_symbol_table, local_symbol_table));
+                result.push(token.to_vm());
+                result
             }
             t => panic!("needs to implement other variants: {:?}", t),
         }
@@ -1314,6 +1328,26 @@ mod tests {
         let actual = Term::IntegerConstant(1).to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(vec![Command::Push(Segment::Const, 1)], actual);
+    }
+
+    #[test]
+    fn unary_op_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::UnaryOp(
+            UnaryOpToken::new(TokenType::Minus),
+            Box::new(Term::IntegerConstant(1)),
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 1),
+                Command::Arthmetic(ArthmeticCommand::Neg)
+            ],
+            actual
+        );
     }
 
     #[test]
