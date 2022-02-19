@@ -2,13 +2,44 @@ use super::ast::*;
 use super::token::*;
 use super::tokenizer::*;
 use anyhow::{anyhow, Result};
+use uuid::Uuid;
+
+pub trait LabelGenerator {
+    fn generate(&self) -> String;
+}
+
+struct UuidLabelGenerator;
+impl UuidLabelGenerator {
+    fn new() -> Self {
+        Self
+    }
+}
+impl LabelGenerator for UuidLabelGenerator {
+    fn generate(&self) -> String {
+        Uuid::new_v4().to_string()
+    }
+}
 
 pub struct Parser<'a> {
     tokenizer: &'a mut JackTokenizer,
+    label_generator: Box<dyn LabelGenerator>,
 }
 impl<'a> Parser<'a> {
     pub fn new(tokenizer: &'a mut JackTokenizer) -> Self {
-        Parser { tokenizer }
+        Parser {
+            tokenizer,
+            label_generator: Box::new(UuidLabelGenerator::new()),
+        }
+    }
+
+    pub fn new_by_label_generator(
+        tokenizer: &'a mut JackTokenizer,
+        label_generator: Box<dyn LabelGenerator>,
+    ) -> Self {
+        Parser {
+            tokenizer,
+            label_generator: label_generator,
+        }
     }
 
     pub fn parse_program(&mut self) -> Result<Program> {
@@ -350,7 +381,12 @@ impl<'a> Parser<'a> {
             None
         };
 
-        Ok(Statement::If(expression, if_statements, else_statements))
+        Ok(Statement::If(
+            expression,
+            self.label_generator.generate(),
+            if_statements,
+            else_statements,
+        ))
     }
 
     fn parse_do_statement(&mut self) -> Result<Statement> {
@@ -540,6 +576,18 @@ impl<'a> Parser<'a> {
 mod tests {
     use crate::analyzer::parser::*;
     use std::io::Cursor;
+
+    struct FixedLabelGenerator(String);
+    impl FixedLabelGenerator {
+        fn new<S: Into<String>>(label: S) -> Self {
+            Self(label.into())
+        }
+    }
+    impl LabelGenerator for FixedLabelGenerator {
+        fn generate(&self) -> String {
+            self.0.clone()
+        }
+    }
 
     fn parse_ast_elements(tokenizer: &mut JackTokenizer) -> Vec<Statement> {
         let mut parser = Parser::new(tokenizer);
@@ -877,7 +925,17 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let mut parser = Parser::new_by_label_generator(
+            &mut tokenizer,
+            Box::new(FixedLabelGenerator::new("Label")),
+        );
+
+        let mut actual = vec![];
+        let mut token = parser.next_token().unwrap();
+        while parser.tokenizer.has_more_tokens() {
+            actual.push(parser.parse_statement(token).unwrap());
+            token = parser.next_token().unwrap();
+        }
 
         assert_eq!(actual.len(), 2);
         assert_eq!(
@@ -885,6 +943,7 @@ mod tests {
             vec![
                 Statement::If(
                     Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
+                    "Label".to_string(),
                     vec![
                         Statement::Let(
                             IdentifierToken::new("i"),
@@ -906,6 +965,7 @@ mod tests {
                             Term::IntegerConstant(3)
                         )
                     )))),
+                    "Label".to_string(),
                     vec![Statement::Expression(Expression::new(Term::VarName(
                         IdentifierToken::new("i"),
                         None

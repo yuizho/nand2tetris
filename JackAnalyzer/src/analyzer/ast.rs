@@ -393,7 +393,7 @@ impl VarDec {
 pub enum Statement {
     Let(IdentifierToken, Option<Expression>, Expression),
     While(Expression, Vec<Statement>),
-    If(Expression, Vec<Statement>, Option<Vec<Statement>>),
+    If(Expression, String, Vec<Statement>, Option<Vec<Statement>>),
     Do(SubroutineCall),
     Return(Option<Expression>),
     Expression(Expression),
@@ -406,6 +406,27 @@ impl Statement {
     ) -> Vec<Command> {
         use Statement::*;
         match self {
+            // TODO: LET
+            // TODO: WHILE
+            If(expression, label_id, if_statements, else_statements) => {
+                let mut result = vec![];
+
+                result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
+                result.push(Command::If(format!("{}-if-statements", label_id)));
+                if let Some(else_statements) = else_statements {
+                    else_statements.iter().for_each(|s| {
+                        result.append(&mut s.to_vm(class_symbol_table, local_symbol_table))
+                    });
+                }
+                result.push(Command::GoTo(format!("{}-if-end", label_id)));
+                result.push(Command::Label(format!("{}-if-statements", label_id)));
+                if_statements.iter().for_each(|s| {
+                    result.append(&mut s.to_vm(class_symbol_table, local_symbol_table))
+                });
+                result.push(Command::Label(format!("{}-if-end", label_id)));
+
+                result
+            }
             Do(subroutine_call) => subroutine_call.to_vm(class_symbol_table, local_symbol_table),
             Return(Some(expression)) => {
                 let mut commands = expression.to_vm(class_symbol_table, local_symbol_table);
@@ -463,7 +484,7 @@ impl Statement {
                 ],
             ),
 
-            Self::If(expression, if_statements, else_statements) => {
+            Self::If(expression, _, if_statements, else_statements) => {
                 fn statements_to_xml(
                     v: &[Statement],
                     class_symbol_table: &SymbolTable<ClassAttribute>,
@@ -1004,6 +1025,76 @@ mod tests {
                     Command::Return,
                 ]
             ),
+            actual
+        );
+    }
+
+    #[test]
+    fn if_statement_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Statement::If(
+            Expression::new_binary_op(
+                Term::IntegerConstant(1),
+                BinaryOp::new(BinaryOpToken::new(TokenType::Lt), Term::IntegerConstant(2)),
+            ),
+            "Label".to_string(),
+            vec![Statement::Return(Some(Expression::new(
+                Term::IntegerConstant(1),
+            )))],
+            None,
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 1),
+                Command::Push(Segment::Const, 2),
+                Command::Arthmetic(ArthmeticCommand::Lt),
+                Command::If("Label-if-statements".to_string()),
+                Command::GoTo("Label-if-end".to_string()),
+                Command::Label("Label-if-statements".to_string()),
+                Command::Push(Segment::Const, 1),
+                Command::Return,
+                Command::Label("Label-if-end".to_string()),
+            ],
+            actual
+        );
+    }
+
+    #[test]
+    fn if_else_statement_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Statement::If(
+            Expression::new_binary_op(
+                Term::IntegerConstant(1),
+                BinaryOp::new(BinaryOpToken::new(TokenType::Lt), Term::IntegerConstant(2)),
+            ),
+            "Label".to_string(),
+            vec![Statement::Return(Some(Expression::new(
+                Term::IntegerConstant(1),
+            )))],
+            Some(vec![Statement::Return(None)]),
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 1),
+                Command::Push(Segment::Const, 2),
+                Command::Arthmetic(ArthmeticCommand::Lt),
+                Command::If("Label-if-statements".to_string()),
+                Command::Push(Segment::Const, 0),
+                Command::Return,
+                Command::GoTo("Label-if-end".to_string()),
+                Command::Label("Label-if-statements".to_string()),
+                Command::Push(Segment::Const, 1),
+                Command::Return,
+                Command::Label("Label-if-end".to_string()),
+            ],
             actual
         );
     }
@@ -1694,6 +1785,7 @@ mod tests {
     fn if_statement_no_else_to_xml() {
         let program = Statement::If(
             Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
+            "Label".to_string(),
             vec![
                 Statement::Let(
                     IdentifierToken::new("i"),
@@ -1758,6 +1850,7 @@ mod tests {
     fn if_statement_has_else_to_xml() {
         let program = Statement::If(
             Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
+            "Label".to_string(),
             vec![Statement::Let(
                 IdentifierToken::new("i"),
                 None,
