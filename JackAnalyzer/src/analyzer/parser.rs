@@ -334,7 +334,11 @@ impl<'a> Parser<'a> {
             token = self.next_token()?;
         }
 
-        Ok(Statement::While(expression, statements))
+        Ok(Statement::While(
+            expression,
+            self.label_generator.generate(),
+            statements,
+        ))
     }
 
     fn parse_if_statement(&mut self) -> Result<Statement> {
@@ -871,7 +875,17 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let mut parser = Parser::new_by_label_generator(
+            &mut tokenizer,
+            Box::new(FixedLabelGenerator::new("Label")),
+        );
+
+        let mut actual = vec![];
+        let mut token = parser.next_token().unwrap();
+        while parser.tokenizer.has_more_tokens() {
+            actual.push(parser.parse_statement(token).unwrap());
+            token = parser.next_token().unwrap();
+        }
 
         assert_eq!(actual.len(), 2);
         assert_eq!(
@@ -879,6 +893,7 @@ mod tests {
             vec![
                 Statement::While(
                     Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
+                    "Label".to_string(),
                     vec![
                         Statement::Let(
                             IdentifierToken::new("i"),
@@ -899,6 +914,7 @@ mod tests {
                             Term::IntegerConstant(3)
                         )
                     )))),
+                    "Label".to_string(),
                     vec![Statement::Expression(Expression::new(Term::VarName(
                         IdentifierToken::new("i"),
                         None

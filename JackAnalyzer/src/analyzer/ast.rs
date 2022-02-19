@@ -392,7 +392,7 @@ impl VarDec {
 #[derive(PartialEq, Eq, Debug)]
 pub enum Statement {
     Let(IdentifierToken, Option<Expression>, Expression),
-    While(Expression, Vec<Statement>),
+    While(Expression, String, Vec<Statement>),
     If(Expression, String, Vec<Statement>, Option<Vec<Statement>>),
     Do(SubroutineCall),
     Return(Option<Expression>),
@@ -407,7 +407,22 @@ impl Statement {
         use Statement::*;
         match self {
             // TODO: LET
-            // TODO: WHILE
+            While(expression, label_id, statements) => {
+                let mut result = vec![];
+
+                result.push(Command::Label(format!("{}-while-loop", label_id)));
+                result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
+                result.push(Command::If(format!("{}-while-statements", label_id)));
+                result.push(Command::GoTo(format!("{}-while-end", label_id)));
+                result.push(Command::Label(format!("{}-while-statements", label_id)));
+                statements.iter().for_each(|s| {
+                    result.append(&mut s.to_vm(class_symbol_table, local_symbol_table))
+                });
+                result.push(Command::GoTo(format!("{}-while-loop", label_id)));
+                result.push(Command::Label(format!("{}-while-end", label_id)));
+
+                result
+            }
             If(expression, label_id, if_statements, else_statements) => {
                 let mut result = vec![];
 
@@ -465,7 +480,7 @@ impl Statement {
                 ],
             ),
 
-            Self::While(expression, statements) => Element::new_elements(
+            Self::While(expression, _, statements) => Element::new_elements(
                 "whileStatement",
                 vec![
                     Keyword::While.get_xml_tag(),
@@ -1025,6 +1040,41 @@ mod tests {
                     Command::Return,
                 ]
             ),
+            actual
+        );
+    }
+
+    #[test]
+    fn while_statement_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Statement::While(
+            Expression::new_binary_op(
+                Term::IntegerConstant(1),
+                BinaryOp::new(BinaryOpToken::new(TokenType::Lt), Term::IntegerConstant(2)),
+            ),
+            "Label".to_string(),
+            vec![Statement::Return(Some(Expression::new(
+                Term::IntegerConstant(1),
+            )))],
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Label("Label-while-loop".to_string()),
+                Command::Push(Segment::Const, 1),
+                Command::Push(Segment::Const, 2),
+                Command::Arthmetic(ArthmeticCommand::Lt),
+                Command::If("Label-while-statements".to_string()),
+                Command::GoTo("Label-while-end".to_string()),
+                Command::Label("Label-while-statements".to_string()),
+                Command::Push(Segment::Const, 1),
+                Command::Return,
+                Command::GoTo("Label-while-loop".to_string()),
+                Command::Label("Label-while-end".to_string()),
+            ],
             actual
         );
     }
@@ -1722,6 +1772,7 @@ mod tests {
     fn while_statement_to_xml() {
         let program = Statement::While(
             Expression::new(Term::KeywordConstant(KeywordConstant::new(Keyword::True))),
+            "Label".to_string(),
             vec![
                 Statement::Let(
                     IdentifierToken::new("i"),
