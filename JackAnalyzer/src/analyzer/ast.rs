@@ -406,7 +406,30 @@ impl Statement {
     ) -> Vec<Command> {
         use Statement::*;
         match self {
-            // TODO: LET
+            // TODO: is array
+            Let(identifier_token, None, expression) => {
+                let mut result = vec![];
+
+                result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
+
+                let index = match local_symbol_table.index_of(&identifier_token.0) {
+                    Some(index) => index,
+                    None => class_symbol_table
+                        .index_of(&identifier_token.0)
+                        .unwrap_or_else(|| panic!("{} is not defined", identifier_token.0)),
+                };
+
+                if let Some(local_attr) = local_symbol_table.attr_of(&identifier_token.0) {
+                    result.push(Command::Push(Segment::from_local_attr(local_attr), *index));
+                } else {
+                    let class_attr = class_symbol_table
+                        .attr_of(&identifier_token.0)
+                        .unwrap_or_else(|| panic!("{} is not defined", identifier_token.0));
+                    result.push(Command::Push(Segment::from_class_attr(class_attr), *index));
+                }
+
+                result
+            }
             While(expression, label_id, statements) => {
                 let mut result = vec![];
 
@@ -1040,6 +1063,28 @@ mod tests {
                     Command::Return,
                 ]
             ),
+            actual
+        );
+    }
+
+    #[test]
+    fn let_statement_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol("index".to_string(), "int".to_string(), LocalAttribute::Var);
+
+        let actual = Statement::Let(
+            IdentifierToken::new("index"),
+            None,
+            Expression::new(Term::IntegerConstant(1)),
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 1),
+                Command::Push(Segment::Local, 0),
+            ],
             actual
         );
     }

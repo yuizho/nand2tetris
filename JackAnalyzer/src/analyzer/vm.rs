@@ -1,3 +1,4 @@
+use super::symbol_table::{ClassAttribute, LocalAttribute};
 use std::io::{self, Write};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -93,6 +94,21 @@ impl ToString for Segment {
             Temp => "temp",
         };
         s.to_string()
+    }
+}
+impl Segment {
+    pub fn from_class_attr(class_attr: &ClassAttribute) -> Self {
+        match class_attr {
+            ClassAttribute::Static => Segment::Static,
+            ClassAttribute::Field => Segment::This,
+        }
+    }
+
+    pub fn from_local_attr(local_attr: &LocalAttribute) -> Self {
+        match local_attr {
+            LocalAttribute::Argument => Segment::Arg,
+            LocalAttribute::Var => Segment::Local,
+        }
     }
 }
 
