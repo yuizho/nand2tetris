@@ -763,7 +763,7 @@ impl BinaryOpToken {
             Minus => Command::Arthmetic(ArthmeticCommand::Sub),
             Asterisk => Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
             Slash => Command::Call(Some("Math".to_string()), "divide".to_string(), 2),
-            And => Command::Arthmetic(ArthmeticCommand::Eq),
+            And => Command::Arthmetic(ArthmeticCommand::And),
             Or => Command::Arthmetic(ArthmeticCommand::Or),
             Gt => Command::Arthmetic(ArthmeticCommand::Gt),
             Lt => Command::Arthmetic(ArthmeticCommand::Lt),
