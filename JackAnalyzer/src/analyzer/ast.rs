@@ -1,6 +1,6 @@
 use super::symbol_table::{ClassAttribute, LocalAttribute, SymbolTable};
 use super::token::{IdentifierToken, Keyword, Token, TokenType};
-use super::vm::{ArthmeticCommand, Command, Segment, Subroutine, VmClass};
+use super::vm::{ArthmeticCommand, Command, Segment, Subroutine, SubroutineType, VmClass};
 use super::xml::Element;
 use std::str::FromStr;
 
@@ -272,8 +272,16 @@ impl SubroutineDec {
                 .map(|v| v.alt_var_names.len())
                 .sum::<usize>();
 
+        let subroutine_type = match self.subroutine_identifier {
+            Keyword::Constructor => SubroutineType::Constructor,
+            Keyword::Function => SubroutineType::Function,
+            Keyword::Method => SubroutineType::Method,
+            _ => panic!("unreachable"),
+        };
+
         Subroutine::new(
             self.class_name.0.clone(),
+            subroutine_type,
             self.subroutine_name.0.clone(),
             var_dec_count,
             commands,
@@ -1051,6 +1059,7 @@ mod tests {
         assert_eq!(
             VmClass::new(vec![Subroutine::new(
                 "Main".to_string(),
+                SubroutineType::Function,
                 "main".to_string(),
                 0,
                 vec![
@@ -1105,6 +1114,7 @@ mod tests {
         assert_eq!(
             Subroutine::new(
                 "Main".to_string(),
+                SubroutineType::Function,
                 "main".to_string(),
                 0,
                 vec![

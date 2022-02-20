@@ -20,8 +20,16 @@ impl VmClass {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
+pub enum SubroutineType {
+    Constructor,
+    Method,
+    Function,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Subroutine {
     class_name: String,
+    subroutine_type: SubroutineType,
     subroutine_name: String,
     local_var_count: usize,
     commands: Vec<Command>,
@@ -30,12 +38,14 @@ pub struct Subroutine {
 impl Subroutine {
     pub fn new<S: Into<String>>(
         class_name: S,
+        subroutine_type: SubroutineType,
         subroutine_name: S,
         local_var_count: usize,
         commands: Vec<Command>,
     ) -> Self {
         Self {
             class_name: class_name.into(),
+            subroutine_type,
             subroutine_name: subroutine_name.into(),
             local_var_count,
             commands,
@@ -48,15 +58,15 @@ impl Subroutine {
             self.class_name, self.subroutine_name, self.local_var_count
         );
 
-        // TODO: this code is cause of "Out of segment space" error
-        // https://stackoverflow.com/questions/61493651/error-out-of-segment-space-in-vmemulator-cause-by-a-getter-mwthod-in-jack
-        /*
-        let this_config = format!(
-            "{}\n{}",
-            Command::Push(Segment::Arg, 0).compile(),
-            Command::Pop(Segment::Pointer, 0).compile()
-        );
-        */
+        use SubroutineType::*;
+        let this_config = match self.subroutine_type {
+            Constructor | Method => Some(format!(
+                "{}\n{}",
+                Command::Push(Segment::Arg, 0).compile(),
+                Command::Pop(Segment::Pointer, 0).compile()
+            )),
+            Function => None,
+        };
 
         let commands = self
             .commands
@@ -65,7 +75,10 @@ impl Subroutine {
             .collect::<Vec<String>>()
             .join("\n");
 
-        format!("{}\n{}", define, commands)
+        match this_config {
+            Some(this_config) => format!("{}\n{}\n{}", define, this_config, commands),
+            None => format!("{}\n{}", define, commands),
+        }
     }
 }
 
@@ -205,26 +218,41 @@ mod tests {
 
     #[test]
     fn simple_main_class() {
-        let class = VmClass::new(vec![Subroutine::new(
-            "Main",
-            "main",
-            0,
-            vec![
-                Command::Push(Segment::Const, 1),
-                Command::Push(Segment::Const, 2),
-                Command::Push(Segment::Const, 3),
-                Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
-                Command::Arthmetic(ArthmeticCommand::Add),
-                Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
-                Command::Push(Segment::Const, 0),
-                Command::Return,
-            ],
-        )]);
+        let class = VmClass::new(vec![
+            Subroutine::new(
+                "Main",
+                SubroutineType::Method,
+                "method",
+                0,
+                vec![Command::Push(Segment::Const, 0), Command::Return],
+            ),
+            Subroutine::new(
+                "Main",
+                SubroutineType::Function,
+                "main",
+                0,
+                vec![
+                    Command::Push(Segment::Const, 1),
+                    Command::Push(Segment::Const, 2),
+                    Command::Push(Segment::Const, 3),
+                    Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                    Command::Arthmetic(ArthmeticCommand::Add),
+                    Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
+                    Command::Push(Segment::Const, 0),
+                    Command::Return,
+                ],
+            ),
+        ]);
 
         let actual = class.compile();
 
         assert_eq!(
-            "function Main.main 0
+            "function Main.method 0
+push argument 0
+pop pointer 0
+push constant 0
+return
+function Main.main 0
 push constant 1
 push constant 2
 push constant 3
@@ -241,6 +269,7 @@ return",
     fn if_else() {
         let class = VmClass::new(vec![Subroutine::new(
             "Main",
+            SubroutineType::Function,
             "main",
             0,
             vec![
