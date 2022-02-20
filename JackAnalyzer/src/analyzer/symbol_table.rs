@@ -88,7 +88,7 @@ impl<T: Eq + PartialEq + ToString> SymbolTable<T> {
         );
     }
 
-    fn var_count(&self, attribute: &T) -> usize {
+    pub fn var_count(&self, attribute: &T) -> usize {
         self.symbols
             .iter()
             .filter(|(_, v)| &v.attribute == attribute)

@@ -273,7 +273,9 @@ impl SubroutineDec {
                 .sum::<usize>();
 
         let subroutine_type = match self.subroutine_identifier {
-            Keyword::Constructor => SubroutineType::Constructor,
+            Keyword::Constructor => {
+                SubroutineType::Constructor(class_symbol_table.var_count(&ClassAttribute::Field))
+            }
             Keyword::Function => SubroutineType::Function,
             Keyword::Method => SubroutineType::Method,
             _ => panic!("unreachable"),
@@ -839,8 +841,32 @@ impl SubroutineCall {
             result.append(&mut e.to_vm(class_symbol_table, local_symbol_table));
         }
 
+        let parent_type = match &self.parent_name {
+            Some(parent) => {
+                let parent_name = parent.0.clone();
+                if local_symbol_table.contains(&parent_name) {
+                    Some(
+                        local_symbol_table
+                            .type_of(&parent_name)
+                            .unwrap()
+                            .to_string(),
+                    )
+                } else if class_symbol_table.contains(&parent_name) {
+                    Some(
+                        class_symbol_table
+                            .type_of(&parent_name)
+                            .unwrap()
+                            .to_string(),
+                    )
+                } else {
+                    Some(parent_name)
+                }
+            }
+            None => None,
+        };
+
         result.push(Command::Call(
-            self.parent_name.clone().map(|i| i.0),
+            parent_type,
             self.subroutine_name.clone().0,
             self.expressions.len(),
         ));

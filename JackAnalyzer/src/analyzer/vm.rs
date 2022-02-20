@@ -21,7 +21,7 @@ impl VmClass {
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum SubroutineType {
-    Constructor,
+    Constructor(usize),
     Method,
     Function,
 }
@@ -60,7 +60,13 @@ impl Subroutine {
 
         use SubroutineType::*;
         let this_config = match self.subroutine_type {
-            Constructor | Method => Some(format!(
+            Constructor(field_count) => Some(format!(
+                "{}\n{}\n{}",
+                format!("call Memory.alloc {}", field_count),
+                Command::Push(Segment::Arg, 0).compile(),
+                Command::Pop(Segment::Pointer, 0).compile()
+            )),
+            Method => Some(format!(
                 "{}\n{}",
                 Command::Push(Segment::Arg, 0).compile(),
                 Command::Pop(Segment::Pointer, 0).compile()
@@ -221,6 +227,13 @@ mod tests {
         let class = VmClass::new(vec![
             Subroutine::new(
                 "Main",
+                SubroutineType::Constructor(2),
+                "new",
+                0,
+                vec![Command::Push(Segment::Pointer, 0), Command::Return],
+            ),
+            Subroutine::new(
+                "Main",
                 SubroutineType::Method,
                 "method",
                 0,
@@ -247,7 +260,13 @@ mod tests {
         let actual = class.compile();
 
         assert_eq!(
-            "function Main.method 0
+            "function Main.new 0
+call Memory.alloc 2
+push argument 0
+pop pointer 0
+push pointer 0
+return
+function Main.method 0
 push argument 0
 pop pointer 0
 push constant 0
