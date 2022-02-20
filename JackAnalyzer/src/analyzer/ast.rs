@@ -771,8 +771,8 @@ impl BinaryOpToken {
         match self.0 {
             Plus => Command::Arthmetic(ArthmeticCommand::Add),
             Minus => Command::Arthmetic(ArthmeticCommand::Sub),
-            Asterisk => Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
-            Slash => Command::Call(Some("Math".to_string()), "divide".to_string(), 2),
+            Asterisk => Command::Call("Math".to_string(), "multiply".to_string(), 2),
+            Slash => Command::Call("Math".to_string(), "divide".to_string(), 2),
             And => Command::Arthmetic(ArthmeticCommand::And),
             Or => Command::Arthmetic(ArthmeticCommand::Or),
             Gt => Command::Arthmetic(ArthmeticCommand::Gt),
@@ -805,26 +805,18 @@ impl KeywordConstant {
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct SubroutineCall {
-    parent_name: Option<IdentifierToken>,
+    parent_name: IdentifierToken,
     subroutine_name: IdentifierToken,
     expressions: Vec<Expression>,
 }
 impl SubroutineCall {
-    pub fn new(subroutine_name: IdentifierToken, expressions: Vec<Expression>) -> Self {
-        SubroutineCall {
-            parent_name: None,
-            subroutine_name,
-            expressions,
-        }
-    }
-
-    pub fn new_parent_subroutine_call(
+    pub fn new(
         parent_name: IdentifierToken,
         subroutine_name: IdentifierToken,
         expressions: Vec<Expression>,
     ) -> Self {
         SubroutineCall {
-            parent_name: Some(parent_name),
+            parent_name,
             subroutine_name,
             expressions,
         }
@@ -841,28 +833,19 @@ impl SubroutineCall {
             result.append(&mut e.to_vm(class_symbol_table, local_symbol_table));
         }
 
-        let parent_type = match &self.parent_name {
-            Some(parent) => {
-                let parent_name = parent.0.clone();
-                if local_symbol_table.contains(&parent_name) {
-                    Some(
-                        local_symbol_table
-                            .type_of(&parent_name)
-                            .unwrap()
-                            .to_string(),
-                    )
-                } else if class_symbol_table.contains(&parent_name) {
-                    Some(
-                        class_symbol_table
-                            .type_of(&parent_name)
-                            .unwrap()
-                            .to_string(),
-                    )
-                } else {
-                    Some(parent_name)
-                }
-            }
-            None => None,
+        let parent_name = self.parent_name.0.clone();
+        let parent_type = if local_symbol_table.contains(&parent_name) {
+            local_symbol_table
+                .type_of(&parent_name)
+                .unwrap()
+                .to_string()
+        } else if class_symbol_table.contains(&parent_name) {
+            class_symbol_table
+                .type_of(&parent_name)
+                .unwrap()
+                .to_string()
+        } else {
+            parent_name
         };
 
         result.push(Command::Call(
@@ -880,12 +863,10 @@ impl SubroutineCall {
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Element {
         Element::new_fragment(vec![
-            match &self.parent_name {
-                Some(name) => {
-                    Element::new_fragment(vec![name.get_xml_tag(), TokenType::Dot.get_xml_tag()])
-                }
-                None => Element::empty(),
-            },
+            Element::new_fragment(vec![
+                self.parent_name.get_xml_tag(),
+                TokenType::Dot.get_xml_tag(),
+            ]),
             self.subroutine_name.get_xml_tag(),
             TokenType::Lparen.get_xml_tag(),
             Element::new_element(
@@ -1060,7 +1041,7 @@ mod tests {
                 vec![],
                 vec![],
                 vec![
-                    Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                    Statement::Do(SubroutineCall::new(
                         IdentifierToken("Output".to_string()),
                         IdentifierToken("printInt".to_string()),
                         vec![Expression::new_binary_op(
@@ -1093,9 +1074,9 @@ mod tests {
                     Command::Push(Segment::Const, 1),
                     Command::Push(Segment::Const, 2),
                     Command::Push(Segment::Const, 3),
-                    Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                    Command::Call("Math".to_string(), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
-                    Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
+                    Command::Call("Output".to_string(), "printInt".to_string(), 1),
                     Command::Push(Segment::Const, 0),
                     Command::Return,
                 ]
@@ -1116,7 +1097,7 @@ mod tests {
             vec![],
             vec![],
             vec![
-                Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                Statement::Do(SubroutineCall::new(
                     IdentifierToken("Output".to_string()),
                     IdentifierToken("printInt".to_string()),
                     vec![Expression::new_binary_op(
@@ -1148,9 +1129,9 @@ mod tests {
                     Command::Push(Segment::Const, 1),
                     Command::Push(Segment::Const, 2),
                     Command::Push(Segment::Const, 3),
-                    Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                    Command::Call("Math".to_string(), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
-                    Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
+                    Command::Call("Output".to_string(), "printInt".to_string(), 1),
                     Command::Push(Segment::Const, 0),
                     Command::Return,
                 ]
@@ -1291,7 +1272,7 @@ mod tests {
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
 
-        let actual = Statement::Do(SubroutineCall::new_parent_subroutine_call(
+        let actual = Statement::Do(SubroutineCall::new(
             IdentifierToken("Math".to_string()),
             IdentifierToken("multiply".to_string()),
             vec![
@@ -1305,7 +1286,7 @@ mod tests {
             vec![
                 Command::Push(Segment::Const, 2),
                 Command::Push(Segment::Const, 3),
-                Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                Command::Call("Math".to_string(), "multiply".to_string(), 2),
             ],
             actual
         );
@@ -1378,7 +1359,7 @@ mod tests {
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
 
-        let actual = Term::SubroutineCall(SubroutineCall::new_parent_subroutine_call(
+        let actual = Term::SubroutineCall(SubroutineCall::new(
             IdentifierToken("Math".to_string()),
             IdentifierToken("multiply".to_string()),
             vec![
@@ -1392,7 +1373,7 @@ mod tests {
             vec![
                 Command::Push(Segment::Const, 2),
                 Command::Push(Segment::Const, 3),
-                Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                Command::Call("Math".to_string(), "multiply".to_string(), 2),
             ],
             actual
         );
@@ -1519,7 +1500,7 @@ mod tests {
                         None,
                         Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
                     ),
-                    Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                    Statement::Do(SubroutineCall::new(
                         IdentifierToken::new("game"),
                         IdentifierToken::new("run"),
                         vec![],
@@ -1685,7 +1666,7 @@ mod tests {
                     None,
                     Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
                 ),
-                Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                Statement::Do(SubroutineCall::new(
                     IdentifierToken::new("game"),
                     IdentifierToken::new("run"),
                     vec![],
@@ -1777,7 +1758,7 @@ mod tests {
                     None,
                     Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
                 ),
-                Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                Statement::Do(SubroutineCall::new(
                     IdentifierToken::new("game"),
                     IdentifierToken::new("run"),
                     vec![],
@@ -2196,7 +2177,7 @@ mod tests {
 
     #[test]
     fn do_statement_to_xml() {
-        let program = Statement::Do(SubroutineCall::new_parent_subroutine_call(
+        let program = Statement::Do(SubroutineCall::new(
             IdentifierToken::new("game"),
             IdentifierToken::new("run"),
             vec![],
@@ -2485,9 +2466,12 @@ mod tests {
 
     #[test]
     fn local_subroutine_call_no_param_expression_to_xml() {
-        let program = Statement::Expression(Expression::new(Term::SubroutineCall(
-            SubroutineCall::new(IdentifierToken::new("new"), vec![]),
-        )));
+        let program =
+            Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
+                IdentifierToken::new("Main"),
+                IdentifierToken::new("new"),
+                vec![],
+            ))));
 
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
@@ -2496,6 +2480,8 @@ mod tests {
             elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
+    <identifier> Main </identifier>
+    <symbol> . </symbol>
     <identifier> new </identifier>
     <symbol> ( </symbol>
     <expressionList>
@@ -2511,6 +2497,7 @@ mod tests {
     fn local_subroutine_call_with_param_expression_to_xml() {
         let program =
             Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
+                IdentifierToken::new("Main"),
                 IdentifierToken::new("new"),
                 vec![
                     Expression::new(Term::IntegerConstant(1)),
@@ -2531,6 +2518,8 @@ mod tests {
             elm_to_str(program.to_xml(&class_symbol_table, &local_symbol_table)),
             "<expression>
   <term>
+    <identifier> Main </identifier>
+    <symbol> . </symbol>
     <identifier> new </identifier>
     <symbol> ( </symbol>
     <expressionList>
@@ -2559,13 +2548,12 @@ mod tests {
 
     #[test]
     fn subroutine_call_no_param_expression_to_xml() {
-        let program = Statement::Expression(Expression::new(Term::SubroutineCall(
-            SubroutineCall::new_parent_subroutine_call(
+        let program =
+            Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
                 IdentifierToken::new("SquareGame"),
                 IdentifierToken::new("new"),
                 vec![],
-            ),
-        )));
+            ))));
 
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
@@ -2589,8 +2577,8 @@ mod tests {
 
     #[test]
     fn subroutine_call_with_param_expression_to_xml() {
-        let program = Statement::Expression(Expression::new(Term::SubroutineCall(
-            SubroutineCall::new_parent_subroutine_call(
+        let program =
+            Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
                 IdentifierToken::new("SquareGame"),
                 IdentifierToken::new("new"),
                 vec![
@@ -2603,8 +2591,7 @@ mod tests {
                         ),
                     ),
                 ],
-            ),
-        )));
+            ))));
 
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();

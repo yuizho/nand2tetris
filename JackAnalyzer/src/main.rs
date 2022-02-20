@@ -19,7 +19,11 @@ fn main() -> Result<()> {
         let f = File::open(&file_name)?;
 
         let mut tokenizer = JackTokenizer::new(f);
-        let mut parser = Parser::new(&mut tokenizer);
+        let mut parser = Parser::new(
+            &mut tokenizer,
+            // filename is same as class name
+            file_name.file_stem().unwrap().to_str().unwrap().to_string(),
+        );
         let vm = parser.parse_program()?.to_vm();
 
         buf_writer.write_vm(&vm)?;

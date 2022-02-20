@@ -23,22 +23,26 @@ impl LabelGenerator for UuidLabelGenerator {
 pub struct Parser<'a> {
     tokenizer: &'a mut JackTokenizer,
     label_generator: Box<dyn LabelGenerator>,
+    class_name: String,
 }
 impl<'a> Parser<'a> {
-    pub fn new(tokenizer: &'a mut JackTokenizer) -> Self {
+    pub fn new(tokenizer: &'a mut JackTokenizer, class_name: String) -> Self {
         Parser {
             tokenizer,
             label_generator: Box::new(UuidLabelGenerator::new()),
+            class_name,
         }
     }
 
     pub fn new_by_label_generator(
         tokenizer: &'a mut JackTokenizer,
         label_generator: Box<dyn LabelGenerator>,
+        class_name: String,
     ) -> Self {
         Parser {
             tokenizer,
             label_generator: label_generator,
+            class_name,
         }
     }
 
@@ -470,12 +474,16 @@ impl<'a> Parser<'a> {
         }
 
         match parent_name {
-            Some(parent_name) => Ok(SubroutineCall::new_parent_subroutine_call(
+            Some(parent_name) => Ok(SubroutineCall::new(
                 parent_name,
                 subroutine_name,
                 expressions,
             )),
-            None => Ok(SubroutineCall::new(subroutine_name, expressions)),
+            None => Ok(SubroutineCall::new(
+                IdentifierToken::new(self.class_name.clone()),
+                subroutine_name,
+                expressions,
+            )),
         }
     }
 
@@ -594,7 +602,7 @@ mod tests {
     }
 
     fn parse_ast_elements(tokenizer: &mut JackTokenizer) -> Vec<Statement> {
-        let mut parser = Parser::new(tokenizer);
+        let mut parser = Parser::new(tokenizer, "Main".to_string());
 
         let mut statements = vec![];
         let mut token = parser.next_token().unwrap();
@@ -630,7 +638,7 @@ mod tests {
         .as_bytes();
 
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer);
+        let mut parser = Parser::new(&mut tokenizer, "Main".to_string());
         let actual = parser.parse_program().unwrap();
 
         assert_eq!(
@@ -670,7 +678,7 @@ mod tests {
                                 None,
                                 Expression::new(Term::VarName(IdentifierToken::new("game"), None)),
                             ),
-                            Statement::Do(SubroutineCall::new_parent_subroutine_call(
+                            Statement::Do(SubroutineCall::new(
                                 IdentifierToken::new("game"),
                                 IdentifierToken::new("run"),
                                 vec![],
@@ -779,10 +787,12 @@ mod tests {
             actual,
             vec![
                 Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
+                    IdentifierToken::new("Main"),
                     IdentifierToken::new("hoge"),
                     vec![]
                 )))),
                 Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
+                    IdentifierToken::new("Main"),
                     IdentifierToken::new("fuga"),
                     vec![
                         Expression::new(Term::IntegerConstant(1)),
@@ -795,23 +805,19 @@ mod tests {
                         )
                     ]
                 )))),
-                Statement::Expression(Expression::new(Term::SubroutineCall(
-                    SubroutineCall::new_parent_subroutine_call(
-                        IdentifierToken::new("parent"),
-                        IdentifierToken::new("hoge"),
-                        vec![]
-                    )
-                ))),
-                Statement::Expression(Expression::new(Term::SubroutineCall(
-                    SubroutineCall::new_parent_subroutine_call(
-                        IdentifierToken::new("parent"),
-                        IdentifierToken::new("hoge"),
-                        vec![
-                            Expression::new(Term::IntegerConstant(1)),
-                            Expression::new(Term::IntegerConstant(2)),
-                        ]
-                    )
-                )))
+                Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
+                    IdentifierToken::new("parent"),
+                    IdentifierToken::new("hoge"),
+                    vec![]
+                )))),
+                Statement::Expression(Expression::new(Term::SubroutineCall(SubroutineCall::new(
+                    IdentifierToken::new("parent"),
+                    IdentifierToken::new("hoge"),
+                    vec![
+                        Expression::new(Term::IntegerConstant(1)),
+                        Expression::new(Term::IntegerConstant(2)),
+                    ]
+                ))))
             ]
         );
     }
@@ -853,7 +859,7 @@ mod tests {
         assert_eq!(actual.len(), 1);
         assert_eq!(
             actual,
-            vec![Statement::Do(SubroutineCall::new_parent_subroutine_call(
+            vec![Statement::Do(SubroutineCall::new(
                 IdentifierToken::new("game"),
                 IdentifierToken::new("run"),
                 vec![],
@@ -878,6 +884,7 @@ mod tests {
         let mut parser = Parser::new_by_label_generator(
             &mut tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
+            "Main".to_string(),
         );
 
         let mut actual = vec![];
@@ -944,6 +951,7 @@ mod tests {
         let mut parser = Parser::new_by_label_generator(
             &mut tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
+            "Main".to_string(),
         );
 
         let mut actual = vec![];

@@ -172,7 +172,7 @@ pub enum Command {
     Label(String),
     GoTo(String),
     If(String),
-    Call(Option<String>, String, usize),
+    Call(String, String, usize),
     Return,
 }
 
@@ -196,11 +196,12 @@ impl Command {
             GoTo(label) => format!("goto {}", label),
             If(label) => format!("if-goto {}", label),
             Call(parent_name, subroutin_name, local_var_count) => {
-                let parent_name = match parent_name {
-                    Some(name) => format!("{}.", name),
-                    None => "".to_string(),
-                };
-                format!("call {}{} {}", parent_name, subroutin_name, local_var_count)
+                format!(
+                    "call {}{} {}",
+                    format!("{}.", parent_name),
+                    subroutin_name,
+                    local_var_count
+                )
             }
             Return => "return".to_string(),
         }
@@ -248,9 +249,9 @@ mod tests {
                     Command::Push(Segment::Const, 1),
                     Command::Push(Segment::Const, 2),
                     Command::Push(Segment::Const, 3),
-                    Command::Call(Some("Math".to_string()), "multiply".to_string(), 2),
+                    Command::Call("Math".to_string(), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
-                    Command::Call(Some("Output".to_string()), "printInt".to_string(), 1),
+                    Command::Call("Output".to_string(), "printInt".to_string(), 1),
                     Command::Push(Segment::Const, 0),
                     Command::Return,
                 ],
