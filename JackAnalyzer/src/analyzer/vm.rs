@@ -61,8 +61,9 @@ impl Subroutine {
         use SubroutineType::*;
         let this_config = match self.subroutine_type {
             Constructor(field_count) => Some(format!(
-                "{}\n{}\n{}",
-                format!("call Memory.alloc {}", field_count),
+                "{}\n{}\n{}\n{}",
+                Command::Push(Segment::Const, field_count).compile(),
+                "call Memory.alloc 1",
                 Command::Push(Segment::Arg, 0).compile(),
                 Command::Pop(Segment::Pointer, 0).compile()
             )),
@@ -262,7 +263,8 @@ mod tests {
 
         assert_eq!(
             "function Main.new 0
-call Memory.alloc 2
+push constant 2
+call Memory.alloc 1
 push argument 0
 pop pointer 0
 push pointer 0
