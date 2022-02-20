@@ -95,6 +95,10 @@ impl<T: Eq + PartialEq + ToString> SymbolTable<T> {
             .count()
     }
 
+    pub fn contains(&self, name: &str) -> bool {
+        self.symbols.contains_key(name)
+    }
+
     pub fn attr_of(&self, name: &str) -> Option<&T> {
         let symbol = self.symbols.get(name)?;
         Some(&symbol.attribute)

@@ -412,6 +412,7 @@ impl Statement {
 
                 result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
 
+                // TODO: needs refactoring
                 let index = match local_symbol_table.index_of(&identifier_token.0) {
                     Some(index) => index,
                     None => class_symbol_table
@@ -874,6 +875,21 @@ impl Term {
         use Term::*;
         match self {
             IntegerConstant(num) => vec![Command::Push(Segment::Const, *num as usize)],
+            // TODO: needs to impl array
+            VarName(token, None) => {
+                let var_name = &token.0;
+                if local_symbol_table.contains(var_name) {
+                    vec![Command::Push(
+                        Segment::from_local_attr(local_symbol_table.attr_of(var_name).unwrap()),
+                        *local_symbol_table.index_of(var_name).unwrap(),
+                    )]
+                } else {
+                    vec![Command::Push(
+                        Segment::from_class_attr(class_symbol_table.attr_of(var_name).unwrap()),
+                        *class_symbol_table.index_of(var_name).unwrap(),
+                    )]
+                }
+            }
             Expresssion(expression) => expression.to_vm(class_symbol_table, local_symbol_table),
             SubroutineCall(subroutine_call) => {
                 subroutine_call.to_vm(class_symbol_table, local_symbol_table)
@@ -1328,6 +1344,22 @@ mod tests {
         let actual = Term::IntegerConstant(1).to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(vec![Command::Push(Segment::Const, 1)], actual);
+    }
+
+    #[test]
+    fn var_name_to_vm() {
+        let mut class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        class_symbol_table.add_symbol(
+            "index".to_string(),
+            "int".to_string(),
+            ClassAttribute::Field,
+        );
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::VarName(IdentifierToken::new("index"), None)
+            .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(vec![Command::Push(Segment::This, 0)], actual);
     }
 
     #[test]
