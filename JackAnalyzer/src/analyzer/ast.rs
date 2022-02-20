@@ -235,6 +235,13 @@ impl SubroutineDec {
                 v.var_type.to_string(),
                 LocalAttribute::Var,
             );
+            for alt_var_name in &v.alt_var_names {
+                local_symbol_table.add_symbol(
+                    alt_var_name.0.clone(),
+                    v.var_type.to_string(),
+                    LocalAttribute::Var,
+                );
+            }
         }
 
         SubroutineDec {
@@ -421,12 +428,12 @@ impl Statement {
                 };
 
                 if let Some(local_attr) = local_symbol_table.attr_of(&identifier_token.0) {
-                    result.push(Command::Push(Segment::from_local_attr(local_attr), *index));
+                    result.push(Command::Pop(Segment::from_local_attr(local_attr), *index));
                 } else {
                     let class_attr = class_symbol_table
                         .attr_of(&identifier_token.0)
                         .unwrap_or_else(|| panic!("{} is not defined", identifier_token.0));
-                    result.push(Command::Push(Segment::from_class_attr(class_attr), *index));
+                    result.push(Command::Pop(Segment::from_class_attr(class_attr), *index));
                 }
 
                 result
@@ -1121,7 +1128,7 @@ mod tests {
         assert_eq!(
             vec![
                 Command::Push(Segment::Const, 1),
-                Command::Push(Segment::Local, 0),
+                Command::Pop(Segment::Local, 0),
             ],
             actual
         );
