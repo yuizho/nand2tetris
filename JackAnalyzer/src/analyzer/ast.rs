@@ -875,6 +875,14 @@ impl Term {
         use Term::*;
         match self {
             IntegerConstant(num) => vec![Command::Push(Segment::Const, *num as usize)],
+            KeywordConstant(keyword) => match keyword.0 {
+                Keyword::True => vec![
+                    Command::Push(Segment::Const, 1),
+                    Command::Arthmetic(ArthmeticCommand::Neg),
+                ],
+                Keyword::False | Keyword::Null => vec![Command::Push(Segment::Const, 0)],
+                _ => panic!("unexpected keyword is passed: {:?}", keyword),
+            },
             // TODO: needs to impl array
             VarName(token, None) => {
                 let var_name = &token.0;
@@ -1344,6 +1352,23 @@ mod tests {
         let actual = Term::IntegerConstant(1).to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(vec![Command::Push(Segment::Const, 1)], actual);
+    }
+
+    #[test]
+    fn keyword_constant_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::KeywordConstant(KeywordConstant::new(Keyword::True))
+            .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 1),
+                Command::Arthmetic(ArthmeticCommand::Neg)
+            ],
+            actual
+        );
     }
 
     #[test]
