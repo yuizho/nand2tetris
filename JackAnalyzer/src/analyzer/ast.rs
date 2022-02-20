@@ -906,6 +906,7 @@ impl Term {
                     Command::Arthmetic(ArthmeticCommand::Neg),
                 ],
                 Keyword::False | Keyword::Null => vec![Command::Push(Segment::Const, 0)],
+                Keyword::This => vec![Command::Push(Segment::Pointer, 0)],
                 _ => panic!("unexpected keyword is passed: {:?}", keyword),
             },
             // TODO: needs to impl array
@@ -1382,7 +1383,7 @@ mod tests {
     }
 
     #[test]
-    fn keyword_constant_to_vm() {
+    fn keyword_constant_true_to_vm() {
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
 
@@ -1396,6 +1397,28 @@ mod tests {
             ],
             actual
         );
+    }
+
+    #[test]
+    fn keyword_constant_false_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::KeywordConstant(KeywordConstant::new(Keyword::False))
+            .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(vec![Command::Push(Segment::Const, 0),], actual);
+    }
+
+    #[test]
+    fn keyword_constant_this_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::KeywordConstant(KeywordConstant::new(Keyword::This))
+            .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(vec![Command::Push(Segment::Pointer, 0),], actual);
     }
 
     #[test]
