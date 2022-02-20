@@ -217,11 +217,14 @@ impl SubroutineDec {
         };
 
         let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
-        local_symbol_table.add_symbol(
-            "this".to_string(),
-            class_name.0.clone(),
-            LocalAttribute::Argument,
-        );
+        // when the subroutine is method, "this" is treated as a first argument
+        if subroutine_identifier == Keyword::Method {
+            local_symbol_table.add_symbol(
+                "this".to_string(),
+                class_name.0.clone(),
+                LocalAttribute::Argument,
+            );
+        }
         for (class_type, identifier) in &parameters {
             local_symbol_table.add_symbol(
                 identifier.0.clone(),
@@ -262,10 +265,17 @@ impl SubroutineDec {
             commands.append(&mut s.to_vm(class_symbol_table, &self.local_symbol_table))
         }
 
+        let var_dec_count = self.var_dec.len()
+            + self
+                .var_dec
+                .iter()
+                .map(|v| v.alt_var_names.len())
+                .sum::<usize>();
+
         Subroutine::new(
             self.class_name.0.clone(),
             self.subroutine_name.0.clone(),
-            self.var_dec.len(),
+            var_dec_count,
             commands,
         )
     }
