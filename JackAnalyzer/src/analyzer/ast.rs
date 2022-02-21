@@ -17,7 +17,6 @@ impl Program {
         class_var_dec: Vec<ClassVarDec>,
         subroutine_dec: Vec<SubroutineDec>,
     ) -> Self {
-        // TODO: class and subroutin are also needs to add as symbol?
         let mut class_symbol_table = SymbolTable::<ClassAttribute>::new();
         for c in &class_var_dec {
             class_symbol_table.add_symbol(
@@ -32,6 +31,14 @@ impl Program {
                     ClassAttribute::from_str(&c.var_identifier.to_string()).unwrap(),
                 );
             }
+        }
+
+        for s in &subroutine_dec {
+            class_symbol_table.add_symbol(
+                format!("{}.{}", class_name.0, s.subroutine_name.0),
+                "subroutine".to_string(),
+                ClassAttribute::from_str(&s.subroutine_identifier.to_string()).unwrap(),
+            )
         }
 
         Program {
@@ -493,7 +500,11 @@ impl Statement {
 
                 result
             }
-            Do(subroutine_call) => subroutine_call.to_vm(class_symbol_table, local_symbol_table),
+            Do(subroutine_call) => {
+                let mut commands = subroutine_call.to_vm(class_symbol_table, local_symbol_table);
+                commands.push(Command::Pop(Segment::Temp, 0));
+                commands
+            }
             Return(Some(expression)) => {
                 let mut commands = expression.to_vm(class_symbol_table, local_symbol_table);
                 commands.push(Command::Return);
@@ -829,30 +840,58 @@ impl SubroutineCall {
     ) -> Vec<Command> {
         let mut result = vec![];
 
-        for e in &self.expressions {
-            result.append(&mut e.to_vm(class_symbol_table, local_symbol_table));
-        }
+        let mut parameter_commands = self
+            .expressions
+            .iter()
+            .flat_map(|e| e.to_vm(class_symbol_table, local_symbol_table))
+            .collect::<Vec<_>>();
 
-        let parent_name = self.parent_name.0.clone();
-        let parent_type = if local_symbol_table.contains(&parent_name) {
-            local_symbol_table
-                .type_of(&parent_name)
-                .unwrap()
-                .to_string()
-        } else if class_symbol_table.contains(&parent_name) {
-            class_symbol_table
-                .type_of(&parent_name)
-                .unwrap()
-                .to_string()
+        // TODO refactoring
+        let parent_name = &self.parent_name.0;
+        if local_symbol_table.contains(parent_name) {
+            // handle method of local variable
+            result.push(Command::Push(
+                Segment::Local,
+                *local_symbol_table.index_of(parent_name).unwrap(),
+            ));
+            result.append(&mut parameter_commands);
+            result.push(Command::Call(
+                local_symbol_table.type_of(parent_name).unwrap().to_string(),
+                self.subroutine_name.clone().0,
+                self.expressions.len() + 1,
+            ))
+        } else if class_symbol_table.contains(parent_name) {
+            // handle method of class field
+            result.push(Command::Push(
+                Segment::This,
+                *class_symbol_table.index_of(parent_name).unwrap(),
+            ));
+            result.append(&mut parameter_commands);
+            result.push(Command::Call(
+                class_symbol_table.type_of(parent_name).unwrap().to_string(),
+                self.subroutine_name.clone().0,
+                self.expressions.len() + 1,
+            ))
+        } else if class_symbol_table
+            .contains(&format!("{}.{}", parent_name, self.subroutine_name.0))
+        {
+            // handle self class's subroutine
+            result.push(Command::Push(Segment::Pointer, 0));
+            result.append(&mut parameter_commands);
+            result.push(Command::Call(
+                parent_name.clone(),
+                self.subroutine_name.clone().0,
+                self.expressions.len() + 1,
+            ));
         } else {
-            parent_name
+            // other class's static function
+            result.append(&mut parameter_commands);
+            result.push(Command::Call(
+                parent_name.clone(),
+                self.subroutine_name.clone().0,
+                self.expressions.len(),
+            ));
         };
-
-        result.push(Command::Call(
-            parent_type,
-            self.subroutine_name.clone().0,
-            self.expressions.len(),
-        ));
 
         result
     }
@@ -1077,6 +1116,7 @@ mod tests {
                     Command::Call("Math".to_string(), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
                     Command::Call("Output".to_string(), "printInt".to_string(), 1),
+                    Command::Pop(Segment::Temp, 0),
                     Command::Push(Segment::Const, 0),
                     Command::Return,
                 ]
@@ -1132,6 +1172,7 @@ mod tests {
                     Command::Call("Math".to_string(), "multiply".to_string(), 2),
                     Command::Arthmetic(ArthmeticCommand::Add),
                     Command::Call("Output".to_string(), "printInt".to_string(), 1),
+                    Command::Pop(Segment::Temp, 0),
                     Command::Push(Segment::Const, 0),
                     Command::Return,
                 ]
@@ -1287,6 +1328,7 @@ mod tests {
                 Command::Push(Segment::Const, 2),
                 Command::Push(Segment::Const, 3),
                 Command::Call("Math".to_string(), "multiply".to_string(), 2),
+                Command::Pop(Segment::Temp, 0)
             ],
             actual
         );
@@ -1355,7 +1397,96 @@ mod tests {
     }
 
     #[test]
-    fn subroutine_call_to_vm() {
+    fn local_obj_method_call_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol("math".to_string(), "Math".to_string(), LocalAttribute::Var);
+
+        let actual = Term::SubroutineCall(SubroutineCall::new(
+            IdentifierToken("math".to_string()),
+            IdentifierToken("multiply".to_string()),
+            vec![
+                Expression::new(Term::IntegerConstant(2)),
+                Expression::new(Term::IntegerConstant(3)),
+            ],
+        ))
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Local, 0),
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
+                Command::Call("Math".to_string(), "multiply".to_string(), 3),
+            ],
+            actual
+        );
+    }
+
+    #[test]
+    fn field_obj_method_call_to_vm() {
+        let mut class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        class_symbol_table.add_symbol(
+            "math".to_string(),
+            "Math".to_string(),
+            ClassAttribute::Field,
+        );
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::SubroutineCall(SubroutineCall::new(
+            IdentifierToken("math".to_string()),
+            IdentifierToken("multiply".to_string()),
+            vec![
+                Expression::new(Term::IntegerConstant(2)),
+                Expression::new(Term::IntegerConstant(3)),
+            ],
+        ))
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::This, 0),
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
+                Command::Call("Math".to_string(), "multiply".to_string(), 3),
+            ],
+            actual
+        );
+    }
+
+    #[test]
+    fn self_method_call_to_vm() {
+        let mut class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        class_symbol_table.add_symbol(
+            "Math.multiply".to_string(),
+            "subroutine".to_string(),
+            ClassAttribute::Method,
+        );
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::SubroutineCall(SubroutineCall::new(
+            IdentifierToken("Math".to_string()),
+            IdentifierToken("multiply".to_string()),
+            vec![
+                Expression::new(Term::IntegerConstant(2)),
+                Expression::new(Term::IntegerConstant(3)),
+            ],
+        ))
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Pointer, 0),
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
+                Command::Call("Math".to_string(), "multiply".to_string(), 3),
+            ],
+            actual
+        );
+    }
+
+    #[test]
+    fn function_call_to_vm() {
         let class_symbol_table = SymbolTable::<ClassAttribute>::new();
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
 
