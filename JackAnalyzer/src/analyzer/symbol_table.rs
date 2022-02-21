@@ -8,6 +8,9 @@ type SymbolType = String;
 pub enum ClassAttribute {
     Static,
     Field,
+    Constructor,
+    Method,
+    Function,
 }
 impl FromStr for ClassAttribute {
     type Err = String;
@@ -16,6 +19,9 @@ impl FromStr for ClassAttribute {
         match input {
             "static" => Ok(Self::Static),
             "field" => Ok(Self::Field),
+            "constructor" => Ok(Self::Constructor),
+            "method" => Ok(Self::Method),
+            "function" => Ok(Self::Function),
             s => Err(format!("unexpected str: {}", s)),
         }
     }
@@ -26,6 +32,9 @@ impl ToString for ClassAttribute {
         let s = match self {
             Static => "static",
             Field => "field",
+            Constructor => "constructor",
+            Method => "method",
+            Function => "function",
         };
         s.to_string()
     }
