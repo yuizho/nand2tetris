@@ -61,10 +61,9 @@ impl Subroutine {
         use SubroutineType::*;
         let this_config = match self.subroutine_type {
             Constructor(field_count) => Some(format!(
-                "{}\n{}\n{}\n{}",
+                "{}\n{}\n{}",
                 Command::Push(Segment::Const, field_count).compile(),
                 "call Memory.alloc 1",
-                Command::Push(Segment::Arg, 0).compile(),
                 Command::Pop(Segment::Pointer, 0).compile()
             )),
             Method => Some(format!(
@@ -119,8 +118,10 @@ impl ToString for Segment {
 impl Segment {
     pub fn from_class_attr(class_attr: &ClassAttribute) -> Self {
         match class_attr {
-            ClassAttribute::Static => Segment::Static,
-            ClassAttribute::Field => Segment::This,
+            ClassAttribute::Static | ClassAttribute::Function => Segment::Static,
+            ClassAttribute::Field | ClassAttribute::Constructor | ClassAttribute::Method => {
+                Segment::This
+            }
         }
     }
 
@@ -265,7 +266,6 @@ mod tests {
             "function Main.new 0
 push constant 2
 call Memory.alloc 1
-push argument 0
 pop pointer 0
 push pointer 0
 return
