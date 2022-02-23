@@ -267,10 +267,11 @@ impl SubroutineDec {
     }
 
     fn to_vm(&self, class_symbol_table: &SymbolTable<ClassAttribute>) -> Subroutine {
-        let mut commands = vec![];
-        for s in &self.statements {
-            commands.append(&mut s.to_vm(class_symbol_table, &self.local_symbol_table))
-        }
+        let commands = self
+            .statements
+            .iter()
+            .flat_map(|s| s.to_vm(class_symbol_table, &self.local_symbol_table))
+            .collect::<Vec<_>>();
 
         let var_dec_count = self.var_dec.len()
             + self
