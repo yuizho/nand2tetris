@@ -838,6 +838,7 @@ impl SubroutineCall {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
+        // TODO: remove
         let mut result = vec![];
 
         let mut parameter_commands = self
