@@ -839,63 +839,67 @@ impl SubroutineCall {
         class_symbol_table: &SymbolTable<ClassAttribute>,
         local_symbol_table: &SymbolTable<LocalAttribute>,
     ) -> Vec<Command> {
-        // TODO: remove
-        let mut result = vec![];
-
-        let mut parameter_commands = self
+        let parameter_commands = self
             .expressions
             .iter()
             .flat_map(|e| e.to_vm(class_symbol_table, local_symbol_table))
             .collect::<Vec<_>>();
-
-        // TODO refactoring
         let parent_name = &self.parent_name.0;
+
+        // handle method of local variable
         if local_symbol_table.contains(parent_name) {
-            // handle method of local variable
-            result.push(Command::Push(
+            return vec![Command::Push(
                 Segment::Local,
                 *local_symbol_table.index_of(parent_name).unwrap(),
-            ));
-            result.append(&mut parameter_commands);
-            result.push(Command::Call(
+            )]
+            .into_iter()
+            .chain(parameter_commands.into_iter())
+            .chain(vec![Command::Call(
                 local_symbol_table.type_of(parent_name).unwrap().to_string(),
                 self.subroutine_name.clone().0,
                 self.expressions.len() + 1,
-            ))
-        } else if class_symbol_table.contains(parent_name) {
-            // handle method of class field
-            result.push(Command::Push(
+            )])
+            .collect();
+        }
+
+        // handle method of class field
+        if class_symbol_table.contains(parent_name) {
+            return vec![Command::Push(
                 Segment::This,
                 *class_symbol_table.index_of(parent_name).unwrap(),
-            ));
-            result.append(&mut parameter_commands);
-            result.push(Command::Call(
+            )]
+            .into_iter()
+            .chain(parameter_commands)
+            .chain(vec![Command::Call(
                 class_symbol_table.type_of(parent_name).unwrap().to_string(),
                 self.subroutine_name.clone().0,
                 self.expressions.len() + 1,
-            ))
-        } else if class_symbol_table
-            .contains(&format!("{}.{}", parent_name, self.subroutine_name.0))
-        {
-            // handle self class's subroutine
-            result.push(Command::Push(Segment::Pointer, 0));
-            result.append(&mut parameter_commands);
-            result.push(Command::Call(
-                parent_name.clone(),
-                self.subroutine_name.clone().0,
-                self.expressions.len() + 1,
-            ));
-        } else {
-            // other class's static function
-            result.append(&mut parameter_commands);
-            result.push(Command::Call(
+            )])
+            .collect();
+        }
+
+        // handle self class's subroutine
+        if class_symbol_table.contains(&format!("{}.{}", parent_name, self.subroutine_name.0)) {
+            return vec![Command::Push(Segment::Pointer, 0)]
+                .into_iter()
+                .chain(parameter_commands)
+                .chain(vec![Command::Call(
+                    parent_name.clone(),
+                    self.subroutine_name.clone().0,
+                    self.expressions.len() + 1,
+                )])
+                .collect();
+        }
+
+        // other class's static function
+        parameter_commands
+            .into_iter()
+            .chain(vec![Command::Call(
                 parent_name.clone(),
                 self.subroutine_name.clone().0,
                 self.expressions.len(),
-            ));
-        };
-
-        result
+            )])
+            .collect()
     }
 
     pub fn to_xml(
