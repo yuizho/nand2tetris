@@ -984,12 +984,12 @@ impl Term {
                     .flat_map(|c| {
                         vec![
                             Command::Push(Segment::Const, c as usize),
-                            Command::Call("String".to_string(), "appendChar".to_string(), 1),
+                            Command::Call("String".to_string(), "appendChar".to_string(), 2),
                         ]
                     })
                     .collect::<Vec<_>>();
                 vec![
-                    Command::Push(Segment::Const, 2),
+                    Command::Push(Segment::Const, str.len()),
                     Command::Call("String".to_string(), "new".to_string(), 1),
                 ]
                 .into_iter()
