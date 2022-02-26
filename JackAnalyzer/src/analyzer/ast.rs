@@ -952,6 +952,24 @@ impl Term {
         use Term::*;
         match self {
             IntegerConstant(num) => vec![Command::Push(Segment::Const, *num as usize)],
+            StringConstant(str) => {
+                let append_char_commands = str
+                    .chars()
+                    .flat_map(|c| {
+                        vec![
+                            Command::Push(Segment::Const, c as usize),
+                            Command::Call("String".to_string(), "appendChar".to_string(), 1),
+                        ]
+                    })
+                    .collect::<Vec<_>>();
+                vec![
+                    Command::Push(Segment::Const, 2),
+                    Command::Call("String".to_string(), "new".to_string(), 1),
+                ]
+                .into_iter()
+                .chain(append_char_commands)
+                .collect()
+            }
             KeywordConstant(keyword) => match keyword.0 {
                 Keyword::True => vec![
                     Command::Push(Segment::Const, 1),
@@ -1524,6 +1542,27 @@ mod tests {
         let actual = Term::IntegerConstant(1).to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(vec![Command::Push(Segment::Const, 1)], actual);
+    }
+
+    #[test]
+    fn string_constant_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual =
+            Term::StringConstant("ab".to_string()).to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 2),
+                Command::Call("String".to_string(), "new".to_string(), 1),
+                Command::Push(Segment::Const, 97),
+                Command::Call("String".to_string(), "appendChar".to_string(), 1),
+                Command::Push(Segment::Const, 98),
+                Command::Call("String".to_string(), "appendChar".to_string(), 1),
+            ],
+            actual
+        );
     }
 
     #[test]
