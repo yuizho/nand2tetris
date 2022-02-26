@@ -441,7 +441,6 @@ impl Statement {
     ) -> Vec<Command> {
         use Statement::*;
         match self {
-            // TODO: is array
             Let(identifier_token, None, expression) => {
                 let mut result = vec![];
 
@@ -463,6 +462,33 @@ impl Statement {
                         .unwrap_or_else(|| panic!("{} is not defined", identifier_token.0));
                     result.push(Command::Pop(Segment::from_class_attr(class_attr), *index));
                 }
+
+                result
+            }
+            Let(identifier_token, Some(index_expression), expression) => {
+                let mut result = vec![];
+
+                // push array index
+                result.append(&mut index_expression.to_vm(class_symbol_table, local_symbol_table));
+                // push array base address
+                let array_var_name = &identifier_token.0;
+                if local_symbol_table.contains(array_var_name) {
+                    result.push(Command::Push(
+                        Segment::Local,
+                        *local_symbol_table.index_of(array_var_name).unwrap(),
+                    ));
+                } else if class_symbol_table.contains(array_var_name) {
+                    result.push(Command::Push(
+                        Segment::This,
+                        *class_symbol_table.index_of(array_var_name).unwrap(),
+                    ));
+                }
+                // array index + array base address
+                result.push(Command::Arthmetic(ArthmeticCommand::Add));
+
+                result.push(Command::Pop(Segment::Pointer, 1));
+                result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
+                result.push(Command::Pop(Segment::That, 0));
 
                 result
             }
@@ -979,7 +1005,6 @@ impl Term {
                 Keyword::This => vec![Command::Push(Segment::Pointer, 0)],
                 _ => panic!("unexpected keyword is passed: {:?}", keyword),
             },
-            // TODO: needs to impl array
             VarName(token, None) => {
                 let var_name = &token.0;
                 if local_symbol_table.contains(var_name) {
@@ -993,6 +1018,32 @@ impl Term {
                         *class_symbol_table.index_of(var_name).unwrap(),
                     )]
                 }
+            }
+            VarName(token, Some(index_expression)) => {
+                let mut result = vec![];
+
+                // push array index
+                result.append(&mut index_expression.to_vm(class_symbol_table, local_symbol_table));
+                // push array base address
+                let array_var_name = &token.0;
+                if local_symbol_table.contains(array_var_name) {
+                    result.push(Command::Push(
+                        Segment::Local,
+                        *local_symbol_table.index_of(array_var_name).unwrap(),
+                    ));
+                } else if class_symbol_table.contains(array_var_name) {
+                    result.push(Command::Push(
+                        Segment::This,
+                        *class_symbol_table.index_of(array_var_name).unwrap(),
+                    ));
+                }
+                // array index + array base address
+                result.push(Command::Arthmetic(ArthmeticCommand::Add));
+
+                result.push(Command::Pop(Segment::Pointer, 1));
+                result.push(Command::Push(Segment::That, 0));
+
+                result
             }
             Expresssion(expression) => expression.to_vm(class_symbol_table, local_symbol_table),
             SubroutineCall(subroutine_call) => {
@@ -1222,6 +1273,36 @@ mod tests {
             vec![
                 Command::Push(Segment::Const, 1),
                 Command::Pop(Segment::Local, 0),
+            ],
+            actual
+        );
+    }
+
+    #[test]
+    fn let_array_statement_to_vm() {
+        let class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        let mut local_symbol_table = SymbolTable::<LocalAttribute>::new();
+        local_symbol_table.add_symbol(
+            "array".to_string(),
+            "Array".to_string(),
+            LocalAttribute::Var,
+        );
+
+        let actual = Statement::Let(
+            IdentifierToken::new("array"),
+            Some(Expression::new(Term::IntegerConstant(2))),
+            Expression::new(Term::IntegerConstant(1)),
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Local, 0),
+                Command::Arthmetic(ArthmeticCommand::Add),
+                Command::Pop(Segment::Pointer, 1),
+                Command::Push(Segment::Const, 1),
+                Command::Pop(Segment::That, 0),
             ],
             actual
         );
@@ -1618,6 +1699,34 @@ mod tests {
             .to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(vec![Command::Push(Segment::This, 0)], actual);
+    }
+
+    #[test]
+    fn var_name_array_to_vm() {
+        let mut class_symbol_table = SymbolTable::<ClassAttribute>::new();
+        class_symbol_table.add_symbol(
+            "array".to_string(),
+            "Array".to_string(),
+            ClassAttribute::Field,
+        );
+        let local_symbol_table = SymbolTable::<LocalAttribute>::new();
+
+        let actual = Term::VarName(
+            IdentifierToken::new("array"),
+            Some(Box::new(Expression::new(Term::IntegerConstant(2)))),
+        )
+        .to_vm(&class_symbol_table, &local_symbol_table);
+
+        assert_eq!(
+            vec![
+                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::This, 0),
+                Command::Arthmetic(ArthmeticCommand::Add),
+                Command::Pop(Segment::Pointer, 1),
+                Command::Push(Segment::That, 0)
+            ],
+            actual
+        );
     }
 
     #[test]
