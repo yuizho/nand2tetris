@@ -446,22 +446,16 @@ impl Statement {
 
                 result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
 
-                // TODO: needs refactoring
-                let index = match local_symbol_table.index_of(&identifier_token.0) {
-                    Some(index) => index,
-                    None => class_symbol_table
-                        .index_of(&identifier_token.0)
-                        .unwrap_or_else(|| panic!("{} is not defined", identifier_token.0)),
-                };
-
-                if let Some(local_attr) = local_symbol_table.attr_of(&identifier_token.0) {
-                    result.push(Command::Pop(Segment::from_local_attr(local_attr), *index));
+                let var_name = &identifier_token.0;
+                if local_symbol_table.contains(var_name) {
+                    let index = local_symbol_table.index_of(var_name).unwrap();
+                    let attr = local_symbol_table.attr_of(var_name).unwrap();
+                    result.push(Command::Pop(Segment::from_local_attr(attr), *index));
                 } else {
-                    let class_attr = class_symbol_table
-                        .attr_of(&identifier_token.0)
-                        .unwrap_or_else(|| panic!("{} is not defined", identifier_token.0));
-                    result.push(Command::Pop(Segment::from_class_attr(class_attr), *index));
-                }
+                    let index = class_symbol_table.index_of(var_name).unwrap();
+                    let attr = class_symbol_table.attr_of(var_name).unwrap();
+                    result.push(Command::Pop(Segment::from_class_attr(attr), *index));
+                };
 
                 result
             }
