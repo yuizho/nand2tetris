@@ -1631,16 +1631,18 @@ mod tests {
         let local_symbol_table = SymbolTable::<LocalAttribute>::new();
 
         let actual =
-            Term::StringConstant("ab".to_string()).to_vm(&class_symbol_table, &local_symbol_table);
+            Term::StringConstant("abc".to_string()).to_vm(&class_symbol_table, &local_symbol_table);
 
         assert_eq!(
             vec![
-                Command::Push(Segment::Const, 2),
+                Command::Push(Segment::Const, 3),
                 Command::Call("String".to_string(), "new".to_string(), 1),
                 Command::Push(Segment::Const, 97),
-                Command::Call("String".to_string(), "appendChar".to_string(), 1),
+                Command::Call("String".to_string(), "appendChar".to_string(), 2),
                 Command::Push(Segment::Const, 98),
-                Command::Call("String".to_string(), "appendChar".to_string(), 1),
+                Command::Call("String".to_string(), "appendChar".to_string(), 2),
+                Command::Push(Segment::Const, 99),
+                Command::Call("String".to_string(), "appendChar".to_string(), 2),
             ],
             actual
         );
