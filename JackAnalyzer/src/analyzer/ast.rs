@@ -467,8 +467,12 @@ impl Statement {
                 // push array base address
                 let array_var_name = &identifier_token.0;
                 if local_symbol_table.contains(array_var_name) {
+                    let segment = match local_symbol_table.attr_of(array_var_name).unwrap() {
+                        LocalAttribute::Argument => Segment::Arg,
+                        LocalAttribute::Var => Segment::Local,
+                    };
                     result.push(Command::Push(
-                        Segment::Local,
+                        segment,
                         *local_symbol_table.index_of(array_var_name).unwrap(),
                     ));
                 } else if class_symbol_table.contains(array_var_name) {
@@ -870,8 +874,12 @@ impl SubroutineCall {
 
         // handle method of local variable
         if local_symbol_table.contains(parent_name) {
+            let segment = match local_symbol_table.attr_of(parent_name).unwrap() {
+                LocalAttribute::Argument => Segment::Arg,
+                LocalAttribute::Var => Segment::Local,
+            };
             return vec![Command::Push(
-                Segment::Local,
+                segment,
                 *local_symbol_table.index_of(parent_name).unwrap(),
             )]
             .into_iter()
@@ -1037,8 +1045,12 @@ impl Term {
                 // push array base address
                 let array_var_name = &token.0;
                 if local_symbol_table.contains(array_var_name) {
+                    let segment = match local_symbol_table.attr_of(array_var_name).unwrap() {
+                        LocalAttribute::Argument => Segment::Arg,
+                        LocalAttribute::Var => Segment::Local,
+                    };
                     result.push(Command::Push(
-                        Segment::Local,
+                        segment,
                         *local_symbol_table.index_of(array_var_name).unwrap(),
                     ));
                 } else if class_symbol_table.contains(array_var_name) {
