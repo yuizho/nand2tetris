@@ -480,8 +480,10 @@ impl Statement {
                 // array index + array base address
                 result.push(Command::Arthmetic(ArthmeticCommand::Add));
 
-                result.push(Command::Pop(Segment::Pointer, 1));
+                result.push(Command::Pop(Segment::Temp, 1));
                 result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
+                result.push(Command::Push(Segment::Temp, 1));
+                result.push(Command::Pop(Segment::Pointer, 1));
                 result.push(Command::Pop(Segment::That, 0));
 
                 result
@@ -1294,8 +1296,10 @@ mod tests {
                 Command::Push(Segment::Const, 2),
                 Command::Push(Segment::Local, 0),
                 Command::Arthmetic(ArthmeticCommand::Add),
-                Command::Pop(Segment::Pointer, 1),
+                Command::Pop(Segment::Temp, 1),
                 Command::Push(Segment::Const, 1),
+                Command::Push(Segment::Temp, 1),
+                Command::Pop(Segment::Pointer, 1),
                 Command::Pop(Segment::That, 0),
             ],
             actual
