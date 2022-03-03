@@ -901,16 +901,30 @@ impl SubroutineCall {
         }
 
         // handle self class's subroutine
-        if class_symbol_table.contains(&format!("{}.{}", parent_name, self.subroutine_name.0)) {
-            return vec![Command::Push(Segment::Pointer, 0)]
-                .into_iter()
-                .chain(parameter_commands)
-                .chain(vec![Command::Call(
-                    parent_name.clone(),
-                    self.subroutine_name.clone().0,
-                    self.expressions.len() + 1,
-                )])
-                .collect();
+        let subroutine_name = &format!("{}.{}", parent_name, self.subroutine_name.0);
+        if class_symbol_table.contains(subroutine_name) {
+            return match class_symbol_table.attr_of(subroutine_name).unwrap() {
+                ClassAttribute::Function => parameter_commands
+                    .into_iter()
+                    .chain(vec![Command::Call(
+                        parent_name.clone(),
+                        self.subroutine_name.clone().0,
+                        self.expressions.len(),
+                    )])
+                    .collect(),
+                ClassAttribute::Constructor | ClassAttribute::Method => {
+                    vec![Command::Push(Segment::Pointer, 0)]
+                        .into_iter()
+                        .chain(parameter_commands)
+                        .chain(vec![Command::Call(
+                            parent_name.clone(),
+                            self.subroutine_name.clone().0,
+                            self.expressions.len() + 1,
+                        )])
+                        .collect()
+                }
+                _ => panic!("unexpected attribute"),
+            };
         }
 
         // other class's static function
