@@ -429,7 +429,7 @@ impl Parser {
         &mut self,
         identifier_token: IdentifierToken,
     ) -> Result<SubroutineCall> {
-        let (parent_name, token) = if self.peek_token_is(TokenType::Dot)? {
+        let (receiver, token) = if self.peek_token_is(TokenType::Dot)? {
             self.next_token()?;
             (Some(identifier_token), self.next_token()?)
         } else {
@@ -465,12 +465,8 @@ impl Parser {
             }
         }
 
-        match parent_name {
-            Some(parent_name) => Ok(SubroutineCall::new(
-                parent_name,
-                subroutine_name,
-                expressions,
-            )),
+        match receiver {
+            Some(receiver) => Ok(SubroutineCall::new(receiver, subroutine_name, expressions)),
             None => Ok(SubroutineCall::new(
                 IdentifierToken::new(self.class_name.clone()),
                 subroutine_name,

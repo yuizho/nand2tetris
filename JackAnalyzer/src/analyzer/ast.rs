@@ -842,18 +842,18 @@ impl KeywordConstant {
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct SubroutineCall {
-    parent_name: IdentifierToken,
+    receiver: IdentifierToken,
     subroutine_name: IdentifierToken,
     expressions: Vec<Expression>,
 }
 impl SubroutineCall {
     pub fn new(
-        parent_name: IdentifierToken,
+        receiver: IdentifierToken,
         subroutine_name: IdentifierToken,
         expressions: Vec<Expression>,
     ) -> Self {
         SubroutineCall {
-            parent_name,
+            receiver,
             subroutine_name,
             expressions,
         }
@@ -869,20 +869,19 @@ impl SubroutineCall {
             .iter()
             .flat_map(|e| e.to_vm(class_symbol_table, local_symbol_table))
             .collect::<Vec<_>>();
-        let parent_name = &self.parent_name.0;
+        let receiver = &self.receiver.0;
 
         // handle method of local variable
-        if local_symbol_table.contains(parent_name) {
-            let segment =
-                Segment::from_local_attr(local_symbol_table.attr_of(parent_name).unwrap());
+        if local_symbol_table.contains(receiver) {
+            let segment = Segment::from_local_attr(local_symbol_table.attr_of(receiver).unwrap());
             return vec![Command::Push(
                 segment,
-                *local_symbol_table.index_of(parent_name).unwrap(),
+                *local_symbol_table.index_of(receiver).unwrap(),
             )]
             .into_iter()
             .chain(parameter_commands.into_iter())
             .chain(vec![Command::Call(
-                local_symbol_table.type_of(parent_name).unwrap().to_string(),
+                local_symbol_table.type_of(receiver).unwrap().to_string(),
                 self.subroutine_name.clone().0,
                 self.expressions.len() + 1,
             )])
@@ -890,15 +889,15 @@ impl SubroutineCall {
         }
 
         // handle method of class field
-        if class_symbol_table.contains(parent_name) {
+        if class_symbol_table.contains(receiver) {
             return vec![Command::Push(
                 Segment::This,
-                *class_symbol_table.index_of(parent_name).unwrap(),
+                *class_symbol_table.index_of(receiver).unwrap(),
             )]
             .into_iter()
             .chain(parameter_commands)
             .chain(vec![Command::Call(
-                class_symbol_table.type_of(parent_name).unwrap().to_string(),
+                class_symbol_table.type_of(receiver).unwrap().to_string(),
                 self.subroutine_name.clone().0,
                 self.expressions.len() + 1,
             )])
@@ -906,13 +905,13 @@ impl SubroutineCall {
         }
 
         // handle self class's subroutine
-        let subroutine_name = &format!("{}.{}", parent_name, self.subroutine_name.0);
+        let subroutine_name = &format!("{}.{}", receiver, self.subroutine_name.0);
         if class_symbol_table.contains(subroutine_name) {
             return match class_symbol_table.attr_of(subroutine_name).unwrap() {
                 ClassAttribute::Function => parameter_commands
                     .into_iter()
                     .chain(vec![Command::Call(
-                        parent_name.clone(),
+                        receiver.clone(),
                         self.subroutine_name.clone().0,
                         self.expressions.len(),
                     )])
@@ -922,7 +921,7 @@ impl SubroutineCall {
                         .into_iter()
                         .chain(parameter_commands)
                         .chain(vec![Command::Call(
-                            parent_name.clone(),
+                            receiver.clone(),
                             self.subroutine_name.clone().0,
                             self.expressions.len() + 1,
                         )])
@@ -936,7 +935,7 @@ impl SubroutineCall {
         parameter_commands
             .into_iter()
             .chain(vec![Command::Call(
-                parent_name.clone(),
+                receiver.clone(),
                 self.subroutine_name.clone().0,
                 self.expressions.len(),
             )])
@@ -950,7 +949,7 @@ impl SubroutineCall {
     ) -> Element {
         Element::new_fragment(vec![
             Element::new_fragment(vec![
-                self.parent_name.get_xml_tag(),
+                self.receiver.get_xml_tag(),
                 TokenType::Dot.get_xml_tag(),
             ]),
             self.subroutine_name.get_xml_tag(),
