@@ -1077,7 +1077,6 @@ impl Term {
                 result.push(token.to_vm());
                 result
             }
-            t => panic!("needs to implement other variants: {:?}", t),
         }
     }
 
