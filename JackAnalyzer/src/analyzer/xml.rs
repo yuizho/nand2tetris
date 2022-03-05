@@ -41,35 +41,11 @@ impl Element {
         }
     }
 
-    pub fn new_element_with_attr<S: Into<String>>(
-        name: S,
-        child: Element,
-        attributes: Vec<Attribute>,
-    ) -> Self {
-        Element {
-            name: name.into(),
-            content: Content::Elements(vec![child]),
-            attributes,
-        }
-    }
-
     pub fn new_elements<S: Into<String>>(name: S, children: Vec<Element>) -> Self {
         Element {
             name: name.into(),
             content: Content::Elements(children),
             attributes: vec![],
-        }
-    }
-
-    pub fn new_elements_with_attr<S: Into<String>>(
-        name: S,
-        children: Vec<Element>,
-        attributes: Vec<Attribute>,
-    ) -> Self {
-        Element {
-            name: name.into(),
-            content: Content::Elements(children),
-            attributes,
         }
     }
 
@@ -246,29 +222,6 @@ mod tests {
         assert_eq!(
             actual,
             "<expression>
-  <term>
-    <keyword> true </keyword>
-  </term>
-</expression>
-"
-        );
-    }
-
-    #[test]
-    fn elemnt_with_attr() {
-        let elm = Element::new_element_with_attr(
-            "expression",
-            Element::new_element("term", Element::new_text("keyword", "true")),
-            vec![
-                ("hoge".to_string(), "value~!!".to_string()),
-                ("hoge2".to_string(), "value~!!!!".to_string()),
-            ],
-        );
-        let actual = get_xml_string(&elm);
-
-        assert_eq!(
-            actual,
-            "<expression hoge=\"value~!!\" hoge2=\"value~!!!!\">
   <term>
     <keyword> true </keyword>
   </term>
