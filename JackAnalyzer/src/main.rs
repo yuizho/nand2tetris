@@ -21,9 +21,8 @@ fn main() -> Result<()> {
         let mut buf_writer = BufWriter::new(File::create(new_file_name)?);
         let f = File::open(&file_name)?;
 
-        let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(
-            &mut tokenizer,
+            JackTokenizer::new(f),
             Box::new(UuidLabelGenerator::new()),
             // filename is same as class name
             file_name.file_stem().unwrap().to_str().unwrap().to_string(),

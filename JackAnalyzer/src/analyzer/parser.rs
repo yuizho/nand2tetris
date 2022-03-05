@@ -20,14 +20,14 @@ impl LabelGenerator for UuidLabelGenerator {
     }
 }
 
-pub struct Parser<'a> {
-    tokenizer: &'a mut JackTokenizer,
+pub struct Parser {
+    tokenizer: JackTokenizer,
     label_generator: Box<dyn LabelGenerator>,
     class_name: String,
 }
-impl<'a> Parser<'a> {
+impl Parser {
     pub fn new(
-        tokenizer: &'a mut JackTokenizer,
+        tokenizer: JackTokenizer,
         label_generator: Box<dyn LabelGenerator>,
         class_name: String,
     ) -> Self {
@@ -593,7 +593,7 @@ mod tests {
         }
     }
 
-    fn parse_ast_elements(tokenizer: &mut JackTokenizer) -> Vec<Statement> {
+    fn parse_ast_elements(tokenizer: JackTokenizer) -> Vec<Statement> {
         let mut parser = Parser::new(
             tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
@@ -633,9 +633,9 @@ mod tests {
         "
         .as_bytes();
 
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(
-            &mut tokenizer,
+            tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
         );
@@ -720,8 +720,8 @@ mod tests {
         let z = 1 * 2;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 6);
         assert_eq!(
@@ -779,8 +779,8 @@ mod tests {
         parent.hoge(1, 2);
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 4);
         assert_eq!(
@@ -830,8 +830,8 @@ mod tests {
         return;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 3);
         assert_eq!(
@@ -853,8 +853,8 @@ mod tests {
         do game.run();
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 1);
         assert_eq!(
@@ -880,9 +880,9 @@ mod tests {
         }
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(
-            &mut tokenizer,
+            tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
         );
@@ -947,9 +947,9 @@ mod tests {
         }
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
         let mut parser = Parser::new(
-            &mut tokenizer,
+            tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
         );
@@ -1016,8 +1016,8 @@ mod tests {
         foobar;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 1);
         assert_eq!(
@@ -1037,8 +1037,8 @@ mod tests {
         foobar[i + 1];
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 3);
         assert_eq!(
@@ -1072,8 +1072,8 @@ mod tests {
         5;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 1);
         assert_eq!(
@@ -1090,8 +1090,8 @@ mod tests {
         \"str value!!\";
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 1);
         assert_eq!(
@@ -1110,8 +1110,8 @@ mod tests {
         false;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 3);
         assert_eq!(
@@ -1139,8 +1139,8 @@ mod tests {
         -8 +( ((9 - 10) / 11) * 12);
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 4);
         assert_eq!(
@@ -1231,8 +1231,8 @@ mod tests {
         ~i;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 2);
         assert_eq!(
@@ -1257,8 +1257,8 @@ mod tests {
         2 > 3;
         "
         .as_bytes();
-        let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let actual = parse_ast_elements(&mut tokenizer);
+        let tokenizer = JackTokenizer::new(Cursor::new(&source));
+        let actual = parse_ast_elements(tokenizer);
 
         assert_eq!(actual.len(), 2);
         assert_eq!(
