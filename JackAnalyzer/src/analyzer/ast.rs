@@ -54,7 +54,7 @@ impl Program {
             self.subroutine_dec
                 .iter()
                 .map(|s| s.to_vm(&self.class_symbol_table))
-                .collect::<Vec<Subroutine>>(),
+                .collect::<Vec<_>>(),
         )
     }
 
