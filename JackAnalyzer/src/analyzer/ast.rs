@@ -540,7 +540,7 @@ impl Statement {
             Return(None) => {
                 vec![Command::Push(Segment::Const, 0), Command::Return]
             }
-            _ => panic!("needs to implement other variants"),
+            Expression(expression) => expression.to_vm(class_symbol_table, local_symbol_table),
         }
     }
 
