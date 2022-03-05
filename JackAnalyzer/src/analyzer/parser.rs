@@ -34,14 +34,14 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn new_by_label_generator(
+    pub fn _new_by_label_generator(
         tokenizer: &'a mut JackTokenizer,
         label_generator: Box<dyn LabelGenerator>,
         class_name: String,
     ) -> Self {
         Parser {
             tokenizer,
-            label_generator: label_generator,
+            label_generator,
             class_name,
         }
     }
@@ -881,7 +881,7 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new_by_label_generator(
+        let mut parser = Parser::_new_by_label_generator(
             &mut tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
@@ -948,7 +948,7 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new_by_label_generator(
+        let mut parser = Parser::_new_by_label_generator(
             &mut tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
