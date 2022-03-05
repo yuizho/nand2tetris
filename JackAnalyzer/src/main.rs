@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 mod analyzer;
-use analyzer::parser::Parser;
+use analyzer::parser::{Parser, UuidLabelGenerator};
 use analyzer::tokenizer::JackTokenizer;
 use analyzer::vm::VmWriter;
 use analyzer::xml::XmlWriter;
@@ -24,6 +24,7 @@ fn main() -> Result<()> {
         let mut tokenizer = JackTokenizer::new(f);
         let mut parser = Parser::new(
             &mut tokenizer,
+            Box::new(UuidLabelGenerator::new()),
             // filename is same as class name
             file_name.file_stem().unwrap().to_str().unwrap().to_string(),
         );

@@ -8,9 +8,9 @@ pub trait LabelGenerator {
     fn generate(&self) -> String;
 }
 
-struct UuidLabelGenerator;
+pub struct UuidLabelGenerator;
 impl UuidLabelGenerator {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self
     }
 }
@@ -26,15 +26,7 @@ pub struct Parser<'a> {
     class_name: String,
 }
 impl<'a> Parser<'a> {
-    pub fn new(tokenizer: &'a mut JackTokenizer, class_name: String) -> Self {
-        Parser {
-            tokenizer,
-            label_generator: Box::new(UuidLabelGenerator::new()),
-            class_name,
-        }
-    }
-
-    pub fn _new_by_label_generator(
+    pub fn new(
         tokenizer: &'a mut JackTokenizer,
         label_generator: Box<dyn LabelGenerator>,
         class_name: String,
@@ -602,7 +594,11 @@ mod tests {
     }
 
     fn parse_ast_elements(tokenizer: &mut JackTokenizer) -> Vec<Statement> {
-        let mut parser = Parser::new(tokenizer, "Main".to_string());
+        let mut parser = Parser::new(
+            tokenizer,
+            Box::new(FixedLabelGenerator::new("Label")),
+            "Main".to_string(),
+        );
 
         let mut statements = vec![];
         let mut token = parser.next_token().unwrap();
@@ -638,7 +634,11 @@ mod tests {
         .as_bytes();
 
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::new(&mut tokenizer, "Main".to_string());
+        let mut parser = Parser::new(
+            &mut tokenizer,
+            Box::new(FixedLabelGenerator::new("Label")),
+            "Main".to_string(),
+        );
         let actual = parser.parse_program().unwrap();
 
         assert_eq!(
@@ -881,7 +881,7 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::_new_by_label_generator(
+        let mut parser = Parser::new(
             &mut tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
@@ -948,7 +948,7 @@ mod tests {
         "
         .as_bytes();
         let mut tokenizer = JackTokenizer::new(Cursor::new(&source));
-        let mut parser = Parser::_new_by_label_generator(
+        let mut parser = Parser::new(
             &mut tokenizer,
             Box::new(FixedLabelGenerator::new("Label")),
             "Main".to_string(),
