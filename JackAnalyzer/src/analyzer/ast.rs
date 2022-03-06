@@ -447,15 +447,19 @@ impl Statement {
                 result.append(&mut expression.to_vm(class_symbol_table, local_symbol_table));
 
                 let var_name = &identifier_token.0;
-                if local_symbol_table.contains(var_name) {
-                    let index = local_symbol_table.index_of(var_name).unwrap();
-                    let attr = local_symbol_table.attr_of(var_name).unwrap();
-                    result.push(Command::Pop(Segment::from_local_attr(attr), *index));
+                if let Some(symbol) = local_symbol_table.of(var_name) {
+                    result.push(Command::Pop(
+                        Segment::from_local_attr(&symbol.attribute),
+                        symbol.number,
+                    ));
+                } else if let Some(symbol) = class_symbol_table.of(var_name) {
+                    result.push(Command::Pop(
+                        Segment::from_class_attr(&symbol.attribute),
+                        symbol.number,
+                    ));
                 } else {
-                    let index = class_symbol_table.index_of(var_name).unwrap();
-                    let attr = class_symbol_table.attr_of(var_name).unwrap();
-                    result.push(Command::Pop(Segment::from_class_attr(attr), *index));
-                };
+                    panic!("the variable is not defined: {}", var_name)
+                }
 
                 result
             }
@@ -466,20 +470,17 @@ impl Statement {
                 result.append(&mut index_expression.to_vm(class_symbol_table, local_symbol_table));
                 // push array base address
                 let array_var_name = &identifier_token.0;
-                if local_symbol_table.contains(array_var_name) {
-                    let segment = Segment::from_local_attr(
-                        local_symbol_table.attr_of(array_var_name).unwrap(),
-                    );
+                if let Some(symbol) = local_symbol_table.of(array_var_name) {
                     result.push(Command::Push(
-                        segment,
-                        *local_symbol_table.index_of(array_var_name).unwrap(),
+                        Segment::from_local_attr(&symbol.attribute),
+                        symbol.number,
                     ));
-                } else if class_symbol_table.contains(array_var_name) {
-                    result.push(Command::Push(
-                        Segment::This,
-                        *class_symbol_table.index_of(array_var_name).unwrap(),
-                    ));
+                } else if let Some(symbol) = class_symbol_table.of(array_var_name) {
+                    result.push(Command::Push(Segment::This, symbol.number));
+                } else {
+                    panic!("the variable is not defined: {}", array_var_name)
                 }
+
                 // array index + array base address
                 result.push(Command::Arthmetic(ArthmeticCommand::Add));
 
@@ -872,16 +873,15 @@ impl SubroutineCall {
         let receiver = &self.receiver.0;
 
         // handle method of local variable
-        if local_symbol_table.contains(receiver) {
-            let segment = Segment::from_local_attr(local_symbol_table.attr_of(receiver).unwrap());
+        if let Some(symbol) = local_symbol_table.of(receiver) {
             return vec![Command::Push(
-                segment,
-                *local_symbol_table.index_of(receiver).unwrap(),
+                Segment::from_local_attr(&symbol.attribute),
+                symbol.number,
             )]
             .into_iter()
             .chain(parameter_commands.into_iter())
             .chain(vec![Command::Call(
-                local_symbol_table.type_of(receiver).unwrap().to_string(),
+                symbol.symbol_type.to_string(),
                 self.subroutine_name.clone().0,
                 self.expressions.len() + 1,
             )])
@@ -889,25 +889,22 @@ impl SubroutineCall {
         }
 
         // handle method of class field
-        if class_symbol_table.contains(receiver) {
-            return vec![Command::Push(
-                Segment::This,
-                *class_symbol_table.index_of(receiver).unwrap(),
-            )]
-            .into_iter()
-            .chain(parameter_commands)
-            .chain(vec![Command::Call(
-                class_symbol_table.type_of(receiver).unwrap().to_string(),
-                self.subroutine_name.clone().0,
-                self.expressions.len() + 1,
-            )])
-            .collect();
+        if let Some(symbol) = class_symbol_table.of(receiver) {
+            return vec![Command::Push(Segment::This, symbol.number)]
+                .into_iter()
+                .chain(parameter_commands)
+                .chain(vec![Command::Call(
+                    symbol.symbol_type.to_string(),
+                    self.subroutine_name.clone().0,
+                    self.expressions.len() + 1,
+                )])
+                .collect();
         }
 
         // handle self class's subroutine
         let subroutine_name = &format!("{}.{}", receiver, self.subroutine_name.0);
-        if class_symbol_table.contains(subroutine_name) {
-            return match class_symbol_table.attr_of(subroutine_name).unwrap() {
+        if let Some(symbol) = class_symbol_table.of(subroutine_name) {
+            return match symbol.attribute {
                 ClassAttribute::Function => parameter_commands
                     .into_iter()
                     .chain(vec![Command::Call(
@@ -1021,16 +1018,18 @@ impl Term {
             },
             VarName(token, None) => {
                 let var_name = &token.0;
-                if local_symbol_table.contains(var_name) {
+                if let Some(symbol) = local_symbol_table.of(var_name) {
                     vec![Command::Push(
-                        Segment::from_local_attr(local_symbol_table.attr_of(var_name).unwrap()),
-                        *local_symbol_table.index_of(var_name).unwrap(),
+                        Segment::from_local_attr(&symbol.attribute),
+                        symbol.number,
+                    )]
+                } else if let Some(symbol) = class_symbol_table.of(var_name) {
+                    vec![Command::Push(
+                        Segment::from_class_attr(&symbol.attribute),
+                        symbol.number,
                     )]
                 } else {
-                    vec![Command::Push(
-                        Segment::from_class_attr(class_symbol_table.attr_of(var_name).unwrap()),
-                        *class_symbol_table.index_of(var_name).unwrap(),
-                    )]
+                    panic!("the variable is not defined: {}", var_name)
                 }
             }
             VarName(token, Some(index_expression)) => {
@@ -1040,19 +1039,15 @@ impl Term {
                 result.append(&mut index_expression.to_vm(class_symbol_table, local_symbol_table));
                 // push array base address
                 let array_var_name = &token.0;
-                if local_symbol_table.contains(array_var_name) {
-                    let segment = Segment::from_local_attr(
-                        local_symbol_table.attr_of(array_var_name).unwrap(),
-                    );
+                if let Some(symbol) = local_symbol_table.of(array_var_name) {
                     result.push(Command::Push(
-                        segment,
-                        *local_symbol_table.index_of(array_var_name).unwrap(),
+                        Segment::from_local_attr(&symbol.attribute),
+                        symbol.number,
                     ));
-                } else if class_symbol_table.contains(array_var_name) {
-                    result.push(Command::Push(
-                        Segment::This,
-                        *class_symbol_table.index_of(array_var_name).unwrap(),
-                    ));
+                } else if let Some(symbol) = class_symbol_table.of(array_var_name) {
+                    result.push(Command::Push(Segment::This, symbol.number));
+                } else {
+                    panic!("the variable is not defined: {}", array_var_name)
                 }
                 // array index + array base address
                 result.push(Command::Arthmetic(ArthmeticCommand::Add));
@@ -1087,18 +1082,22 @@ impl Term {
                     (
                         "category".to_string(),
                         class_symbol_table
-                            .type_of(name)
-                            .or_else(|| local_symbol_table.type_of(name))
-                            .unwrap()
-                            .to_string(),
+                            .of(name)
+                            .map(|s| s.symbol_type.to_string())
+                            .or_else(|| {
+                                local_symbol_table
+                                    .of(name)
+                                    .map(|s| s.symbol_type.to_string())
+                            })
+                            .unwrap(),
                     ),
                     ("how".to_string(), "use".to_string()),
                     (
                         "attribute".to_string(),
-                        match class_symbol_table.attr_of(name) {
-                            Some(attr) => attr.to_string(),
-                            None => match local_symbol_table.attr_of(name) {
-                                Some(attr) => attr.to_string(),
+                        match class_symbol_table.of(name) {
+                            Some(symbol) => symbol.attribute.to_string(),
+                            None => match local_symbol_table.of(name) {
+                                Some(symbol) => symbol.attribute.to_string(),
                                 None => panic!("the variable is not defined: {}", name),
                             },
                         },

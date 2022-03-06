@@ -68,10 +68,10 @@ impl ToString for LocalAttribute {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct Symbol<T> {
-    symbol_type: SymbolType,
-    attribute: T,
-    number: usize,
+pub struct Symbol<T> {
+    pub symbol_type: SymbolType,
+    pub attribute: T,
+    pub number: usize,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -104,23 +104,8 @@ impl<T: Eq + PartialEq + ToString> SymbolTable<T> {
             .count()
     }
 
-    pub fn contains(&self, name: &str) -> bool {
-        self.symbols.contains_key(name)
-    }
-
-    pub fn attr_of(&self, name: &str) -> Option<&T> {
-        let symbol = self.symbols.get(name)?;
-        Some(&symbol.attribute)
-    }
-
-    pub fn type_of(&self, name: &str) -> Option<&str> {
-        let symbol = self.symbols.get(name)?;
-        Some(&symbol.symbol_type)
-    }
-
-    pub fn index_of(&self, name: &str) -> Option<&usize> {
-        let symbol = self.symbols.get(name)?;
-        Some(&symbol.number)
+    pub fn of(&self, name: &str) -> Option<&Symbol<T>> {
+        self.symbols.get(name)
     }
 }
 
@@ -142,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn class_symbol_table_index_of() {
+    fn class_symbol_table_of() {
         let mut symbol_table = SymbolTable::<ClassAttribute>::new();
         symbol_table.add_symbol(
             "first".to_string(),
@@ -150,8 +135,15 @@ mod tests {
             ClassAttribute::Field,
         );
 
-        assert_eq!(Some(&0), symbol_table.index_of("first"));
-        assert_eq!(None, symbol_table.index_of("none"));
+        assert_eq!(
+            Some(&Symbol {
+                number: 0,
+                symbol_type: "String".to_string(),
+                attribute: ClassAttribute::Field,
+            }),
+            symbol_table.of("first")
+        );
+        assert_eq!(None, symbol_table.of("none"));
     }
 
     #[test]
@@ -168,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn local_symbol_table_index_of() {
+    fn local_symbol_table_of() {
         let mut symbol_table = SymbolTable::<LocalAttribute>::new();
         symbol_table.add_symbol(
             "first".to_string(),
@@ -176,7 +168,14 @@ mod tests {
             LocalAttribute::Var,
         );
 
-        assert_eq!(Some(&0), symbol_table.index_of("first"));
-        assert_eq!(None, symbol_table.index_of("none"));
+        assert_eq!(
+            Some(&Symbol {
+                number: 0,
+                symbol_type: "String".to_string(),
+                attribute: LocalAttribute::Var,
+            }),
+            symbol_table.of("first")
+        );
+        assert_eq!(None, symbol_table.of("none"));
     }
 }
