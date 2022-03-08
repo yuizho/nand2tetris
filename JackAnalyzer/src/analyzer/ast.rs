@@ -999,6 +999,7 @@ impl Term {
                         ]
                     })
                     .collect::<Vec<_>>();
+
                 vec![
                     Command::Push(Segment::Const, str.len()),
                     Command::Call("String".to_string(), "new".to_string(), 1),
